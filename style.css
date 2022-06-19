@@ -1,0 +1,24 @@
+.and {
+    display: flex;
+}
+.container1, .container2 {
+    width: 8em;
+    height: 4em;
+    border: 1px solid;
+}
+
+#transistor1, #transistor2 {
+    display: flex;
+    justify-content: space-around;
+    gap: .5em;
+}
+
+#box1, #box2 {
+    width: 2em;
+    height: 2em;
+    border: 1px solid;
+}
+#base1, #base2 {
+    display: flex;
+    justify-content: center;
+}
