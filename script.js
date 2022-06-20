@@ -38,8 +38,8 @@ function NotGate(input1, output, id) {
     this.input1 = input1;
     this.output = output;
     this.id = id;
-    this.logic = function() {if (this.base === 1 && this.collector === 1) 
-                                {this.output = 0;
+    this.logic = function() {if (this.base === 1 && this.collector === 1) {
+                                    this.output = 0;
                                 } else {
                                     this.output = 1}}
 }
@@ -54,86 +54,94 @@ function makeNotGate(x) {
 //AND gate 2x NPN transistors
 // 2 inputs 1 output
 
-// let bandGate = {
-//     input1: makeTransistor(1),
-//     input2: makeTransistor(1)
-// }
-
-function AndGate(input1, input2, output, id) {
+function AndGate(input1, input2, transistor1, transistor2, output, id) {
     this.input1 = input1;
     this.input2 = input2;
+    this.transistor1 = transistor1;
+    this.transistor2 = transistor2;
     this.output = output;
     this.id = id;
     this.logic = function() {
-                    this.input1.logic();
-                    let emitter = this.input1.emitter;
-                    this.input2.collector = emitter;
-                    this.input2.logic();
-                    if (this.input2.emitter === 1) {
-                        this.output = 1;
-                    } else {
-                        this.output = 0;
-                    }
-                };
+        this.transistor1.collector = 1;
+        this.transistor1.base = this.input1;
+        this.transistor2.base = this.input2;
+        this.transistor1.logic();
+        this.transistor2.collector = this.transistor1.emitter;
+        this.transistor2.logic();
+        if (this.transistor2.emitter === 1) {
+            this.output = 1;
+        } else {
+            this.output = 0;
+        }
+    };
 }
 
 function makeAndGate() {
-        andGate = new AndGate(makeTransistor(1), makeTransistor(1), 0, andCount);
+        andGate = new AndGate(0, 0, makeTransistor(1), makeTransistor(1), 0, andCount);
         andCount++;
         return andGate;
 }
 
-// makeAndGate();
-
 // OR gate
 
-function OrGate(input1, input2, output, id) {
+function OrGate(input1, input2, transistor1, transistor2, output, id) {
     this.input1 = input1;
     this.input2 = input2;
+    this.transistor1 = transistor1;
+    this.transistor2 = transistor2;
     this.output = output;
     this.id = id;
     this.logic = function() {
-                    this.input1.logic();
-                    this.input2.logic();
-                    if (this.input1.emitter === 1 || this.input2.emitter === 1) {
-                        this.output = 1;
-                    } else {
-                        this.output = 0;
-                    }
-                };
+        this.transistor1.collector = 1;
+        this.transistor1.base = this.input1;
+        this.transistor2.collector = 1;
+        this.transistor2.base = this.input2;
+        this.transistor1.logic();
+        this.transistor2.logic();
+        if (this.transistor1.emitter === 1 || this.transistor2.emitter === 1) {
+            this.output = 1;
+        } else {
+            this.output = 0;
+        }
+    };
 }
 
 function makeOrGate(x) {
     let orId = []
     for (let i = 0; i < x; i++) {
-        window[`orGate`] = new OrGate(makeTransistor(1), makeTransistor(1), 0, andCount);
-        andCount++;
+        window[`orGate`] = new OrGate(1, 1, makeTransistor(1), makeTransistor(1), 0, andCount);
         return window[`orGate`];
     }
 }
 
 // NOR gate
 
-function NorGate(input1, input2, output, id) {
+function NorGate(input1, input2, transistor1, transistor2, output, id) {
     this.input1 = input1;
     this.input2 = input2;
+    this.transistor1 = transistor1;
+    this.transistor2 = transistor2;
     this.output = output;
     this.id = id;
     this.logic = function() {
-                    this.input1.logic();
-                    this.input2.logic();
-                    if (this.input1.emitter === 1 || this.input2.emitter === 1) {
-                        this.output = 0;
-                    } else {
-                        this.output = 1;
-                    }
-                };
+        this.transistor1.collector = 1;
+        this.transistor1.base = this.input1;
+        this.transistor2.collector = 1;
+        this.transistor2.base = this.input2;
+        this.transistor1.logic();
+        this.transistor2.logic();
+        if (this.transistor1.emitter === 1 || this.transistor2.emitter === 1) {
+            this.output = 0;
+        } else {
+            this.output = 1;
+        }
+    };
 }
 
 function makeNorGate(x) {
     let orId = []
     for (let i = 0; i < x; i++) {
-        window[`norGate`] = new NorGate(makeTransistor(1), makeTransistor(1), 0, andCount);
+        window[`norGate`] = new NorGate(0, 0, makeTransistor(1), makeTransistor(1), 0, andCount);
         andCount++;
         return window[`norGate`];
     }
@@ -141,27 +149,32 @@ function makeNorGate(x) {
 
 //NAND gate
 
-function NandGate(input1, input2, output, id) {
+function NandGate(input1, input2, transistor1, transistor2, output, id) {
     this.input1 = input1;
     this.input2 = input2;
+    this.transistor1 = transistor1;
+    this.transistor2 = transistor2;
     this.output = output;
     this.id = id;
     this.logic = function() {
-                    this.input1.logic();
-                    this.input2.collector = this.input1.emitter;
-                    this.input2.logic();
-                    if (this.input2.emitter === 1) {
-                        this.output = 0;
-                    } else {
-                        this.output = 1;
-                    }
-                };
+        this.transistor1.collector = 1;
+        this.transistor1.base = this.input1;
+        this.transistor2.base = this.input2;
+        this.transistor1.logic();
+        this.transistor2.collector = this.transistor1.emitter;
+        this.transistor2.logic();
+        if (this.transistor2.emitter === 1) {
+            this.output = 0;
+        } else {
+            this.output = 1;
+        }
+    };
 }
 
 function makeNandGate(x) {
     let andId = []
     for (let i = 0; i < x; i++) {
-        window[`nandGate`] = new NandGate(makeTransistor(1), makeTransistor(1), 1, andCount);
+        window[`nandGate`] = new NandGate(0, 0, makeTransistor(1), makeTransistor(1), 1, andCount);
         return window[`nandGate`];
     }
 }
@@ -177,27 +190,23 @@ function XorGate(input1, input2, nandGate, andGate, orGate, output, id) {
     this.output = output;
     this.id = id;
     this.logic = function() {
-                    this.nandGate.input1.collector = 1;
-                    this.nandGate.input1.base = this.input1;
-                    this.nandGate.input2.base = this.input2;
-                    this.nandGate.logic();
-                    this.orGate.input1.collector = 1;
-                    this.orGate.input2.collector = 1;
-                    this.orGate.input1.base = this.input2;
-                    this.orGate.input2.base = this.input1;
-                    this.orGate.logic();
-                    this.andGate.input1.collector = 1;
-                    this.andGate.input1.base = this.nandGate.output;
-                    this.andGate.input2.base = this.orGate.output;
-                    this.andGate.logic();
-                    this.output = this.andGate.output;
-                };
+        this.nandGate.input1 = this.input1;
+        this.nandGate.input2 = this.input2;
+        this.nandGate.logic();
+        this.orGate.input1 = this.input2;
+        this.orGate.input2 = this.input1;
+        this.orGate.logic();
+        this.andGate.input1 = this.nandGate.output;
+        this.andGate.input2 = this.orGate.output;
+        this.andGate.logic();
+        this.output = this.andGate.output;
+    };
 }
 
 function makeXorGate(x) {
     let andId = []
     for (let i = 0; i < x; i++) {
-        window[`xorGate`] = new XorGate(0, 0, makeNandGate(1), makeAndGate(1), makeOrGate(1), 0, andCount)
+        window[`xorGate`] = new XorGate(1, 1, makeNandGate(1), makeAndGate(1), makeOrGate(1), 0, andCount)
         return window[`xorGate`]
         //andCount++;
     }
@@ -212,37 +221,55 @@ function XnorGate(input1, input2, norGate, andGate, orGate, output, id) {
     this.output = output;
     this.id = id;
     this.logic = function() {
-                    this.norGate.input1.collector = 1;
-                    this.norGate.input2.collector = 1;
-                    this.norGate.input1.base = this.input1;
-                    this.norGate.input2.base = this.input2;
-                    this.norGate.logic();
-                    this.andGate.input1.collector = 1;
-                    this.andGate.input1.base = this.input2;
-                    this.andGate.input2.base = this.input1;
-                    this.andGate.logic();
-                    this.orGate.input1.collector = 1;
-                    this.orGate.input2.collector = 1;
-                    this.orGate.input1.base = this.norGate.output;
-                    this.orGate.input2.base = this.andGate.output;
-                    this.orGate.logic();
-                    this.output = this.orGate.output;
-                };
+        this.norGate.input1 = this.input1;
+        this.norGate.input2 = this.input2;
+        this.norGate.logic();
+        this.andGate.input1 = this.input2;
+        this.andGate.input2 = this.input1;
+        this.andGate.logic();
+        this.orGate.input1 = this.norGate.output;
+        this.orGate.input2 = this.andGate.output;
+        this.orGate.logic();
+        this.output = this.orGate.output;
+    };
 }
 
 function makeXnorGate(x) {
-    let andId = []
     for (let i = 0; i < x; i++) {
-        window[`xnorGate`] = new XnorGate(1, 1, makeNorGate(1), makeAndGate(1), makeOrGate(1), 0, andCount)
+        window[`xnorGate`] = new XnorGate(0, 0, makeNorGate(1), makeAndGate(1), makeOrGate(1), 0, andCount);
         return window[`xnorGate`]
         //andCount++;
     }
 }
 
-makeXnorGate(1);
-xnorGate.logic();
 
+function HalfAdder(x, y, xorGate, andGate, sum, carryOut) {
+    this.x = x;
+    this.y = y;
+    this.xorGate = xorGate;
+    this.andGate = andGate;
+    this.sum = sum;
+    this.carryOut = carryOut;
+    this.logic = function() {
+        this.xorGate.input1 = this.x;
+        this.xorGate.input2 = this.y;
+        this.andGate.input1 = this.x;
+        this.andGate.input2 = this.y;
+        xorGate.logic();
+        andGate.logic();
+        this.sum = this.xorGate.output;
+        this.carryOut = this.andGate.output;
+    };
+}
 
+function makeHalfAdder() {
+    window[`halfAdder`] = new HalfAdder(1, 1, makeXorGate(1), makeAndGate(1));
+    return window[`halfAdder`]
+}
+
+makeHalfAdder();
+halfAdder.logic();
+console.log("sum:", halfAdder.sum, "carryout", halfAdder.carryOut)
 
 
 // let collector1 = document.getElementById('collector1');
