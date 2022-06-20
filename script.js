@@ -263,13 +263,57 @@ function HalfAdder(x, y, xorGate, andGate, sum, carryOut) {
 }
 
 function makeHalfAdder() {
-    window[`halfAdder`] = new HalfAdder(1, 1, makeXorGate(1), makeAndGate(1));
+    window[`halfAdder`] = new HalfAdder(0, 0, makeXorGate(1), makeAndGate(1));
     return window[`halfAdder`]
 }
 
-makeHalfAdder();
-halfAdder.logic();
-console.log("sum:", halfAdder.sum, "carryout", halfAdder.carryOut)
+function FullAdder(a, b, carryIn, halfAdder1, halfAdder2, orGate, sum, carryOut) {
+    this.a = a;
+    this.b = b;
+    this.carryIn = carryIn;
+    this.halfAdder1 = halfAdder1;
+    this.halfAdder2 = halfAdder2;
+    this.orGate = orGate;
+    this.sum = sum;
+    this.carryOut = carryOut;
+    this.logic = function() {
+        this.halfAdder1.x = a;
+        this.halfAdder1.y = b;
+        halfAdder1.logic();
+        this.halfAdder2.x = this.halfAdder1.sum;
+        this.halfAdder2.y = this.carryIn;
+        halfAdder2.logic();
+        this.orGate.input1 = halfAdder1.carryOut;
+        this.orGate.input2 = halfAdder2.carryOut;
+        orGate.logic();
+        this.carryOut = orGate.output;
+        this.sum = halfAdder2.sum;
+    }
+}
+
+function makeFullAdder() {
+    window[`fullAdder`] = new FullAdder(0, 0, 0, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    return window[`fullAdder`]
+}
+
+//simple calculator
+let firstNumber = [0, 0, 0, 1]
+let secondNumber = [0, 1, 0, 0]
+
+let addOne = new HalfAdder(firstNumber[3], secondNumber[3], makeXorGate(1), makeAndGate(1));
+addOne.logic();
+
+let addTwo = new FullAdder(firstNumber[2], secondNumber[2], addOne.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+addTwo.logic();
+
+let addThree = new FullAdder(firstNumber[1], secondNumber[1], addTwo.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+addThree.logic();
+
+let addFour = new FullAdder(firstNumber[0], secondNumber[0], addThree.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+addFour.logic();
+
+let calOutput = [addFour.sum, addThree.sum, addTwo.sum, addOne.sum]
+console.log(calOutput)
 
 
 // let collector1 = document.getElementById('collector1');
