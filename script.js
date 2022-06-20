@@ -29,16 +29,14 @@ function Transistor(collector, base, emitter, id) {
 function makeTransistor(x) {
     for (let i = 0; i < x; i++) {
         transistor = new Transistor(0, 0, 0, transistorCount);
-        transistorCount++;
         return transistor;
     }
 }
 
-function NotGate(input1, output, id) {
-    this.input1 = input1;
+function NotGate(input, output) {
+    this.input = input;
     this.output = output;
-    this.id = id;
-    this.logic = function() {if (this.base === 1 && this.collector === 1) {
+    this.logic = function() {if (this.input === 1) {
                                     this.output = 0;
                                 } else {
                                     this.output = 1}}
@@ -46,7 +44,7 @@ function NotGate(input1, output, id) {
 
 function makeNotGate(x) {
     for (let i = 0; i < x; i++) {
-        window[`notGate`] = new NotGate(makeTransistor(1), 0, transistorCount);
+        window[`notGate`] = new NotGate(0, 0);
         return window[`notGate`];
     }
 }
@@ -297,88 +295,181 @@ function makeFullAdder() {
 }
 
 //simple calculator
-let firstNumber = [0, 0, 0, 1]
-let secondNumber = [0, 1, 0, 0]
+let firstNumber = [0, 0, 0, 0]
+let secondNumber = [0, 0, 0, 0]
 
-let addOne = new HalfAdder(firstNumber[3], secondNumber[3], makeXorGate(1), makeAndGate(1));
-addOne.logic();
+function fourBitAdder() {
+    let addOne = new HalfAdder(firstNumber[3], secondNumber[3], makeXorGate(1), makeAndGate(1));
+    addOne.logic();
 
-let addTwo = new FullAdder(firstNumber[2], secondNumber[2], addOne.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
-addTwo.logic();
+    let addTwo = new FullAdder(firstNumber[2], secondNumber[2], addOne.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    addTwo.logic();
 
-let addThree = new FullAdder(firstNumber[1], secondNumber[1], addTwo.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
-addThree.logic();
+    let addThree = new FullAdder(firstNumber[1], secondNumber[1], addTwo.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    addThree.logic();
 
-let addFour = new FullAdder(firstNumber[0], secondNumber[0], addThree.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
-addFour.logic();
+    let addFour = new FullAdder(firstNumber[0], secondNumber[0], addThree.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    addFour.logic();
 
-let calOutput = [addFour.sum, addThree.sum, addTwo.sum, addOne.sum]
-console.log(calOutput)
+    let calOutput = [addFour.carryOut, addFour.sum, addThree.sum, addTwo.sum, addOne.sum]
+    return calOutput;
+}
 
+//convert binary to decimal
+function binaryToDecimal(array) {
+    const reversed = [...array].reverse();
+    let i = 1;
+    let sum = 0;
+    for (ele of reversed) {
+        if (ele === 1) {
+            sum+=i;
+        };
+        i*=2
+    }
+    return sum;
+}
 
-// let collector1 = document.getElementById('collector1');
-// andGate.input1.collector = 1;
-// collector1.textContent = andGate.input1.collector;
-
-// function updateDom() {
-//     for (let i = 1; i < transistorCount + 1; i++) {
-//         //console.log(i);
-//         eval(`collector${i}.textContent` + "=" + `andGate.input${i}.collector`);
-//         eval(`base${i}.textContent` + "=" + `andGate.input${i}.base`);
-//         eval(`emitter${i}.textContent` + "=" + `andGate.input${i}.emitter`);
-//     }
-// };
-
-// for (let i = 1; i < transistorCount.length + 1; i ++){
-//     let 
-// }
-
-
-// let emitter1 = document.getElementById('emitter1');
-// emitter1.textContent = andGate.input1.emitter;
-
-// let base1 = document.getElementById('base1');
-// base1.textContent = andGate.input1.base;
-
-// let collector2 = document.getElementById('collector2');
-// collector2.textContent = andGate.input1.collector;
-
-// let emitter2 = document.getElementById('emitter2');
-// emitter2.textContent = andGate.input1.emitter;
-
-// let base2 = document.getElementById('base2');
-// base2.textContent = andGate.input1.base;
-
-// let button1 = document.getElementById("one");
-// let button2 = document.getElementById("two");
+// console.log(binaryToDecimal(firstNumber), firstNumber);
+// console.log("+");
+// console.log(binaryToDecimal(secondNumber), secondNumber);
+// console.log("=");
+// console.log(binaryToDecimal(calOutput), calOutput)
 
 
-// button1.onclick = function() {
-//     if (button1.textContent === On) {
-//         button1.textContent = Off;
-//         andGate.input1.base = 0;
-//     } else if (button1.textContent === Off) {
-//         button1.textContent = On;
-//         andGate.input1.base = 1;
-//     }
-//     base1.textContent = andGate.input1.base;
-//     andGate.input1.logic();
-//     andGate.logic();
-//     emitter1.textContent = andGate.input1.emitter;
-//     updateDom();
-// }
+// GUI stuff
 
-// button2.onclick = function() {
-//     if (button2.textContent === On) {
-//         button2.textContent = Off;
-//         andGate.input2.base = 0;
+let outputfive = document.getElementById("outputfive")
+let outputfour = document.getElementById("outputfour")
+let outputthree = document.getElementById("outputthree")
+let outputtwo = document.getElementById("outputtwo")
+let outputone = document.getElementById("outputone")
+let output = document.getElementById("output")
 
-//     } else if (button2.textContent === Off) {
-//         button2.textContent = On;
-//         andGate.input2.base = 1;
-//     }
-//     base2.textContent = transistor2.base;
-//     andGate.logic();
-//     emitter2.textContent = andGate.input2.emitter;
-//     updateDom();
-// }
+document.getElementById("add").onclick = function() {
+    let array = fourBitAdder();
+    console.log("test")
+    outputfive.textContent = array[0];
+    outputfour.textContent = array[1];
+    outputthree.textContent = array[2];
+    outputtwo.textContent = array[3];
+    outputone.textContent = array[4];
+    output.textContent = binaryToDecimal(array);
+};
+
+let firstDigit = document.getElementById("ffirstdigit")
+let secondDigit = document.getElementById("fseconddigit")
+let thirdDigit = document.getElementById("fthirddigit")
+let fourthDigit = document.getElementById("ffourthdigit")
+
+let fifthDigit = document.getElementById("sfirstdigit")
+let sixthDigit = document.getElementById("sseconddigit")
+let seventhDigit = document.getElementById("sthirddigit")
+let eighthDigit = document.getElementById("sfourthdigit")
+
+let firstnumdec = document.getElementById("firstnumdec")
+function upDateFirstNumber() {
+    firstnumdec.textContent = binaryToDecimal(firstNumber);
+};
+
+let secondnumdec = document.getElementById("secondnumdec")
+function upDateSecondNumber() {
+    secondnumdec.textContent = binaryToDecimal(secondNumber);
+};
+
+document.getElementById("ftop1").onclick = function() {
+    firstNumber[3] = 1, 
+    firstDigit.textContent = firstNumber[3],
+    upDateFirstNumber()
+};
+
+document.getElementById("ftop2").onclick = function() {
+    firstNumber[2] = 1, 
+    secondDigit.textContent = firstNumber[2],
+    upDateFirstNumber()
+};
+
+document.getElementById("ftop3").onclick = function() {
+    firstNumber[1] = 1, 
+    thirdDigit.textContent = firstNumber[1],
+    upDateFirstNumber()
+};
+
+document.getElementById("ftop4").onclick = function() {
+    firstNumber[0] = 1, 
+    fourthDigit.textContent = firstNumber[0],
+    upDateFirstNumber()
+};
+
+document.getElementById("fbottom1").onclick = function() {
+    firstNumber[3] = 0, 
+    firstDigit.textContent = firstNumber[3],
+    upDateFirstNumber()
+};
+
+document.getElementById("fbottom2").onclick = function() {
+    firstNumber[2] = 0, 
+    secondDigit.textContent = firstNumber[2],
+    upDateFirstNumber()
+};
+
+document.getElementById("fbottom3").onclick = function() {
+    firstNumber[1] = 0, 
+    thirdDigit.textContent = firstNumber[1],
+    upDateFirstNumber()
+};
+
+document.getElementById("fbottom4").onclick = function() {
+    firstNumber[0] = 0, 
+    fourthDigit.textContent = firstNumber[0],
+    upDateFirstNumber()
+};
+
+//
+
+document.getElementById("stop1").onclick = function() {
+    secondNumber[3] = 1, 
+    fifthDigit.textContent = secondNumber[3],
+    upDateSecondNumber()
+};
+
+document.getElementById("stop2").onclick = function() {
+    secondNumber[2] = 1, 
+    sixthDigit.textContent = secondNumber[2],
+    upDateSecondNumber()
+};
+
+document.getElementById("stop3").onclick = function() {
+    secondNumber[1] = 1, 
+    seventhDigit.textContent = secondNumber[1],
+    upDateSecondNumber()
+};
+
+document.getElementById("stop4").onclick = function() {
+    secondNumber[0] = 1, 
+    eighthDigit.textContent = secondNumber[0],
+    upDateSecondNumber()
+};
+
+document.getElementById("sbottom1").onclick = function() {
+    secondNumber[3] = 0, 
+    fifthDigit.textContent = secondNumber[3],
+    upDateSecondNumber()
+};
+
+document.getElementById("sbottom2").onclick = function() {
+    secondNumber[2] = 0, 
+    sixthDigit.textContent = secondNumber[2],
+    upDateSecondNumber()
+};
+
+document.getElementById("sbottom3").onclick = function() {
+    secondNumber[1] = 0, 
+    seventhDigit.textContent = secondNumber[1],
+    upDateSecondNumber()
+};
+
+document.getElementById("sbottom4").onclick = function() {
+    secondNumber[0] = 0, 
+    eighthDigit.textContent = secondNumber[0],
+    upDateSecondNumber()
+};

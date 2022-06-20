@@ -1,24 +1,40 @@
-.and {
-    display: flex;
-}
-.container1, .container2 {
-    width: 8em;
-    height: 4em;
-    border: 1px solid;
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+html
+{
+    font-family: 'Share Tech Mono', monospace;
 }
 
-#transistor1, #transistor2 {
-    display: flex;
-    justify-content: space-around;
-    gap: .5em;
-}
-
-#box1, #box2 {
-    width: 2em;
-    height: 2em;
-    border: 1px solid;
-}
-#base1, #base2 {
+#container {
     display: flex;
     justify-content: center;
+    align-items: center;
+    gap: 1em;
+}
+
+#first, #second{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 10em;
+    height: 6em;
+
+}
+
+#toprow, #middlerow, #bottomrow {
+    display: flex;
+    justify-content: space-around;
+    font-size: 18px;
+}
+
+#firstnumdec, #secondnumdec, #output {
+    font-size: 50px;
+    width: 1.5em;
+    text-align: center;
+    border: 1px solid rgba(128, 128, 128, 0.476);
+}
+
+#equals {
+    font-size: 20px;
+    margin:auto;
 }
