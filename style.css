@@ -34,7 +34,13 @@ html
     border: 1px solid rgba(128, 128, 128, 0.476);
 }
 
-#equals {
+#operators {
+    display: flex;
+    justify-content: center;
+    gap: 1em;
+}
+
+#add, #sub, #multi {
+    width: 1.5em;
     font-size: 20px;
-    margin:auto;
 }

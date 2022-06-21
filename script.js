@@ -44,7 +44,7 @@ function NotGate(input, output) {
 
 function makeNotGate(x) {
     for (let i = 0; i < x; i++) {
-        window[`notGate`] = new NotGate(0, 0);
+        window[`notGate`] = new NotGate(0 ,0);
         return window[`notGate`];
     }
 }
@@ -58,7 +58,6 @@ function AndGate(input1, input2, transistor1, transistor2, output, id) {
     this.transistor1 = transistor1;
     this.transistor2 = transistor2;
     this.output = output;
-    this.id = id;
     this.logic = function() {
         this.transistor1.collector = 1;
         this.transistor1.base = this.input1;
@@ -82,13 +81,12 @@ function makeAndGate() {
 
 // OR gate
 
-function OrGate(input1, input2, transistor1, transistor2, output, id) {
+function OrGate(input1, input2, transistor1, transistor2, output) {
     this.input1 = input1;
     this.input2 = input2;
     this.transistor1 = transistor1;
     this.transistor2 = transistor2;
     this.output = output;
-    this.id = id;
     this.logic = function() {
         this.transistor1.collector = 1;
         this.transistor1.base = this.input1;
@@ -110,6 +108,32 @@ function makeOrGate(x) {
         window[`orGate`] = new OrGate(1, 1, makeTransistor(1), makeTransistor(1), 0, andCount);
         return window[`orGate`];
     }
+}
+
+function TripleOrGate(input1, input2, input3, transistor1, transistor2, transistor3, output) {
+    this.input1 = input1;
+    this.input2 = input2;
+    this.input3 = input3;
+    this.transistor1 = transistor1;
+    this.transistor2 = transistor2;
+    this.transistor3 = transistor3;
+    this.output = output;
+    this.logic = function() {
+        this.transistor1.collector = 1;
+        this.transistor1.base = this.input1;
+        this.transistor2.collector = 1;
+        this.transistor2.base = this.input2;
+        this.transistor3.collector = 1;
+        this.transistor3.base = this.input3;
+        this.transistor1.logic();
+        this.transistor2.logic();
+        this.transistor3.logic();
+        if (this.transistor1.emitter === 1 || this.transistor2.emitter === 1 || this.transistor3.emitter === 1) {
+            this.output = 1;
+        } else {
+            this.output = 0;
+        }
+    };
 }
 
 // NOR gate
@@ -294,7 +318,7 @@ function makeFullAdder() {
     return window[`fullAdder`]
 }
 
-//simple calculator
+//simple adder
 let firstNumber = [0, 0, 0, 0]
 let secondNumber = [0, 0, 0, 0]
 
@@ -314,6 +338,162 @@ function fourBitAdder() {
     let calOutput = [addFour.carryOut, addFour.sum, addThree.sum, addTwo.sum, addOne.sum]
     return calOutput;
 }
+
+// half subtractor
+
+function HalfSubtractor(x, y, xorGate, andGate, notGate, diff, borrowOut) {
+    this.x = x;
+    this.y = y;
+    this.xorGate = xorGate;
+    this.andGate = andGate;
+    this.notGate = notGate
+    this.diff = diff;
+    this.borrowOut = borrowOut;
+    this.logic = function() {
+        this.xorGate.input1 = this.x;
+        this.xorGate.input2 = this.y;
+        this.notGate.input = this.x;
+        notGate.logic();
+        this.andGate.input1 = this.notGate.output;
+        this.andGate.input2 = this.y;
+        xorGate.logic();
+        andGate.logic();
+        this.diff = this.xorGate.output;
+        this.borrowOut = this.andGate.output;
+    };
+}
+
+function makeHalfSubtractor() {
+    window[`halfSubtractor`] = new HalfSubtractor(0, 0, makeXorGate(1), makeAndGate(1), makeNotGate(1));
+    return window[`halfSubtractor`]
+}
+
+//Full Subtractor
+
+function FullSubtractor(a, b, borrowIn, halfSubtractor1, halfSubtractor2, orGate, diff, borrowOut) {
+    this.a = a;
+    this.b = b;
+    this.borrowIn = borrowIn;
+    this.halfSubtractor1 = halfSubtractor1;
+    this.halfSubtractor2 = halfSubtractor2;
+    this.orGate = orGate;
+    this.diff = diff;
+    this.borrowOut = borrowOut;
+    this.logic = function() {
+        this.halfSubtractor1.x = a;
+        this.halfSubtractor1.y = b;
+        halfSubtractor1.logic();
+        this.halfSubtractor2.x = this.halfSubtractor1.diff;
+        this.halfSubtractor2.y = this.borrowIn;
+        halfSubtractor2.logic();
+        this.orGate.input1 = halfSubtractor1.borrowOut;
+        this.orGate.input2 = halfSubtractor2.borrowOut;
+        orGate.logic();
+        this.borrowOut = orGate.output;
+        this.diff = halfSubtractor2.diff;
+    }
+}
+
+function makeFullSubtractor() {
+    window[`fullSubtractor`] = new FullSubtractor(0, 0, 0, makeHalfSubtractor(), makeHalfSubtractor(), makeOrGate(1));
+    return window[`fullSubtractor`]
+}
+
+function fourBitSubtractor() {
+    let subOne = new HalfSubtractor(firstNumber[3], secondNumber[3], makeXorGate(1), makeAndGate(1), makeNotGate(1));
+    subOne.logic();
+
+    let subTwo = new FullSubtractor(firstNumber[2], secondNumber[2], subOne.borrowOut, makeHalfSubtractor(), makeHalfSubtractor(), makeOrGate(1));
+    subTwo.logic();
+
+    let subThree = new FullSubtractor(firstNumber[1], secondNumber[1], subTwo.borrowOut, makeHalfSubtractor(), makeHalfSubtractor(), makeOrGate(1));
+    subThree.logic();
+
+    let subFour = new FullSubtractor(firstNumber[0], secondNumber[0], subThree.borrowOut, makeHalfSubtractor(), makeHalfSubtractor(), makeOrGate(1));
+    subFour.logic();
+
+    let calOutput = [subFour.borrowOut, subFour.diff, subThree.diff, subTwo.diff, subOne.diff]
+    console.log(calOutput);
+    return calOutput;
+}
+
+function fourBitMultiplier(arrayA, arrayB){
+    let a = arrayA
+    let b = arrayB
+    let outPut = [0, 0, 0, 0, 0, 0, 0, 0]
+
+    //generate andgates
+    // for (let i = 1; i < a.length * b.length + 1; i++) {
+    //     window[`multiAndGate${i}`] = makeAndGate(1);
+    // };
+
+    let multiAndGates1 = andGate = new AndGate(a[3], b[3], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates2 = andGate = new AndGate(a[3], b[2], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates3 = andGate = new AndGate(a[3], b[1], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates4 = andGate = new AndGate(a[3], b[0], makeTransistor(1), makeTransistor(1), 0, andCount);
+
+    let multiAndGates5 = andGate = new AndGate(a[2], b[3], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates6 = andGate = new AndGate(a[2], b[2], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates7 = andGate = new AndGate(a[2], b[1], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates8 = andGate = new AndGate(a[2], b[0], makeTransistor(1), makeTransistor(1), 0, andCount);
+
+    let multiAndGates9 = andGate = new AndGate(a[1], b[3], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates10 = andGate = new AndGate(a[1], b[2], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates11 = andGate = new AndGate(a[1], b[1], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates12 = andGate = new AndGate(a[1], b[0], makeTransistor(1), makeTransistor(1), 0, andCount);
+
+    let multiAndGates13 = andGate = new AndGate(a[0], b[3], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates14 = andGate = new AndGate(a[0], b[2], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates15 = andGate = new AndGate(a[0], b[1], makeTransistor(1), makeTransistor(1), 0, andCount);
+    let multiAndGates16 = andGate = new AndGate(a[0], b[0], makeTransistor(1), makeTransistor(1), 0, andCount);
+    
+
+
+    outPut[7] = multiAndGates1.output;
+
+    let addOne = new HalfAdder(multiAndGates2.output, multiAndGates5.output, makeXorGate(1), makeAndGate(1));
+    addOne.logic();
+    outPut[6] = addOne.sum;
+    let addTwo = new FullAdder(multiAndGates3.ouput, multiAndGates6.output, addOne.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    addTwo.logic();
+    let addThree = new HalfAdder(addTwo.sum, multiAndGates9.output, makeXorGate(1), makeAndGate(1));
+    addThree.logic();
+    outPut[5] = addThree.sum;
+    let addFour = new FullAdder(multiAndGates4.ouput, multiAndGates7.output, addTwo.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    addFour.logic();
+    let addFive = new FullAdder(addFour.sum, multiAndGates10.ouput, addThree.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    addFive.logic();
+    let addSix = new HalfAdder(addFive.sum, multiAndGates13.output, makeXorGate(1), makeAndGate(1));
+    addSix.logic();
+    outPut[4] = addSix.sum;
+    let addSeven = new FullAdder(multiAndGates8.output, multiAndGates11, addFour.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    addSeven.logic();
+    let addEight = new FullAdder(addSeven.sum, multiAndGates14, addFive.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    addEight.logic();
+    let addNine = new HalfAdder(addEight.sum, addSix.carryOut, makeXorGate(1), makeAndGate(1));
+    addNine.logic();
+    outPut[3] = addNine.carryOut;
+    let addTen = new FullAdder(multiAndGates12.output, multiAndGates15, addSeven.carryOut, makeHalfAdder(), makeHalfAdder(), makeOrGate(1));
+    addTen.logic();
+    let addEleven = new HalfAdder(addTen.sum, addEight.carryOut, makeXorGate(1), makeAndGate(1));
+    addEleven.logic();
+    let addTwelve = new HalfAdder(addEleven.sum, addNine.carryOut, makeXorGate(1), makeAndGate(1));
+    addTwelve.logic();
+    outPut[2] = addTwelve.sum;
+    let addThirteen = new HalfAdder(multiAndGates16, addTen.carryOut, makeXorGate(1), makeAndGate(1));
+    addThirteen.logic();
+    let addFourteen = new HalfAdder(addThirteen.sum, addEleven.carryOut, makeXorGate(1), makeAndGate(1));
+    addFourteen.logic();
+    let addFifteen = new HalfAdder(addFourteen.sum, addTwelve.carryOut, makeXorGate(1), makeAndGate(1));
+    addFifteen.logic();
+    outPut[1] = addFifteen.sum;
+    let tOrGate = new TripleOrGate(addThirteen.carryOut, addFourteen.carryOut, addFifteen.carryOut, makeTransistor(1), makeTransistor(1), makeTransistor(1), 0)
+    tOrGate.logic();
+    outPut[0] = tOrGate.output;
+    return outPut;
+}
+
+fourBitMultiplier(firstNumber, secondNumber);
 
 //convert binary to decimal
 function binaryToDecimal(array) {
@@ -336,6 +516,8 @@ function binaryToDecimal(array) {
 // console.log(binaryToDecimal(calOutput), calOutput)
 
 
+
+
 // GUI stuff
 
 let outputfive = document.getElementById("outputfive")
@@ -347,7 +529,26 @@ let output = document.getElementById("output")
 
 document.getElementById("add").onclick = function() {
     let array = fourBitAdder();
-    console.log("test")
+    outputfive.textContent = array[0];
+    outputfour.textContent = array[1];
+    outputthree.textContent = array[2];
+    outputtwo.textContent = array[3];
+    outputone.textContent = array[4];
+    output.textContent = binaryToDecimal(array);
+};
+
+document.getElementById("sub").onclick = function() {
+    let array = fourBitSubtractor();
+    outputfive.textContent = array[0];
+    outputfour.textContent = array[1];
+    outputthree.textContent = array[2];
+    outputtwo.textContent = array[3];
+    outputone.textContent = array[4];
+    output.textContent = binaryToDecimal(array);
+};
+
+document.getElementById("multi").onclick = function() {
+    let array = fourBitMultiplier(firstNumber, secondNumber);
     outputfive.textContent = array[0];
     outputfour.textContent = array[1];
     outputthree.textContent = array[2];
