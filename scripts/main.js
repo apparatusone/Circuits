@@ -7,6 +7,7 @@ const zoomIn = document.getElementById("zoom-in");
 const zoomOut = document.getElementById("zoom-out");
 
 const gridDot = document.getElementById('source');
+const testbox = document.getElementById('testbox');
 
 let z = 100;                                            // zoom
 let objectIndex = 0;
@@ -41,14 +42,11 @@ let mouse = {
     cell: {x: 0, y: 0}
 };
 
-objects = [
-    rect1 = {
-        id: 1,
-        x: 0,
-        y: 0,
-        r: 90
-    }
-];
+let objects = []
+
+objects.push(new Box(2, -3, 0))
+objects.push(new Box(2, -1, 0))
+objects.push(new Box(0, 0, 0))
 
 let fps;
 let lastFrame = performance.now();
@@ -75,8 +73,10 @@ function draw() {
         };
     };
 
-    ctx.fillStyle = "rgba(0,0,0,.4)";
-    ctx.fillRect((-origin.x + rect1.x)* z, (origin.y - rect1.y) * z, z * 1, z * 1);
+    for (const part of objects) {
+        ctx.fillStyle = "rgba(0,0,0,.4)";
+        ctx.drawImage(testbox, part.gridCoordinatesX(), part.gridCoordinatesY(), z, z);
+    }
 
     //Smooth Zoom transistion
     if(settings.smoothZoom) {
@@ -163,11 +163,12 @@ canvas.onmouseup = function(e) {
 
 zoomPercentage.innerHTML = Math.round(z) + '%';
 
-zoomPercentage.onclick = function() {
+zoomPercentage.onclick = function() {                   // reset canvas to origin
     z = 100;
     smoothZoom = z;
     origin.x = canvasCenter.x;
     origin.y = canvasCenter.y;
+    zoomPercentage.innerHTML = Math.round(z) + '%';
 };
 
 zoomIn.onclick = function() {
