@@ -23,9 +23,14 @@ let settings = {
 canvas.height = window.innerHeight;
 canvas.width = window.innerWidth;
 
+const canvasCenter = {
+    x: - Number.parseFloat((canvas.width/(z*2)).toFixed(3)) + 0.5,
+    y: Number.parseFloat((canvas.height/(z*2)).toFixed(3)) - 0.5
+}
+
 let origin = {                                          //set origin to center of screen
-    x: - Math.round(canvas.width/(z*2)),
-    y: Math.round(canvas.height/(z*2)),
+    x: canvasCenter.x,
+    y: canvasCenter.y,
     click: {x:0, y:0},
     prev: {x:0, y:0}
 };
@@ -123,7 +128,7 @@ canvas.onmousewheel = function(e) {
         smoothZoom - z / 8 * ((e.deltaY) > 0 ? .3 : -.5),
             15), 300                                               //minimum ), maximum zoom                                                        //maximum zoom
     );
-    zoomPercentage.innerHTML = Math.round(z) + '%';              //level of current shown zoom on screen
+    zoomPercentage.innerHTML = Math.round(z) + '%';              //level of current zoom shown on screen
     return false;
 }
 
@@ -135,6 +140,8 @@ canvas.onmousedown = function(e) {
     origin.click.y = e.y;
     origin.prev.x = origin.x;
     origin.prev.y = origin.y;
+
+    console.log(mouse.grid.x,mouse.grid.y)
 
     if (typeof objectUnderMouse(mouse.grid.x,mouse.grid.y) === 'number') dragging = true;
     objectIndex =  objectUnderMouse(mouse.grid.x,mouse.grid.y)
@@ -155,24 +162,33 @@ canvas.onmouseup = function(e) {
 }
 
 zoomPercentage.innerHTML = Math.round(z) + '%';
+
+zoomPercentage.onclick = function() {
+    z = 100;
+    smoothZoom = z;
+    origin.x = canvasCenter.x;
+    origin.y = canvasCenter.y;
+};
+
 zoomIn.onclick = function() {
     mouse.screen.x = canvas.width / 2;
     mouse.screen.y = canvas.height /2;
     smoothZoom = Math.min(500, Math.round(smoothZoom + settings.zoomButtons));
     zoomPercentage.innerHTML = Math.round(smoothZoom) + '%';
-    };
+};
 
 zoomOut.onclick = function() {
     mouse.screen.x = canvas.width / 2;
     mouse.screen.y = canvas.height /2;
     smoothZoom = Math.max(15, Math.round(smoothZoom - settings.zoomButtons));
     zoomPercentage.innerHTML = smoothZoom + '%';
-    };
+};
 
 pointerEventsNone = (x) => { 
     let elements = [
         zoomIn,
-        zoomOut
+        zoomOut,
+        zoomPercentage
     ]
     for (const ele of elements) {
         if (x === 'add') ele.classList.add("unselectable");
@@ -186,3 +202,8 @@ const objectUnderMouse = (x, y) => {
     }
     return false
 };
+
+
+//bugs
+
+//if screen is resized canvas does not resize
