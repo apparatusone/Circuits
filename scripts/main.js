@@ -123,14 +123,15 @@ canvas.onmousewheel = function(e) {
 
 canvas.onmousedown = function(e) {
     e.preventDefault();
-    mouseDown = true
+    mouseDown = true;
 
-    origin.click.x = e.x
-    origin.click.y = e.y
-    origin.prev.x = origin.x
-    origin.prev.y = origin.y
+    origin.click.x = e.x;
+    origin.click.y = e.y;
+    origin.prev.x = origin.x;
+    origin.prev.y = origin.y;
 
-    canvas.style.cursor = "grabbing"
+    pointerEventsNone('add');
+    canvas.style.cursor = "grabbing";
 }
 
 canvas.onmouseup = function(e) {
@@ -140,7 +141,8 @@ canvas.onmouseup = function(e) {
     dragging = false;
     drawing = false;
 
-    canvas.style.cursor = "crosshair"
+    pointerEventsNone('remove');
+    canvas.style.cursor = "crosshair";
 }
 
 zoomPercentage.innerHTML = Math.round(z) + '%';
@@ -157,3 +159,15 @@ zoomOut.onclick = function() {
     smoothZoom = Math.max(15, Math.round(smoothZoom - settings.zoomButtons));
     zoomPercentage.innerHTML = smoothZoom + '%';
     };
+
+pointerEventsNone = (x) => { 
+    let elements = [
+        zoomIn,
+        zoomOut
+    ]
+    for (const ele of elements) {
+        if (x === 'add') ele.classList.add("unselectable");
+        if (x === 'remove') ele.classList.remove("unselectable");
+    }
+}
+
