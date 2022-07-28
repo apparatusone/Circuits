@@ -1,8 +1,12 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
 ctx.imageSmoothingQuality = 'low';
-//const zoomLevel = document.getElementById("zoomlevel");
-const dot = document.getElementById('source');
+
+const zoomPercentage = document.getElementById("zoomlevel");
+const zoomIn = document.getElementById("zoom-in")
+const zoomOut = document.getElementById("zoom-out")
+
+const gridDot = document.getElementById('source');
 
 let z = 100;                                            // zoom
 let smoothZoom = z;
@@ -12,6 +16,7 @@ let drawing = false;
 let mouseDown = false;
 let settings = {
     smoothZoom: true,                                   // enable/disable smooth zoom
+    zoomButtons: 5
 }
 
 canvas.height = window.innerHeight;
@@ -27,9 +32,6 @@ let mouse = {
     grid: { x: 0, y: 0 },
     cell: {x: 0, y: 0}
 };
-
-console.log(Math.round(canvas.width/(z*2))) //16
-console.log(Math.round(canvas.height/(z*2))) //11
 
 objects = [
     rect1 = {
@@ -49,18 +51,18 @@ function draw() {
     ctx.fillRect(0,0,canvas.width,canvas.height);       // background rectangle
 
     // grid generation
-    if( z > 50 ) {
+    if( z > 40 ) {
         for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) { //
             for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
-                ctx.drawImage(dot, i - z / 12, j - z / 12, z / 6, z / 6)
+                ctx.drawImage(gridDot, i - z / 12, j - z / 12, z / 6, z / 6)
             }
         }
     }
-    if( z < 50 ) {
-        ctx.fillStyle = "rgba(150,150,150,1";
+    if( z < 40 ) {
+        ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
         for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) { //
             for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
-                ctx.fillRect(i - z / 20, j - z / 20, z / 10, z / 10);
+                ctx.fillRect(i - z / 20, j - z / 20, z / 15, z / 15);
             }
         }
     }
@@ -99,13 +101,26 @@ canvas.onmousewheel = function(e) {
     mouse.screen.y = e.y;
     mouse.grid.x = Math.round((e.x / z + origin.x))  //) - 0.54)
     mouse.grid.y = Math.round((-e.y / z + origin.y))  //) + .54)
-    console.log(e)
     smoothZoom = Math.min( Math.max(
         smoothZoom - z / 8 * ((e.deltaY) > 0 ? .3 : -.5),
             15),                                                    //minimum zoom
         300                                                         //maximum zoom
     );
-    //zoomLevel.innerHTML = Math.round(zoom) + '%'; //level of current shown zoom on screen
+    zoomPercentage.innerHTML = Math.round(z) + '%';              //level of current shown zoom on screen
 
     return false;
 }
+
+zoomPercentage.innerHTML = Math.round(z) + '%';
+zoomIn.onclick = function() {
+    mouse.screen.x = canvas.width / 2;
+    mouse.screen.y = canvas.height /2;
+    smoothZoom = Math.min(500, Math.round(smoothZoom + settings.zoomButtons));
+    zoomPercentage.innerHTML = Math.round(smoothZoom) + '%';
+    };
+zoomOut.onclick = function() {
+    mouse.screen.x = canvas.width / 2;
+    mouse.screen.y = canvas.height /2;
+    smoothZoom = Math.max(15, Math.round(smoothZoom - settings.zoomButtons));
+    zoomPercentage.innerHTML = smoothZoom + '%';
+    };
