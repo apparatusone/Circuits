@@ -46,7 +46,7 @@ let objects = []
 
 objects.push(new Box(2, -3, 0))
 objects.push(new Box(2, -1, 0))
-objects.push(new Box(0, 0, 0))
+objects.push(new Box(0, 0, 90))
 
 let fps;
 let lastFrame = performance.now();
@@ -75,7 +75,7 @@ function draw() {
 
     for (const part of objects) {
         ctx.fillStyle = "rgba(0,0,0,.4)";
-        ctx.drawImage(testbox, part.gridCoordinatesX(), part.gridCoordinatesY(), z, z);
+        drawRotated(testbox, part.gridCoordinatesX(), part.gridCoordinatesY(), z, z, part.r)
     }
 
     //Smooth Zoom transistion
@@ -203,6 +203,15 @@ const objectUnderMouse = (x, y) => {
     }
     return false
 };
+
+function drawRotated(image, x, y, w, h, degrees) {
+    ctx.save();
+    ctx.translate(x+(image.width/200)*z, y+(image.width/200)*z);
+    ctx.rotate(degrees * Math.PI / 180);
+    ctx.translate((-image.width/200)*z, ((-image.height/200)*z));
+    ctx.drawImage(image, 0, 0, w, h);
+    ctx.restore();
+}
 
 
 //bugs

@@ -1,9 +1,10 @@
 class Box {
 
-    constructor(x,y,r) {
+    constructor(x,y,r,highlight) {
         this.x = x;
         this.y = y;
-        this.r = r
+        this.r = r;
+        this.highlight = highlight;
     }
 
     gridCoordinatesX() {
