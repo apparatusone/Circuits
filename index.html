@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <script defer src="script.js"></script>
+    <script defer src="scripts/script.js"></script>
     <title>computer</title>
 </head>
 <body>
@@ -31,8 +31,12 @@
             </div>
         </div>
         <p id="firstnumdec">0</p>
-    </div>
-    <div id="container">
+        <div id="operators">
+            <button id="add">+</button>
+            <button id="sub">-</button>
+            <button id="multi">x</button>
+            <button id="div">/</button>
+        </div>
         <div id="second">
             <div id="toprow">
                 <button id="stop4">▲</button>
@@ -55,14 +59,16 @@
         </div>
         <p id="secondnumdec">0</p>
     </div>
-    <div id="operators">
-        <button id="add">+</button>
-        <button id="sub">-</button>
-        <button id="multi">x</button>
-    </div>
     <div id="container">
-        <div id="second">
-            <div id="middlerow">
+        <svg  id="svg" width="500" height="400">
+        </svg>
+
+
+    </div>
+
+    <div id="container">
+        <div id="binaryoutput">
+            <div id="middlerowoutput">
                 <p id="outputfive">0</p>
                 <p id="outputfour">0</p>
                 <p id="outputthree">0</p>
@@ -72,5 +78,8 @@
         </div>
         <p id="output">0</p>
     </div>
+    <footer>
+        
+    </footer>
 </body>
 </html>
