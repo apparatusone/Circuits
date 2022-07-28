@@ -24,7 +24,9 @@ canvas.width = window.innerWidth;
 
 let origin = {                                          //set origin to center of screen
     x: - Math.round(canvas.width/(z*2)),
-    y: Math.round(canvas.height/(z*2))
+    y: Math.round(canvas.height/(z*2)),
+    click: {x:0, y:0},
+    prev: {x:0, y:0}
 };
 
 let mouse = {
@@ -94,6 +96,15 @@ function draw() {
 
 draw();
 
+let delta = 0
+
+canvas.onmousemove = function(e) {
+    if (mouseDown && dragging === false) {
+        origin.x = origin.prev.x + (origin.click.x - e.x)/z;
+        origin.y = origin.prev.y - (origin.click.y - e.y)/z;
+    }
+}
+
 canvas.onmousewheel = function(e) {
     e.preventDefault();
 
@@ -107,8 +118,29 @@ canvas.onmousewheel = function(e) {
         300                                                         //maximum zoom
     );
     zoomPercentage.innerHTML = Math.round(z) + '%';              //level of current shown zoom on screen
-
     return false;
+}
+
+canvas.onmousedown = function(e) {
+    e.preventDefault();
+    mouseDown = true
+
+    origin.click.x = e.x
+    origin.click.y = e.y
+    origin.prev.x = origin.x
+    origin.prev.y = origin.y
+
+    canvas.style.cursor = "grabbing"
+}
+
+canvas.onmouseup = function(e) {
+    e.preventDefault();
+
+    mouseDown = false;
+    dragging = false;
+    drawing = false;
+
+    canvas.style.cursor = "crosshair"
 }
 
 zoomPercentage.innerHTML = Math.round(z) + '%';
@@ -118,6 +150,7 @@ zoomIn.onclick = function() {
     smoothZoom = Math.min(500, Math.round(smoothZoom + settings.zoomButtons));
     zoomPercentage.innerHTML = Math.round(smoothZoom) + '%';
     };
+
 zoomOut.onclick = function() {
     mouse.screen.x = canvas.width / 2;
     mouse.screen.y = canvas.height /2;
