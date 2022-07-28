@@ -24,6 +24,9 @@ let settings = {
     zoomButtons: 5
 };
 
+let start;
+let end;
+
 canvas.height = window.innerHeight;
 canvas.width = window.innerWidth;
 
@@ -176,15 +179,14 @@ canvas.onmousedown = function(e) {
         objects[objectIndex].highlight = false;
         objectIndex = objectUnderMouse(mouse.grid.x,mouse.grid.y);
         objects[objectIndex].highlight = true;
-
         selected = true;
-        rotateButtons('unhide')
     } else if (typeof objectUnderMouse(mouse.grid.x,mouse.grid.y) !== 'number') {
         objects[objectIndex].highlight = false;
         selected = false;
         rotateButtons('hide')
     }
 
+    start = new Date().getTime() / 1000
     pointerEventsNone('add');
     canvas.style.cursor = "grabbing";
 }
@@ -196,6 +198,9 @@ canvas.onmouseup = function(e) {
     dragging = false;
     drawing = false;
 
+    end = new Date().getTime() / 1000;
+
+    mouseClickDuration();
     pointerEventsNone('remove');
     canvas.style.cursor = "crosshair";
 }
@@ -224,7 +229,7 @@ zoomOut.onclick = function() {
     zoomPercentage.innerHTML = smoothZoom + '%';
 };
 
-pointerEventsNone = (x) => { 
+const pointerEventsNone = (x) => { 
     let elements = [
         zoomIn,
         zoomOut,
@@ -282,6 +287,15 @@ rotateRight.onclick = function() {
     const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
     objects[objectIndex].r = next(objects[objectIndex].r)
 }
+
+function mouseClickDuration() {
+    if ((end - start) < .2 && selected === true) {
+        console.log(end - start)
+        rotateButtons('unhide');
+    }
+}
+
+
 
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius, fill, stroke) {
     var cornerRadius = { upperLeft: 0, upperRight: 0, lowerLeft: 0, lowerRight: 0 };
