@@ -5,6 +5,8 @@ ctx.imageSmoothingQuality = 'low';
 const zoomPercentage = document.getElementById("zoomlevel");
 const zoomIn = document.getElementById("zoom-in");
 const zoomOut = document.getElementById("zoom-out");
+const rotateLeft = document.getElementById("rotate-left");
+const rotateRight = document.getElementById("rotate-right");
 
 const gridDot = document.getElementById('source');
 const testbox = document.getElementById('testbox');
@@ -16,6 +18,7 @@ let smoothZoom = z;
 let dragging = false;
 let drawing = false;
 let mouseDown = false;
+let selected = false;
 let settings = {
     smoothZoom: true,                                   // enable/disable smooth zoom
     zoomButtons: 5
@@ -33,7 +36,8 @@ let origin = {                                          //set origin to center o
     x: canvasCenter.x,
     y: canvasCenter.y,
     click: {x:0, y:0},
-    prev: {x:0, y:0}
+    prev: {x:0, y:0},
+    selected: {x: 0, y: 0}                              //location of selected element on screen
 };
 
 let mouse = {
@@ -75,7 +79,33 @@ function draw() {
 
     for (const part of objects) {
         ctx.fillStyle = "rgba(0,0,0,.4)";
-        drawRotated(testbox, part.gridCoordinatesX(), part.gridCoordinatesY(), z, z, part.r)
+        drawRotated(part.image, part.gridCoordinatesX(), part.gridCoordinatesY(), z, z, part.r)
+        if (part.highlight === true) {
+            origin.selected.x = part.gridCoordinatesX()
+            origin.selected.y = part.gridCoordinatesY()
+            ctx.lineWidth = z/20;
+            ctx.strokeStyle = '#26CE00';
+            ctx.roundRect(part.gridCoordinatesX() - z/20,
+                          part.gridCoordinatesY() - z/20,
+                          z*1.1,
+                          z*1.1,
+                           {upperLeft: z/5,upperRight: z/5,lowerLeft: z/5}, false, true);
+            ctx.stroke();
+        }
+    }
+
+    //highlight selection
+    for (const part of objects) {
+        if (part.highlight === true) {
+            ctx.lineWidth = z/55;
+            ctx.strokeStyle = '#26CE00';
+            //ctx.setLineDash([z/3, z/15]);
+            ctx.roundRect(part.gridCoordinatesX() - z/20,
+                          part.gridCoordinatesY() - z/20,
+                          z*1.1,
+                          z*1.1,
+                           {upperLeft: z/5,upperRight: z/5,lowerLeft: z/5}, false, true);
+        }
     }
 
     //Smooth Zoom transistion
@@ -94,15 +124,15 @@ function draw() {
         fps = 0;
         return;
      };
-     lastFrame = performance.now();
-     fps = 1/((performance.now() - lastFrame)/1000);
+    lastFrame = performance.now();
+    fps = 1/((performance.now() - lastFrame)/1000);
 
+
+    if(selected === true) locateRotateButtons()
     window.requestAnimationFrame(draw);
 }
 
 draw();
-
-let delta = 0;
 
 canvas.onmousemove = function(e) {
     mouse.grid.x = Math.round((e.x / z + origin.x) - .5);
@@ -141,10 +171,19 @@ canvas.onmousedown = function(e) {
     origin.prev.x = origin.x;
     origin.prev.y = origin.y;
 
-    console.log(mouse.grid.x,mouse.grid.y)
+    if (typeof objectUnderMouse(mouse.grid.x,mouse.grid.y) === 'number') {
+        dragging = true;
+        objects[objectIndex].highlight = false;
+        objectIndex = objectUnderMouse(mouse.grid.x,mouse.grid.y);
+        objects[objectIndex].highlight = true;
 
-    if (typeof objectUnderMouse(mouse.grid.x,mouse.grid.y) === 'number') dragging = true;
-    objectIndex =  objectUnderMouse(mouse.grid.x,mouse.grid.y)
+        selected = true;
+        rotateButtons('unhide')
+    } else if (typeof objectUnderMouse(mouse.grid.x,mouse.grid.y) !== 'number') {
+        objects[objectIndex].highlight = false;
+        selected = false;
+        rotateButtons('hide')
+    }
 
     pointerEventsNone('add');
     canvas.style.cursor = "grabbing";
@@ -213,7 +252,69 @@ function drawRotated(image, x, y, w, h, degrees) {
     ctx.restore();
 }
 
+const rotateButtons = (x) => {
+    if (x === 'unhide') {
+        rotateLeft.classList.remove("hide");
+        rotateRight.classList.remove("hide");
+    }
+    if (x === 'hide') {
+        rotateLeft.classList.add("hide");
+        rotateRight.classList.add("hide");
+    }
+}
+
+function locateRotateButtons() {
+    rotateLeft.style.left = `${(origin.selected.x - 2/z) - 45}px`;
+    rotateLeft.style.top = `${(origin.selected.y - 2/z) - 45}px`;
+
+    rotateRight.style.left = `${(origin.selected.x + z) + 5}px`;
+    rotateRight.style.top = `${(origin.selected.y - 2/z) - 45}px`;
+}
+
+rotateLeft.onclick = function() {
+    const angle = [270, 180, 90, 0];
+    const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
+    objects[objectIndex].r = next(objects[objectIndex].r)
+}
+
+rotateRight.onclick = function() {
+    const angle = [0, 90, 180, 270];
+    const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
+    objects[objectIndex].r = next(objects[objectIndex].r)
+}
+
+CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius, fill, stroke) {
+    var cornerRadius = { upperLeft: 0, upperRight: 0, lowerLeft: 0, lowerRight: 0 };
+    if (typeof stroke == "undefined") {
+        stroke = true;
+    }
+    if (typeof radius === "object") {
+        for (var side in radius) {
+            cornerRadius[side] = radius[side];
+        }
+    }
+
+    this.beginPath();
+    this.moveTo(x + cornerRadius.upperLeft, y);
+    this.lineTo(x + width - cornerRadius.upperRight, y);
+    this.quadraticCurveTo(x + width, y, x + width, y + cornerRadius.upperRight);
+    this.lineTo(x + width, y + height - cornerRadius.lowerRight);
+    this.quadraticCurveTo(x + width, y + height, x + width - cornerRadius.lowerRight, y + height);
+    this.lineTo(x + cornerRadius.lowerLeft, y + height);
+    this.quadraticCurveTo(x, y + height, x, y + height - cornerRadius.lowerLeft);
+    this.lineTo(x, y + cornerRadius.upperLeft);
+    this.quadraticCurveTo(x, y, x + cornerRadius.upperLeft, y);
+    this.closePath();
+    if (stroke) {
+        this.stroke();
+    }
+    if (fill) {
+        this.fill();
+    }
+}
+
 
 //bugs
 
 //if screen is resized canvas does not resize
+//highlight isn't on top

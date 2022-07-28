@@ -67,6 +67,22 @@ canvas {
     left: 110px;
 }
 
+#rotate-left, #rotate-right {
+    position: fixed;
+
+    width: 36px;
+    height: 36px;
+    background: #26CE00; 
+    border: 1px solid rgba(0, 0, 0, 0.806);
+    border-radius: 18px;
+    z-index: 1;
+}
+
 .unselectable {
-    pointer-events: none
+    pointer-events: none;
+}
+
+.hide {
+    visibility: hidden;
+    pointer-events: none;
 }

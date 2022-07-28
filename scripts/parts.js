@@ -1,10 +1,11 @@
 class Box {
 
-    constructor(x,y,r,highlight) {
+    constructor(x,y,r) {
+        this.image = document.getElementById('testbox');
         this.x = x;
         this.y = y;
         this.r = r;
-        this.highlight = highlight;
+        this.highlight = false;
     }
 
     gridCoordinatesX() {
