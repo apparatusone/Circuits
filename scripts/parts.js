@@ -11,11 +11,11 @@ class Box {
         this.nodes;
     }
 
-    nodes = [
-        this.input1 = {location: {x: -0.25,y: 0}, value:0},
-        this.input2 = {location: {x: 0.25,y: 0}, value:0},
-        this.output1 = {location: {x: 0,y: -0.25}, value:0}
-    ]
+    nodes = {
+        input1: { location: {x: -0.25,y: 0}, value:0},
+        input2: { location: {x: 0.25,y: 0}, value:0},
+        output1: { location: {x: 0,y: -0.25}, value:0},
+    };
 
     rotateNodes(dir) {
         for (let ele in this.nodes) {
@@ -37,10 +37,11 @@ class Box {
 }
 
 class Wire {
-    constructor(componentIndex, node, x2, y2) {
-        this.componentIndex = componentIndex;
-        //this.node = node;
-        //this.start = objects[0].input1.location;
+    constructor(index1, node1) {
+        this.index1 = index1;
+        this.index2 = index1;
+        this.node1 = node1;
+        this.node2 = node1;
         this.x1 = 0;
         this.y1 = 0;
         this.x2 = 0;
@@ -48,10 +49,11 @@ class Wire {
     }
 
     locateWires() {
-        this.x1 = (objects[0].x + objects[0].input1.location.x) ;
-        this.y1 = (objects[0].y + objects[0].input1.location.y) ;
-
-        this.x2 = (objects[1].x + objects[1].input1.location.x) ;
-        this.y2 = (objects[1].y + objects[1].input1.location.y) ;
+        this.x1 = (objects[this.index1].x + objects[this.index1].nodes[this.node1].location.x) ;
+        this.y1 = (objects[this.index1].y - objects[this.index1].nodes[this.node1].location.y) ;
+        if (this.index1 !== this.index2) {
+            this.x2 = (objects[this.index2].x + objects[this.index2].nodes[this.node2].location.x) ;
+            this.y2 = (objects[this.index2].y - objects[this.index2].nodes[this.node2].location.y)
+        };
     }
 }

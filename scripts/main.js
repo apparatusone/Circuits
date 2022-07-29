@@ -52,8 +52,13 @@ let mouse = {
 let objects = []
 let wires = []
 
-objects.push(new Box(0, 0, 0))
-objects.push(new Box(2, 2, 0))
+objects.push(new Box(-6, -4, 0))
+objects.push(new Box(-4, -4, 0))
+objects.push(new Box(-2, -4, 0))
+objects.push(new Box(0, -4, 0))
+objects.push(new Box(2, -4, 0))
+objects.push(new Box(4, -4, 0))
+objects.push(new Box(6, -4, 0))
 
 let fps;
 let lastFrame = performance.now();
@@ -80,6 +85,23 @@ function draw() {
         };
     };
 
+    if( z > 15 ) {
+        for (let i = ((-origin.x - 50) * z) % z; i < canvas.width + 50; i+=z) {
+            for (let j = ((origin.y - 50) * z) % z; j < canvas.height + 50; j+=z) {
+                ctx.strokeStyle = 'rgba(150,150,150,.2)';
+                ctx.lineWidth = z/35;
+                ctx.beginPath();
+                ctx.moveTo((i - z / 20) + .05*z, (j - z / 20));
+                ctx.lineTo((i - z / 20) + .05*z, (j - z / 20) + z);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo((i - z / 20), (j - z / 20) + .05*z);
+                ctx.lineTo((i - z / 20) + z, (j - z / 20) + .05*z);
+                ctx.stroke();
+            }
+        }
+    }
+    
     for (const part of objects) {
         ctx.fillStyle = "rgba(0,0,0,.4)";
         drawRotated(part.image, part.gridCoordinatesX(), part.gridCoordinatesY(), z, z, part.r)
@@ -137,7 +159,9 @@ function draw() {
 
     if(selected === true) {
         locateRotateButtons();
-        wires[0].locateWires();
+        for (let i = 0; i < wires.length; i++) {
+            wires[i].locateWires();
+        }
     }
     window.requestAnimationFrame(draw);
 }
@@ -156,10 +180,11 @@ canvas.onmousemove = function(e) {
         objects[objectIndex].x = mouse.grid.x;
         objects[objectIndex].y = mouse.grid.y;
     }
-    // if (drawing === true) {
-    //     wires[0].x2 = e.x / z + origin.x
-    //     wires[0].y2 = -e.y / z + origin.y
-    // }
+    if (drawing === true) {
+        currentWire = (wires.length - 1)
+        wires[currentWire].x2 = (e.x / z - 0.5) + origin.x
+        wires[currentWire].y2 = (-e.y / z + 0.5) + origin.y
+    }
 };
 
 canvas.onmousewheel = function(e) {
@@ -203,10 +228,7 @@ canvas.onmousedown = function(e) {
     if (getNode(objectIndex)) {
         drawing = true;
         let node = getNode(objectIndex)
-        console.log(node)
-        let x = mouse.grid.x + node.location.x
-        let y = mouse.grid.y - node.location.y
-        //wires.push(new Wire(objectIndex, node, x, y))
+        wires.push(new Wire(objectIndex, node))
     }
 
     start = new Date().getTime() / 1000
@@ -214,19 +236,36 @@ canvas.onmousedown = function(e) {
     canvas.style.cursor = "grabbing";
 }
 
-wires.push(new Wire())
-
-
-
 canvas.onmouseup = function(e) {
     e.preventDefault();
 
     mouseDown = false;
-    dragging = false;
-    drawing = false;
-
     end = new Date().getTime() / 1000;
 
+    mouse.cell.x = Math.round((((e.x / z + origin.x) - mouse.grid.x) - 0.5 % 1)*100)/100
+    mouse.cell.y = Math.round((((e.y / z - origin.y) + mouse.grid.y) - 0.5 % 1)*100)/100
+
+    let index = objectUnderMouse(mouse.grid.x,mouse.grid.y)
+    console.log(index)
+    
+    //TODO: refactor
+
+    if (index && drawing === true) {
+        let node = getNode(index)
+        console.log(node)
+        currentWire = (wires.length - 1)
+        if (node !== undefined) {
+            wires[currentWire].index2 = index
+            wires[currentWire].node2 = node
+        } else {
+            wires.pop()
+        }
+    } else if (index !== true && drawing === true) {
+        wires.pop()
+    }
+
+    dragging = false;
+    drawing = false;
     mouseClickDuration();
     pointerEventsNone('remove');
     canvas.style.cursor = "crosshair";
@@ -324,9 +363,9 @@ function mouseClickDuration() {
 }
 
 function getNode(index) {
-    for (const ele of objects[index].nodes) {
-        let x = ele.location.x
-        let y = ele.location.y
+    for (const ele in objects[index].nodes) {
+        let x = objects[index].nodes[ele].location.x
+        let y = objects[index].nodes[ele].location.y
         if (isCursorWithinCircle(x, y, 0.08, mouse.cell.x, mouse.cell.y)) return ele; //.08 is radius around center of node
     }
 }
@@ -381,7 +420,14 @@ CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, ra
 }
 
 
-//bugs
+// FIXME:
+// - if screen is resized canvas does not resize
+// - highlight isn't on top
+// - drawing lines originates at origin
+// - rotate buttons
 
-//if screen is resized canvas does not resize
-//highlight isn't on top
+// TODO:
+// ADD:
+// - pathfinding for lines
+// - make lines selectable
+// - drag and drop menu
