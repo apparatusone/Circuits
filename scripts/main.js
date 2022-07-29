@@ -50,10 +50,10 @@ let mouse = {
 };
 
 let objects = []
+let wires = []
 
-objects.push(new Box(2, -3, 0))
-objects.push(new Box(2, -1, 0))
 objects.push(new Box(0, 0, 0))
+objects.push(new Box(2, 2, 0))
 
 let fps;
 let lastFrame = performance.now();
@@ -111,6 +111,10 @@ function draw() {
         }
     }
 
+    for(let i = 0, l = wires.length; i < l; ++i) {
+        drawWire(wires[i])
+    }
+
     //Smooth Zoom transistion
     if(settings.smoothZoom) {
         origin.x += mouse.screen.x * (1 / z - 5 / (smoothZoom + 4 * z));
@@ -131,7 +135,10 @@ function draw() {
     fps = 1/((performance.now() - lastFrame)/1000);
 
 
-    if(selected === true) locateRotateButtons()
+    if(selected === true) {
+        locateRotateButtons();
+        wires[0].locateWires();
+    }
     window.requestAnimationFrame(draw);
 }
 
@@ -149,6 +156,10 @@ canvas.onmousemove = function(e) {
         objects[objectIndex].x = mouse.grid.x;
         objects[objectIndex].y = mouse.grid.y;
     }
+    // if (drawing === true) {
+    //     wires[0].x2 = e.x / z + origin.x
+    //     wires[0].y2 = -e.y / z + origin.y
+    // }
 };
 
 canvas.onmousewheel = function(e) {
@@ -190,18 +201,22 @@ canvas.onmousedown = function(e) {
     }
 
     if (getNode(objectIndex)) {
-        //drawing = true;
+        drawing = true;
         let node = getNode(objectIndex)
         console.log(node)
-        let x = mouse.grid.x + objects[objectIndex][node].location.x
-        let y = mouse.grid.y - objects[objectIndex][node].location.y
-        //wires.push({id:3, x1:x, y1:y, x2:x, y2:y})
+        let x = mouse.grid.x + node.location.x
+        let y = mouse.grid.y - node.location.y
+        //wires.push(new Wire(objectIndex, node, x, y))
     }
 
     start = new Date().getTime() / 1000
     pointerEventsNone('add');
     canvas.style.cursor = "grabbing";
 }
+
+wires.push(new Wire())
+
+
 
 canvas.onmouseup = function(e) {
     e.preventDefault();
@@ -269,7 +284,7 @@ function drawRotated(image, x, y, w, h, degrees) {
     ctx.restore();
 }
 
-const rotateButtons = (x, index) => {
+const rotateButtons = (x) => {
     if (x === 'unhide') {
         rotateLeft.classList.remove("hide");
         rotateRight.classList.remove("hide");
@@ -279,25 +294,6 @@ const rotateButtons = (x, index) => {
         rotateRight.classList.add("hide");
     }
 }
-
-// function rotateNodes(node,x,y) {
-//     if (r === 90) [x, y] = [-y, x];
-//     if (r === 180) [x, y] = [-x, -y];
-//     if (r === 270) [x, y] = [y, -x];
-//     node.x = x
-//     node.y = y
-
-//     let inputsAndOutputs = []
-//     const regex = new RegExp('in|out');
-//     for (const key in objects[index]) {
-//         if (regex.test(key)) inputsAndOutputs.push(key)
-//     }
-//     for (const ele of inputsAndOutputs) {
-//         let x = objects[index][ele].location.x
-//         let y = objects[index][ele].location.y
-//         rotateNodes(ele,x,y)
-//     }
-// }
 
 function locateRotateButtons() {
     rotateLeft.style.left = `${(origin.selected.x - 2/z) - 45}px`;
@@ -328,14 +324,9 @@ function mouseClickDuration() {
 }
 
 function getNode(index) {
-    let inputsAndOutputs = []
-    const regex = new RegExp('in|out');
-    for (const key in objects[index]) {
-        if (regex.test(key)) inputsAndOutputs.push(key)
-    }
-    for (const ele of inputsAndOutputs) {
-        let x = objects[index][ele].location.x
-        let y = objects[index][ele].location.y
+    for (const ele of objects[index].nodes) {
+        let x = ele.location.x
+        let y = ele.location.y
         if (isCursorWithinCircle(x, y, 0.08, mouse.cell.x, mouse.cell.y)) return ele; //.08 is radius around center of node
     }
 }
@@ -349,7 +340,15 @@ function isCursorWithinCircle(x, y, r, mouseX, mouseY) {
     return false;
 }
 
-
+function drawWire(wire) {
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.lineWidth = z/20;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo((-origin.x + wire.x1 + 0.5)* z, (origin.y - wire.y1 + 0.5) * z, z, z);
+    ctx.lineTo((-origin.x + wire.x2 + 0.5)* z, (origin.y - wire.y2 + 0.5) * z, z, z);
+    ctx.stroke();
+}
 
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius, fill, stroke) {
     var cornerRadius = { upperLeft: 0, upperRight: 0, lowerLeft: 0, lowerRight: 0 };

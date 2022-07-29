@@ -1,5 +1,4 @@
 class Box {
-
     constructor(x,y,r) {
         this.image = document.getElementById('testbox');
         this.x = x;
@@ -34,5 +33,25 @@ class Box {
     }
     gridCoordinatesY() {
         return (origin.y - this.y) * z
+    }
+}
+
+class Wire {
+    constructor(componentIndex, node, x2, y2) {
+        this.componentIndex = componentIndex;
+        //this.node = node;
+        //this.start = objects[0].input1.location;
+        this.x1 = 0;
+        this.y1 = 0;
+        this.x2 = 0;
+        this.y2 = 0;
+    }
+
+    locateWires() {
+        this.x1 = (objects[0].x + objects[0].input1.location.x) ;
+        this.y1 = (objects[0].y + objects[0].input1.location.y) ;
+
+        this.x2 = (objects[1].x + objects[1].input1.location.x) ;
+        this.y2 = (objects[1].y + objects[1].input1.location.y) ;
     }
 }
