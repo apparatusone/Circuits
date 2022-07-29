@@ -69,7 +69,6 @@ canvas {
 
 #rotate-left, #rotate-right {
     position: fixed;
-
     width: 36px;
     height: 36px;
     background: #26CE00; 

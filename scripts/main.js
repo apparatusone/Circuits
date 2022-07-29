@@ -53,7 +53,7 @@ let objects = []
 
 objects.push(new Box(2, -3, 0))
 objects.push(new Box(2, -1, 0))
-objects.push(new Box(0, 0, 90))
+objects.push(new Box(0, 0, 0))
 
 let fps;
 let lastFrame = performance.now();
@@ -174,6 +174,9 @@ canvas.onmousedown = function(e) {
     origin.prev.x = origin.x;
     origin.prev.y = origin.y;
 
+    mouse.cell.x = Math.round((((e.x / z + origin.x) - mouse.grid.x) - 0.5 % 1)*100)/100
+    mouse.cell.y = Math.round((((e.y / z - origin.y) + mouse.grid.y) - 0.5 % 1)*100)/100
+
     if (typeof objectUnderMouse(mouse.grid.x,mouse.grid.y) === 'number') {
         dragging = true;
         objects[objectIndex].highlight = false;
@@ -184,6 +187,15 @@ canvas.onmousedown = function(e) {
         objects[objectIndex].highlight = false;
         selected = false;
         rotateButtons('hide')
+    }
+
+    if (getNode(objectIndex)) {
+        //drawing = true;
+        let node = getNode(objectIndex)
+        console.log(node)
+        let x = mouse.grid.x + objects[objectIndex][node].location.x
+        let y = mouse.grid.y - objects[objectIndex][node].location.y
+        //wires.push({id:3, x1:x, y1:y, x2:x, y2:y})
     }
 
     start = new Date().getTime() / 1000
@@ -229,7 +241,7 @@ zoomOut.onclick = function() {
     zoomPercentage.innerHTML = smoothZoom + '%';
 };
 
-const pointerEventsNone = (x) => { 
+const pointerEventsNone = (x) => {
     let elements = [
         zoomIn,
         zoomOut,
@@ -257,7 +269,7 @@ function drawRotated(image, x, y, w, h, degrees) {
     ctx.restore();
 }
 
-const rotateButtons = (x) => {
+const rotateButtons = (x, index) => {
     if (x === 'unhide') {
         rotateLeft.classList.remove("hide");
         rotateRight.classList.remove("hide");
@@ -267,6 +279,25 @@ const rotateButtons = (x) => {
         rotateRight.classList.add("hide");
     }
 }
+
+// function rotateNodes(node,x,y) {
+//     if (r === 90) [x, y] = [-y, x];
+//     if (r === 180) [x, y] = [-x, -y];
+//     if (r === 270) [x, y] = [y, -x];
+//     node.x = x
+//     node.y = y
+
+//     let inputsAndOutputs = []
+//     const regex = new RegExp('in|out');
+//     for (const key in objects[index]) {
+//         if (regex.test(key)) inputsAndOutputs.push(key)
+//     }
+//     for (const ele of inputsAndOutputs) {
+//         let x = objects[index][ele].location.x
+//         let y = objects[index][ele].location.y
+//         rotateNodes(ele,x,y)
+//     }
+// }
 
 function locateRotateButtons() {
     rotateLeft.style.left = `${(origin.selected.x - 2/z) - 45}px`;
@@ -279,20 +310,43 @@ function locateRotateButtons() {
 rotateLeft.onclick = function() {
     const angle = [270, 180, 90, 0];
     const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
-    objects[objectIndex].r = next(objects[objectIndex].r)
+    objects[objectIndex].r = next(objects[objectIndex].r);
+    objects[objectIndex].rotateNodes('left');
 }
 
 rotateRight.onclick = function() {
     const angle = [0, 90, 180, 270];
     const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
-    objects[objectIndex].r = next(objects[objectIndex].r)
+    objects[objectIndex].r = next(objects[objectIndex].r);
+    objects[objectIndex].rotateNodes('right');
 }
 
 function mouseClickDuration() {
     if ((end - start) < .2 && selected === true) {
-        console.log(end - start)
         rotateButtons('unhide');
     }
+}
+
+function getNode(index) {
+    let inputsAndOutputs = []
+    const regex = new RegExp('in|out');
+    for (const key in objects[index]) {
+        if (regex.test(key)) inputsAndOutputs.push(key)
+    }
+    for (const ele of inputsAndOutputs) {
+        let x = objects[index][ele].location.x
+        let y = objects[index][ele].location.y
+        if (isCursorWithinCircle(x, y, 0.08, mouse.cell.x, mouse.cell.y)) return ele; //.08 is radius around center of node
+    }
+}
+
+function isCursorWithinCircle(x, y, r, mouseX, mouseY) {
+    var distSqr = Math.pow(x - mouseX, 2) + Math.pow(y - mouseY, 2);
+
+    if(distSqr < r * r) {
+        return true;
+    }
+    return false;
 }
 
 
