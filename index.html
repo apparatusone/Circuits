@@ -4,82 +4,39 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <script defer src="scripts/script.js"></script>
+    <link rel="stylesheet" href="gui.css">
+    <script defer src="scripts/parts.js"></script>
+    <script defer src="scripts/main.js"></script>
+    <!-- <script defer src="scripts/sketch.js"></script> -->
     <title>computer</title>
 </head>
 <body>
-    <div id="container">
-        <div id="first">
-            <div id="toprow">
-                <button id="ftop4">▲</button>
-                <button id="ftop3">▲</button>
-                <button id="ftop2">▲</button>
-                <button id="ftop1">▲</button>
-            </div>
-            <div id="middlerow">
-                <p id="ffourthdigit">0</p>
-                <p id="fthirddigit">0</p>
-                <p id="fseconddigit">0</p>
-                <p id="ffirstdigit">0</p>
-            </div>
-            <div id="bottomrow">
-                <button id="fbottom4">▼</button>
-                <button id="fbottom3">▼</button>
-                <button id="fbottom2">▼</button>
-                <button id="fbottom1">▼</button>
-            </div>
-        </div>
-        <p id="firstnumdec">0</p>
-        <div id="operators">
-            <button id="add">+</button>
-            <button id="sub">-</button>
-            <button id="multi">x</button>
-            <button id="div">/</button>
-        </div>
-        <div id="second">
-            <div id="toprow">
-                <button id="stop4">▲</button>
-                <button id="stop3">▲</button>
-                <button id="stop2">▲</button>
-                <button id="stop1">▲</button>
-            </div>
-            <div id="middlerow">
-                <p id="sfourthdigit">0</p>
-                <p id="sthirddigit">0</p>
-                <p id="sseconddigit">0</p>
-                <p id="sfirstdigit">0</p>
-            </div>
-            <div id="bottomrow">
-                <button id="sbottom4">▼</button>
-                <button id="sbottom3">▼</button>
-                <button id="sbottom2">▼</button>
-                <button id="sbottom1">▼</button>
-            </div>
-        </div>
-        <p id="secondnumdec">0</p>
+    <button id="zoomlevel"></button>
+    <button id="zoom-in">+</button>
+    <button id="zoom-out">-</button>
+    <input id="rotate-left" class="hide" type="image" src="svg/rotateleft.svg" />
+    <input id="rotate-right" class="hide" type="image" src="svg/rotateright.svg" />
+    <canvas id="canvas"></canvas>
+    <div style="display:none;">
+        <img id="source"
+             src="svg/dot-01.svg"
+             width="100" height="100">
     </div>
-    <div id="container">
-        <svg  id="svg" width="500" height="400">
-        </svg>
-
-
+    <div style="display:none;">
+        <img id="transistor"
+             src="svg/transistor.svg"
+             width="100" height="100">
     </div>
-
-    <div id="container">
-        <div id="binaryoutput">
-            <div id="middlerowoutput">
-                <p id="outputfive">0</p>
-                <p id="outputfour">0</p>
-                <p id="outputthree">0</p>
-                <p id="outputtwo">0</p>
-                <p id="outputone">0</p>
-            </div>
-        </div>
-        <p id="output">0</p>
+    <div style="display:none;">
+        <img id="andgate"
+             src="svg/and_gate.svg"
+             width="100" height="100">
     </div>
-    <footer>
-        
-    </footer>
+    <div style="display:none;">
+        <img id="testbox"
+             src="svg/test_box.svg"
+             width="100" height="100">
+    </div>
+    
 </body>
 </html>
