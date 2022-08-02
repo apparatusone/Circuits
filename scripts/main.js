@@ -1,6 +1,7 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
-ctx.imageSmoothingQuality = 'low';
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = 'high';
 
 const zoomPercentage = document.getElementById("zoomlevel");
 const zoomIn = document.getElementById("zoom-in");
@@ -10,8 +11,11 @@ const rotateRight = document.getElementById("rotate-right");
 
 const gridDot = document.getElementById('source');
 const testbox = document.getElementById('testbox');
+const onoff = document.getElementById('onoff');
+const testButton = document.getElementById('addTest');
 
-let z = 100;                                            // zoom
+
+let z = 50;                                            // default zoom
 let objectIndex = 0;
 let smoothZoom = z;
 
@@ -21,11 +25,11 @@ let mouseDown = false;
 let selected = false;
 let settings = {
     smoothZoom: true,                                   // enable/disable smooth zoom
-    zoomButtons: 5
+    zoomButtons: 5                                      // percentage buttons change zoom
 };
 
-let start;
-let end;
+let timerStart;
+let timerEnd;
 
 canvas.height = window.innerHeight;
 canvas.width = window.innerWidth;
@@ -35,6 +39,7 @@ const canvasCenter = {
     y: Number.parseFloat((canvas.height/(z*2)).toFixed(3)) - 0.5
 }
 
+//TODO: ORGANIZE
 let origin = {                                          //set origin to center of screen
     x: canvasCenter.x,
     y: canvasCenter.y,
@@ -43,6 +48,7 @@ let origin = {                                          //set origin to center o
     selected: {x: 0, y: 0}                              //location of selected element on screen
 };
 
+//TODO: ORGANIZE
 let mouse = {
     screen: { x: 0, y: 0 },
     grid: { x: 0, y: 0 },
@@ -52,13 +58,21 @@ let mouse = {
 let objects = []
 let wires = []
 
-objects.push(new Box(-6, -4, 0))
-objects.push(new Box(-4, -4, 0))
-objects.push(new Box(-2, -4, 0))
+// TODO: TESTPOINTS
+
+const points =   [[0,0],
+                  [2, 0],
+                  [2,-4]]
+
+
+objects.push(new Box(0, 3, 0))
 objects.push(new Box(0, -4, 0))
-objects.push(new Box(2, -4, 0))
-objects.push(new Box(4, -4, 0))
-objects.push(new Box(6, -4, 0))
+// objects.push(new Box(-3, -2, 0))
+// objects.push(new Box(0, 1, 0))
+// objects.push(new Box(21, 1, 0))
+
+objects.push(new OnOff(0, 0, 0))
+
 
 let fps;
 let lastFrame = performance.now();
@@ -68,15 +82,30 @@ function draw() {
     ctx.fillStyle = "#fff";                             // background color
     ctx.fillRect(0,0,canvas.width,canvas.height);       // background rectangle
 
+    // //TODO: create function for grid generation
     // grid generation
-    if( z > 40 ) {
-        for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) { //
-            for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
-                ctx.drawImage(gridDot, i - z / 12, j - z / 12, z / 6, z / 6);
+
+    function gridGeneration(zBound, offset, draw) {
+        if ( zBound ) {
+            for (let i = ((-origin.x - offset) * z) % z; i < canvas.width + offset; i+=z) {
+                for (let j = ((origin.y - offset) * z) % z; j < canvas.height + offset; j+=z) {
+                    draw;
+                };
             };
         };
-    };
-    if( z < 40 ) {
+    }
+
+  
+    // if( z > 40 ) {
+    //     for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) { //
+    //         for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
+    //             ctx.drawImage(gridDot, i - z / 12, j - z / 12, z / 6, z / 6);
+    //         };
+    //     };
+    // };
+
+    // more effecient to render when zoomed out
+    if ( z < 40 ) {
         ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
         for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) {
             for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
@@ -105,11 +134,17 @@ function draw() {
     for (const part of objects) {
         ctx.fillStyle = "rgba(0,0,0,.4)";
         drawRotated(part.image, part.gridCoordinatesX(), part.gridCoordinatesY(), z, z, part.r)
+    }
+
+    // TODO: set 'part' to variable so there isnt another loop every redraw
+    //highlight selection
+    for (const part of objects) {
         if (part.highlight === true) {
             origin.selected.x = part.gridCoordinatesX()
             origin.selected.y = part.gridCoordinatesY()
             ctx.lineWidth = z/20;
             ctx.strokeStyle = '#26CE00';
+            //ctx.setLineDash([z/3, z/15]);
             ctx.roundRect(part.gridCoordinatesX() - z/20,
                           part.gridCoordinatesY() - z/20,
                           z*1.1,
@@ -119,23 +154,21 @@ function draw() {
         }
     }
 
-    //highlight selection
-    for (const part of objects) {
-        if (part.highlight === true) {
-            ctx.lineWidth = z/55;
-            ctx.strokeStyle = '#26CE00';
-            //ctx.setLineDash([z/3, z/15]);
-            ctx.roundRect(part.gridCoordinatesX() - z/20,
-                          part.gridCoordinatesY() - z/20,
-                          z*1.1,
-                          z*1.1,
-                           {upperLeft: z/5,upperRight: z/5,lowerLeft: z/5}, false, true);
+    // TODO: REFACTOR
+    if (selected === true) {
+        locateRotateButtons();
+        for (let i = 0; i < wires.length; i++) {
+            wires[i].locateWires();
         }
     }
 
     for(let i = 0, l = wires.length; i < l; ++i) {
         drawWire(wires[i])
     }
+
+    // TODO: PATHFINDING LINES
+    wirePathfinding(objects[0],objects[1])
+
 
     //Smooth Zoom transistion
     if(settings.smoothZoom) {
@@ -153,21 +186,17 @@ function draw() {
         fps = 0;
         return;
      };
+
     lastFrame = performance.now();
     fps = 1/((performance.now() - lastFrame)/1000);
-
-
-    if(selected === true) {
-        locateRotateButtons();
-        for (let i = 0; i < wires.length; i++) {
-            wires[i].locateWires();
-        }
-    }
     window.requestAnimationFrame(draw);
 }
 
 draw();
 
+
+
+// TODO: REFACTOR
 canvas.onmousemove = function(e) {
     mouse.grid.x = Math.round((e.x / z + origin.x) - .5);
     mouse.grid.y = Math.round((-e.y / z + origin.y) + .5);
@@ -181,6 +210,8 @@ canvas.onmousemove = function(e) {
         objects[objectIndex].y = mouse.grid.y;
     }
     if (drawing === true) {
+
+        // TODO: REFACTOR
         currentWire = (wires.length - 1)
         wires[currentWire].x2 = (e.x / z - 0.5) + origin.x
         wires[currentWire].y2 = (-e.y / z + 0.5) + origin.y
@@ -194,13 +225,16 @@ canvas.onmousewheel = function(e) {
     mouse.screen.y = e.y;
 
     smoothZoom = Math.min( Math.max(
-        smoothZoom - z / 8 * ((e.deltaY) > 0 ? .3 : -.5),
-            15), 300                                               //minimum ), maximum zoom                                                        //maximum zoom
+        smoothZoom - z / 8 * ((e.deltaY) > 0 ? .3 : -.5),           // TODO: MAKE READABLE
+            15), 300                                                //minimum ), maximum zoom                                                        //maximum zoom
     );
-    zoomPercentage.innerHTML = Math.round(z) + '%';              //level of current zoom shown on screen
+
+    zoomPercentage.innerHTML = Math.round(z) + '%';                 //level of current zoom shown on screen
     return false;
 }
 
+
+// TODO: REFACTOR
 canvas.onmousedown = function(e) {
     e.preventDefault();
     mouseDown = true;
@@ -228,10 +262,17 @@ canvas.onmousedown = function(e) {
     if (getNode(objectIndex)) {
         drawing = true;
         let node = getNode(objectIndex)
-        wires.push(new Wire(objectIndex, node))
+        let x1 = objects[objectIndex].nodes[node].x
+        let y1 = objects[objectIndex].nodes[node].y
+        wires.push(new Wire(objectIndex, node, x1, y1))
+
+// TODO: REFACTOR
+        currentWire = (wires.length - 1)
+        wires[currentWire].x2 = (e.x / z - 0.5) + origin.x
+        wires[currentWire].y2 = (-e.y / z + 0.5) + origin.y
     }
 
-    start = new Date().getTime() / 1000
+    timerStart = new Date().getTime() / 1000                        //start timer for mouse click duration
     pointerEventsNone('add');
     canvas.style.cursor = "grabbing";
 }
@@ -240,19 +281,17 @@ canvas.onmouseup = function(e) {
     e.preventDefault();
 
     mouseDown = false;
-    end = new Date().getTime() / 1000;
+    timerEnd = new Date().getTime() / 1000;                          //end timer for mouse click duration
 
     mouse.cell.x = Math.round((((e.x / z + origin.x) - mouse.grid.x) - 0.5 % 1)*100)/100
     mouse.cell.y = Math.round((((e.y / z - origin.y) + mouse.grid.y) - 0.5 % 1)*100)/100
 
+    //TODO: ORGANIZE
     let index = objectUnderMouse(mouse.grid.x,mouse.grid.y)
-    console.log(index)
     
-    //TODO: refactor
-
+    //TODO: REFACTOR
     if (index && drawing === true) {
         let node = getNode(index)
-        console.log(node)
         currentWire = (wires.length - 1)
         if (node !== undefined) {
             wires[currentWire].index2 = index
@@ -260,7 +299,7 @@ canvas.onmouseup = function(e) {
         } else {
             wires.pop()
         }
-    } else if (index !== true && drawing === true) {
+    } else if (!index && drawing === true) {
         wires.pop()
     }
 
@@ -271,6 +310,7 @@ canvas.onmouseup = function(e) {
     canvas.style.cursor = "crosshair";
 }
 
+// TODO: ORGANIZE
 zoomPercentage.innerHTML = Math.round(z) + '%';
 
 zoomPercentage.onclick = function() {                   // reset canvas to origin
@@ -291,8 +331,15 @@ zoomIn.onclick = function() {
 zoomOut.onclick = function() {
     mouse.screen.x = canvas.width / 2;
     mouse.screen.y = canvas.height /2;
-    smoothZoom = Math.max(15, Math.round(smoothZoom - settings.zoomButtons));
+    smoothZoom = Math.max(10, Math.round(smoothZoom - settings.zoomButtons));
     zoomPercentage.innerHTML = smoothZoom + '%';
+};
+
+// TODO: MAKE A MENU
+let buttonCount = -4
+testButton.onclick = function() {
+    objects.push(new Box(buttonCount, -5, 0))
+    buttonCount++
 };
 
 const pointerEventsNone = (x) => {
@@ -334,6 +381,7 @@ const rotateButtons = (x) => {
     }
 }
 
+// TODO: REFACTOR
 function locateRotateButtons() {
     rotateLeft.style.left = `${(origin.selected.x - 2/z) - 45}px`;
     rotateLeft.style.top = `${(origin.selected.y - 2/z) - 45}px`;
@@ -356,16 +404,17 @@ rotateRight.onclick = function() {
     objects[objectIndex].rotateNodes('right');
 }
 
+// TODO: GENERALIZE
 function mouseClickDuration() {
-    if ((end - start) < .2 && selected === true) {
+    if ((timerEnd - timerStart) < .2 && selected === true) {
         rotateButtons('unhide');
     }
 }
 
 function getNode(index) {
     for (const ele in objects[index].nodes) {
-        let x = objects[index].nodes[ele].location.x
-        let y = objects[index].nodes[ele].location.y
+        let x = objects[index].nodes[ele].x
+        let y = objects[index].nodes[ele].y
         if (isCursorWithinCircle(x, y, 0.08, mouse.cell.x, mouse.cell.y)) return ele; //.08 is radius around center of node
     }
 }
@@ -386,6 +435,37 @@ function drawWire(wire) {
     ctx.beginPath();
     ctx.moveTo((-origin.x + wire.x1 + 0.5)* z, (origin.y - wire.y1 + 0.5) * z, z, z);
     ctx.lineTo((-origin.x + wire.x2 + 0.5)* z, (origin.y - wire.y2 + 0.5) * z, z, z);
+    ctx.stroke();
+}
+
+function line(x1,y1,x2,y2) {
+    ctx.moveTo((-origin.x + x1 + 0.5)* z, (origin.y - y1 + 0.5) * z, z, z);
+    ctx.lineTo((-origin.x + x2 + 0.5)* z, (origin.y - y2 + 0.5) * z, z, z);
+}
+
+function drawCircle(x1,y1) {
+    ctx.lineWidth = z/35;
+    ctx.fillStyle = '#FFFFFF';
+
+    ctx.beginPath();
+    ctx.arc((-origin.x + x1 + 0.5)* z, (origin.y - y1 + 0.5) * z, .06*z, 0, 2 * Math.PI);
+    ctx.stroke();
+}
+
+function drawWireRouted(array) {
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.lineWidth = z/20;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+
+    for (let i = 0; i < array.length - 1; i++) {
+        let p1 = array[i]
+        let p2 = array[i+1]
+
+        line(p1[0],p1[1],p2[0],p2[1])
+        //ctx.stroke();
+        //drawCircle(p1[0],p1[1])
+    }
     ctx.stroke();
 }
 
@@ -419,16 +499,100 @@ CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, ra
     }
 }
 
+function minMax(items,a) {
+    const map1 = items.map(ele => ele[a]);
+
+    return map1.reduce((acc, val) => {
+        acc[0] = ( acc[0] === undefined || val < acc[0] ) ? val : acc[0]
+        acc[1] = ( acc[1] === undefined || val > acc[1] ) ? val : acc[1]
+        return acc;
+    }, []);
+}
+
+function wirePathfinding(a,b) {
+
+    const min = { x: minMax(objects,'x')[0], y: minMax(objects,'y')[0]};  // get bounds for pathfinding grid
+    const max = { x: minMax(objects,'x')[1], y: minMax(objects,'y')[1]};
+    
+    let gx = Math.abs( max.x - min.x ) + 3;                               // +3 so pathfinding grid is never a line
+    let gy = Math.abs( max.y - min.y ) + 3;
+
+    let offsety = max.y * -1;
+
+    subdivide = 1;                                                        // change to subdivide pathfinding grid
+    divide = { a: subdivide, b: 1/subdivide };
+
+    let graphArray = Array.from({length: gy * divide.a}, () => Array(gx * divide.a).fill(1)); //generate array 
+
+
+    for (let i of objects) {                                            //locate obstacles
+        let cell = {x:0,y:0}
+        cell.x = Math.abs(min.x - i.x) * divide.a + 1;          // +1 is to offset grid for pathfinding objects in a line
+        cell.y = Math.abs(offsety + i.y) * divide.a + 1;
+        if (i !== objects[0] && i !== objects[1]) {
+                graphArray[cell.y].splice(cell.x, 1, 0);
+            }
+    }
+
+    let graph = new Graph(graphArray)
+
+    const start = graph.grid[Math.abs(offsety + a.y)*divide.a + 1][Math.abs(min.x - a.x)*divide.a + 1];    //flip x and y [y][x]
+    const end = graph.grid[Math.abs(offsety + b.y)*divide.a + 1][Math.abs(min.x - b.x)*divide.a + 1];        
+    const result = astar.search(graph, start, end, true);
+
+    let array2 = [[(Math.abs(min.x - a.x)*divide.b + min.x), - Math.abs(offsety + a.y)*divide.b + max.y]]
+
+    for (let i of result) {
+        array2.push([(i.y*divide.b + min.x) - 1, (-i.x*divide.b + max.y) + 1])                          //undo - flip x and y [x][y]
+    }
+
+    drawWireRouted(reduceArray(array2))
+
+}
+
+wirePathfinding(objects[0],objects[1])
+
+
+function reduceArray (array) {
+	const stack = [ array[0] ];
+    const lng = array.length
+
+    for (let i = 0; i < lng - 2 ; i++) {
+        if (array[i][0] !== array[i+2][0] && array[i][1] !== array[i+2][1] ) {
+            stack.push(array[i+1])
+        }
+    }
+    stack.push(array[lng - 1])
+    return stack;
+};
+
 
 // FIXME:
 // - if screen is resized canvas does not resize
-// - highlight isn't on top
-// - drawing lines originates at origin
+// - highlight isn't on top ✓
 // - rotate buttons
+// - can't connect to objects[0]
+// - can add wire into the same node
+// - pathfinding obstacle detection does not work correctly ✓
+//      - can't find path outside of bounds (if no path increase by 1 ?) ✓
+// - wires should not be able to intersect ?
+// - look at currently drawn objects, get bounds +- 2, ✓
+//      generate grid from bounds and populate with components and wires ✓
+// - detects node in empty cell
+
 
 // TODO:
 // ADD:
 // - pathfinding for lines
-// - make lines selectable
+//      - store on creation so its not recalculated
+//      - enable / disable pathfinding (create straight line)
+// - make lines selectable / add points
 // - drag and drop menu
 // - comment code
+// - first components: switch & LED
+// - open hand cursor when something draggable is under cursor
+// - draw cursor when node is under cursor
+// - if zoomed out disaable node selection
+
+// - move gui functions to seperate file
+

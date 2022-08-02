@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <script defer src="scripts/astar.js"></script>
     <script defer src="scripts/parts.js"></script>
     <script defer src="scripts/main.js"></script>
     <!-- <script defer src="scripts/sketch.js"></script> -->
@@ -12,6 +13,7 @@
 </head>
 <body>
     <button id="zoomlevel"></button>
+    <button id="addTest">Add Test Component</button>
     <button id="zoom-in">+</button>
     <button id="zoom-out">-</button>
     <input id="rotate-left" class="hide" type="image" src="svg/rotateleft.svg" />
@@ -35,6 +37,11 @@
     <div style="display:none;">
         <img id="testbox"
              src="svg/test_box.svg"
+             width="100" height="100">
+    </div>
+    <div style="display:none;">
+        <img id="onoff"
+             src="svg/onoff-01.svg"
              width="100" height="100">
     </div>
     
