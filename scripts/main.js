@@ -15,6 +15,10 @@ const onoff = document.getElementById('onoff');
 const andGate = document.getElementById('andgate');
 const nandGate = document.getElementById('nandgate');
 const orgate = document.getElementById('orgate');
+const norgate = document.getElementById('norgate');
+const xorgate = document.getElementById('xorgate');
+const xnorgate = document.getElementById('xnorgate');
+const notgate = document.getElementById('notgate');
 const testButton = document.getElementById('addTest');
 
 // default zoom
@@ -112,10 +116,38 @@ function makeOr (x,y,r) {
     defineNodes( id, nodes, objects[id] )
 }
 
+function makeNor (x,y,r) {
+    let id = generateId()
+    let nodes = ['input1', 'input2', 'output']
+    objects[id] = new NorGate(x, y, r, id)
+    defineNodes( id, nodes, objects[id] )
+}
+
 function makeNand (x,y,r) {
     let id = generateId()
     let nodes = ['input1', 'input2', 'output']
     objects[id] = new NandGate(x, y, r, id)
+    defineNodes( id, nodes, objects[id] )
+}
+
+function makeNot (x,y,r) {
+    let id = generateId()
+    let nodes = ['input', 'output']
+    objects[id] = new NotGate(x, y, r, id)
+    defineNodes( id, nodes, objects[id] )
+}
+
+function makeXor (x,y,r) {
+    let id = generateId()
+    let nodes = ['input1', 'input2', 'output']
+    objects[id] = new XorGate(x, y, r, id)
+    defineNodes( id, nodes, objects[id] )
+}
+
+function makeXnor (x,y,r) {
+    let id = generateId()
+    let nodes = ['input1', 'input2', 'output']
+    objects[id] = new XnorGate(x, y, r, id)
     defineNodes( id, nodes, objects[id] )
 }
 
@@ -130,7 +162,12 @@ makeLed(2,2,0)
 makeAnd(-2,0,0)
 makeOr(-1,0,0)
 makeNand(0,0,0)
-//makeAnd(1,0,0)
+makeNor(1,0,0)
+makeNot(2,0,0)
+makeXor(3,0,0)
+makeLed(3,2,0)
+makeXnor(4,0,0)
+makeLed(4,2,0)
 
 let fps;
 let lastFrame = performance.now();

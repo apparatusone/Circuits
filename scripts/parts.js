@@ -239,17 +239,91 @@ class OrGate extends Generic {
         this.image = document.getElementById('orgate');
     }
 
-    offset = {
-        input1: { x: -0.25, y: -0.5 },
-        input2: { x: 0.25, y: -0.5 },
-        output: { x: 0, y: 0.5 },
+    get state () {
+        let wire1 = wires.find(o => o.id === this.input1.connection);
+        let wire2 = wires.find(o => o.id === this.input2.connection);
+
+        if (wire1.state || wire2.state) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
+class NorGate extends Generic {
+    constructor(x,y,r,id) {
+        super(x,y,r,id);
+
+        this.image = document.getElementById('norgate');
     }
 
     get state () {
         let wire1 = wires.find(o => o.id === this.input1.connection);
         let wire2 = wires.find(o => o.id === this.input2.connection);
 
-        if (wire1.state || wire2.state) {
+        if (!wire1.state && !wire2.state) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
+class NotGate extends Generic {
+    constructor(x,y,r,id) {
+        super(x,y,r,id);
+
+        this.image = document.getElementById('notgate');
+    }
+
+    offset = {
+        input: { x: 0, y: -0.5 },
+        output: { x: 0, y: 0.5 },
+    }
+
+    get state () {
+        let wire1 = wires.find(o => o.id === this.input.connection);
+
+        if (!wire1.state) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
+class XorGate extends Generic {
+    constructor(x,y,r,id) {
+        super(x,y,r,id);
+
+        this.image = document.getElementById('xorgate');
+    }
+
+    get state () {
+        let wire1 = wires.find(o => o.id === this.input1.connection);
+        let wire2 = wires.find(o => o.id === this.input2.connection);
+
+        if (wire1.state * !wire2.state + !wire1.state * wire2.state) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
+class XnorGate extends Generic {
+    constructor(x,y,r,id) {
+        super(x,y,r,id);
+
+        this.image = document.getElementById('xnorgate');
+    }
+
+    get state () {
+        let wire1 = wires.find(o => o.id === this.input1.connection);
+        let wire2 = wires.find(o => o.id === this.input2.connection);
+
+        if (wire1.state * wire2.state + !wire1.state * !wire2.state) {
             return 1;
         } else {
             return 0;
