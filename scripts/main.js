@@ -464,7 +464,7 @@ zoomPercentage.innerHTML = Math.round(z) + '%';
 
 // reset canvas to origin
 zoomPercentage.onclick = function() {                   
-    z = 50;
+    z = 100;
     smoothZoom = z;
     origin.x = canvasCenter.x;
     origin.y = canvasCenter.y;
@@ -725,7 +725,8 @@ function drawRotatedImg(x, y, shape, degrees) {
 // - look at currently drawn objects, get bounds +- 2, ✓
 //      generate grid from bounds and populate with components and wires ✓
 // - detects node in empty cell (something to do with last component being clicked having nodes) ✓
-// - connecting a gate output without wires at each input breaks the program
+// - connecting a gate output without wires at each input breaks the program ✓
+// - wire can't be drawn backwards
 
 
 

@@ -204,13 +204,14 @@ class NandGate extends Generic {
         let wire1 = wires.find(o => o.id === this.input1.connection);
         let wire2 = wires.find(o => o.id === this.input2.connection);
 
-        if (!wire1.state || !wire2.state) {
-            return 1;
-        } else {
-            return 0;
+        if ( wire1 !== undefined && wire2 !== undefined ) {
+            if (!wire1.state || !wire2.state) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
-
 }
 
 class AndGate extends Generic {
@@ -224,10 +225,13 @@ class AndGate extends Generic {
         let wire1 = wires.find(o => o.id === this.input1.connection);
         let wire2 = wires.find(o => o.id === this.input2.connection);
 
-        if (wire1.state && wire2.state) {
-            return 1;
-        } else {
-            return 0;
+        //  added first if to fix break when output is connected to led without both inputs connected
+        if ( wire1 !== undefined && wire2 !== undefined ) {
+            if (wire1.state && wire2.state) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
 }
@@ -243,10 +247,12 @@ class OrGate extends Generic {
         let wire1 = wires.find(o => o.id === this.input1.connection);
         let wire2 = wires.find(o => o.id === this.input2.connection);
 
-        if (wire1.state || wire2.state) {
-            return 1;
-        } else {
-            return 0;
+        if ( wire1 !== undefined && wire2 !== undefined ) {
+            if (wire1.state || wire2.state) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
 }
@@ -262,10 +268,12 @@ class NorGate extends Generic {
         let wire1 = wires.find(o => o.id === this.input1.connection);
         let wire2 = wires.find(o => o.id === this.input2.connection);
 
-        if (!wire1.state && !wire2.state) {
-            return 1;
-        } else {
-            return 0;
+        if ( wire1 !== undefined && wire2 !== undefined ) {
+            if (!wire1.state && !wire2.state) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
 }
@@ -285,10 +293,12 @@ class NotGate extends Generic {
     get state () {
         let wire1 = wires.find(o => o.id === this.input.connection);
 
-        if (!wire1.state) {
-            return 1;
-        } else {
-            return 0;
+        if ( wire1 !== undefined ) {
+            if (!wire1.state) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
 }
@@ -304,10 +314,12 @@ class XorGate extends Generic {
         let wire1 = wires.find(o => o.id === this.input1.connection);
         let wire2 = wires.find(o => o.id === this.input2.connection);
 
-        if (wire1.state * !wire2.state + !wire1.state * wire2.state) {
-            return 1;
-        } else {
-            return 0;
+        if ( wire1 !== undefined && wire2 !== undefined ) {
+            if (wire1.state * !wire2.state + !wire1.state * wire2.state) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
 }
@@ -323,10 +335,12 @@ class XnorGate extends Generic {
         let wire1 = wires.find(o => o.id === this.input1.connection);
         let wire2 = wires.find(o => o.id === this.input2.connection);
 
-        if (wire1.state * wire2.state + !wire1.state * !wire2.state) {
-            return 1;
-        } else {
-            return 0;
+        if ( wire1 !== undefined && wire2 !== undefined ) {
+            if (wire1.state * wire2.state + !wire1.state * !wire2.state) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
 }
