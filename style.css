@@ -100,3 +100,15 @@ canvas {
     border-radius: 10px;
     z-index: 1;
 }
+
+.a {
+    fill:none;
+}
+
+.a, .b {
+    stroke:#000;stroke-miterlimit:10;stroke-width:4px;
+}
+
+.b {
+    fill:#fff;
+}

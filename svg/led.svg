@@ -1,0 +1,9 @@
+
+<svg version="1.1" id="Layer_2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve">
+<link xmlns="http://www.w3.org/1999/xhtml" rel="stylesheet" href="style.css" type="text/css"/>
+
+<title>led</title>
+<line class="a" x1="50.0677" y1="100.0099" x2="50.0511" y2="75.0213"/>
+<path class="b" d="M50.0024,37.5092h0A12.4991,12.4991,0,0,1,62.5015,50.0083V75.0062a0,0,0,0,1,0,0H37.5033a0,0,0,0,1,0,0V50.0083A12.4991,12.4991,0,0,1,50.0024,37.5092Z"/>
+</svg>
