@@ -107,7 +107,9 @@ function makeAnd (x,y,r) {
 
 function makeOr (x,y,r) {
     let id = generateId()
+    let nodes = ['input1', 'input2', 'output']
     objects[id] = new OrGate(x, y, r, id)
+    defineNodes( id, nodes, objects[id] )
 }
 
 function makeNand (x,y,r) {
@@ -126,9 +128,9 @@ makeLed(0,2,0)
 makeLed(1,2,0)
 makeLed(2,2,0)
 makeAnd(-2,0,0)
-//makeOr(-1,0,0)
+makeOr(-1,0,0)
 makeNand(0,0,0)
-makeAnd(1,0,0)
+//makeAnd(1,0,0)
 
 let fps;
 let lastFrame = performance.now();

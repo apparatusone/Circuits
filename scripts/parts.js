@@ -59,6 +59,7 @@ class Generic {
     img = 'svg'
     highlight = false;
 
+//location of the nodes relative to the center of the cell
     offset = {
         input1: { x: -0.25, y: -0.5 },
         input2: { x: 0.25, y: -0.5 },
@@ -96,7 +97,7 @@ class OnOff extends Generic{
     offset = {
         output: { x: 0, y: 0.5 },
     }
-    
+// changes state of switch between 0 and 1
     get changeState () {
         this.state ^= 1;
     }
@@ -198,7 +199,7 @@ class NandGate extends Generic {
 
         this.image = document.getElementById('nandgate');
     }
-
+// logical element of the gate
     get state () {
         let wire1 = wires.find(o => o.id === this.input1.connection);
         let wire2 = wires.find(o => o.id === this.input2.connection);
@@ -231,28 +232,19 @@ class AndGate extends Generic {
     }
 }
 
-class OrGate {
+class OrGate extends Generic {
     constructor(x,y,r,id) {
-        this.x = x;
-        this.y = y;
-        this.r = r;
-        this.id = id;
+        super(x,y,r,id);
+
         this.image = document.getElementById('orgate');
     }
 
-    type = 'non-interactive'
-    img = 'svg'
-    nodes = ['input1', 'input2', 'output']
-    highlight = false;
-
-    //location of the nodes relative to the center of the cell
     offset = {
         input1: { x: -0.25, y: -0.5 },
         input2: { x: 0.25, y: -0.5 },
         output: { x: 0, y: 0.5 },
     }
 
-    //logical element of the gate
     get state () {
         let wire1 = wires.find(o => o.id === this.input1.connection);
         let wire2 = wires.find(o => o.id === this.input2.connection);
@@ -261,42 +253,6 @@ class OrGate {
             return 1;
         } else {
             return 0;
-        }
-    }
-
-    input1 = {
-        self: this,
-        connection: undefined,
-        get x () { return this.self.x + this.self.offset.input1.x },
-        get y () { return this.self.y + this.self.offset.input1.y },
-    }
-
-    input2 = {
-        self: this,
-        connection: undefined,
-        get x () { return this.self.x + this.self.offset.input2.x },
-        get y () { return this.self.y + this.self.offset.input2.y },
-    }
-
-    output = {
-        self: this,
-        connection: undefined,
-        get x () { return this.self.x + this.self.offset.output.x },
-        get y () { return this.self.y + this.self.offset.output.y },
-    }
-
-    get gridCoordinates () {
-        return { x: (-origin.x + this.x) * z, y: (origin.y - this.y) * z }
-    }
-    
-    rotateNodes(dir) {
-        for (let ele in this.offset) {
-            let a = this.offset[ele].x
-            let b = this.offset[ele].y
-            if (dir === 'right') [a, b] = [-b, a];
-            if (dir === 'left') [a, b] = [b, -a];
-            this.offset[ele].x = a
-            this.offset[ele].y = b
         }
     }
 }
