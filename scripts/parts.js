@@ -1,7 +1,7 @@
 'use strict';
 
 class Wire {
-    constructor(index1, node1, x1, y1) {
+    constructor(index1, node1) {
         this.index1 = index1;
         this.index2 = index1;
         this.node1 = node1;
@@ -30,8 +30,16 @@ class Wire {
         return objects[this.index2][this.node2].y
     }
 
+    // get state of output, set wire state
     get state () {
-        return objects[this.index1].state
+        if (this.node1 === 'output') {
+            return objects[this.index1].state
+        } else if (this.node2 === 'output') {
+            return objects[this.index2].state
+        } else {
+            return 0;
+        }
+
     }
 }
 

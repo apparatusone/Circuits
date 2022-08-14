@@ -47,6 +47,27 @@ canvas {
     z-index: 3;
 }
 
+#action-menu {
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: -5px;
+    left: 50vw;
+    color: white;
+    background: rgba(0, 7, 21, 0.654);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border-radius: 0 0 10px 10px;
+    z-index: 2;
+}
+
+#undo {
+    width: 45px;
+    height: 45px;
+    font-size: 2.5em;
+}
+
 #zoomlevel, #zoom-in, #zoom-out{
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);

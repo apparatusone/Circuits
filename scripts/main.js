@@ -8,6 +8,7 @@ const zoomIn = document.getElementById("zoom-in");
 const zoomOut = document.getElementById("zoom-out");
 const rotateLeft = document.getElementById("rotate-left");
 const rotateRight = document.getElementById("rotate-right");
+const undo = document.getElementById("undo");
 
 const gridDot = document.getElementById('source');
 const testbox = document.getElementById('testbox');
@@ -30,12 +31,13 @@ let dragging = false;
 let drawing = false;
 let mouseDown = false;
 let selected = false;
+
 let objectUnderCursor = {
     state: false,
-    node: false,
-    component: false,
+    isComponent: false,
+    isNode: false,
     object: undefined,
-    prev: undefined,
+    node: undefined,
 };
 
 let settings = {
@@ -155,19 +157,19 @@ function makeXnor (x,y,r) {
 makeSwitch(-1,-2,0)
 makeSwitch(0,-2,0)
 makeLed(-2,2,0)
-makeLed(-1,2,0)
-makeLed(0,2,0)
-makeLed(1,2,0)
-makeLed(2,2,0)
+//makeLed(-1,2,0)
+//makeLed(0,2,0)
+//makeLed(1,2,0)
+//makeLed(2,2,0)
 makeAnd(-2,0,0)
-makeOr(-1,0,0)
-makeNand(0,0,0)
-makeNor(1,0,0)
-makeNot(2,0,0)
-makeXor(3,0,0)
-makeLed(3,2,0)
-makeXnor(4,0,0)
-makeLed(4,2,0)
+//makeOr(-1,0,0)
+//makeNand(0,0,0)
+//makeNor(1,0,0)
+//makeNot(2,0,0)
+//makeXor(3,0,0)
+//makeLed(3,2,0)
+//makeXnor(4,0,0)
+//makeLed(4,2,0)
 
 let fps;
 let lastFrame = performance.now();
@@ -256,7 +258,7 @@ function draw() {
     }
 
     // show rotate buttons on selected component
-    if (selected === true) {
+    if (selected) {
         locateRotateButtons();
         for (let i = 0; i < wires.length; i++) {
             //wires[i].locateWires();
@@ -297,22 +299,13 @@ function draw() {
 
     window.requestAnimationFrame(draw);
 }
+
 draw();
 
-// TODO: REFACTOR
 canvas.onmousemove = function(e) {
     mouse.canvas.x = Number.parseFloat((e.x / z + origin.x) - .5).toFixed(2);
     mouse.canvas.y = Number.parseFloat((-e.y / z + origin.y) + .5).toFixed(2);
 
-    //detect whats under cursor
-    if (objectUnderMouse(mouse.canvas.x, mouse.canvas.y)) {
-        objectUnderCursor.state = true;
-    } else {
-        objectUnderCursor.state = false;
-        objectUnderCursor.node = false;
-        objectUnderCursor.component = false;
-    }
-    
     // move canvas
     if (mouseDown && !dragging && !drawing) {
         origin.x = origin.prev.x + (origin.click.x - e.x)/z;
@@ -321,8 +314,8 @@ canvas.onmousemove = function(e) {
 
     // move object
     if (mouseDown && dragging && !drawing) {
-        objects[objectUnderCursor.object].x = Math.round(mouse.canvas.x);
-        objects[objectUnderCursor.object].y = Math.round(mouse.canvas.y);
+        objectUnderCursor.object.x = Math.round(mouse.canvas.x);
+        objectUnderCursor.object.y = Math.round(mouse.canvas.y);
     }
 
     if (drawing === true) {
@@ -340,7 +333,7 @@ canvas.onmousewheel = function(e) {
     smoothZoom = Math.min( Math.max(
         smoothZoom - z / 8 * ((e.deltaY) > 0 ? .3 : -.5),           // TODO: MAKE READABLE
         //minimum ), maximum zoom      
-            15), 300                                                                                                  //maximum zoom
+            15), 300
     );
 
     //level of current zoom shown on screen
@@ -348,7 +341,6 @@ canvas.onmousewheel = function(e) {
     return false;
 }
 
-// TODO: REFACTOR
 canvas.onmousedown = function(e) {
     e.preventDefault();
     mouseDown = true;
@@ -358,43 +350,35 @@ canvas.onmousedown = function(e) {
     origin.prev.x = origin.x;
     origin.prev.y = origin.y;
 
-    if (objectUnderCursor.component) {
-        objectUnderCursor.object = objectUnderMouse(mouse.canvas.x, mouse.canvas.y);
-    }
+    getObject(mouse.canvas.x,mouse.canvas.y)
 
-    if (objectUnderCursor.node) objectUnderCursor.object = { 
-        id: objectUnderMouse(mouse.canvas.x, mouse.canvas.y).component.id,
-        node: objectUnderMouse(mouse.canvas.x, mouse.canvas.y).node,
-        }
-    if (!objectUnderCursor.state) objectUnderCursor.object = undefined;
-
-    if (objectUnderCursor.component) {
+    if (objectUnderCursor.isComponent) {
+        removeHighlight();
+        objectUnderCursor.object.highlight = true;
         dragging = true;
-        removeHighlight();
-        objects[objectUnderCursor.object].highlight = true;
         selected = true;
-        origin.selected.id = objectUnderCursor.object
-    } else if (!objectUnderCursor.state) {
-        removeHighlight();
-        selected = false;
-        rotateButtons('hide')
-        origin.selected.id = undefined
     }
 
-    if (objectUnderCursor.node) {
+    if (objectUnderCursor.isNode) {
         drawing = true;
         let id = objectUnderCursor.object.id;
-        let node = objectUnderCursor.object.node;
-        let x = objects[id][node].x;
-        let y = objects[id][node].y;
+        let node = objectUnderCursor.node;
+        let x = objectUnderCursor.object.x;
+        let y = objectUnderCursor.object.y;
         drawingLine.push(new TempLine(id, node, x, y));
-        wires.push(new Wire(id, node, x, y));
 
         drawingLine[0].x2 = (e.x / z - 0.5) + origin.x;
         drawingLine[0].y2 = (-e.y / z + 0.5) + origin.y;
     }
 
-    timerStart = new Date().getTime() / 1000                        //start timer for mouse click duration
+    if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
+        removeHighlight();
+        selected = false;
+        rotateButtons('hide')
+    }
+
+    //start timer for mouse click duration
+    timerStart = new Date().getTime() / 1000                        
     pointerEventsNone('add');
     canvas.style.cursor = "grabbing";
 }
@@ -402,51 +386,25 @@ canvas.onmousedown = function(e) {
 canvas.onmouseup = function(e) {
     e.preventDefault();
 
-    let connection;
+    let previousObject = objectUnderCursor.object;
+    let previousNode = objectUnderCursor.node;
+    getObject(mouse.canvas.x, mouse.canvas.y);
+
     mouseDown = false;
-    timerEnd = new Date().getTime() / 1000;                          //end timer for mouse click duration
+    //end timer for mouse click duration
+    timerEnd = new Date().getTime() / 1000;
 
-    // TODO: FIXME: REFACTOR
-    if (objectUnderCursor.component) {
+    if (objectUnderCursor.isComponent) {
         if (mouseClickDuration(.2)) {
-            objects[objectUnderCursor.object].changeState;
+            objectUnderCursor.object.changeState;
         } 
-    }   
-
-    if (objectUnderCursor.node) {
-        objectUnderCursor.prev = objectUnderCursor.object
-        objectUnderCursor.object = { 
-            id: objectUnderMouse(mouse.canvas.x, mouse.canvas.y).component.id,
-            node: objectUnderMouse(mouse.canvas.x, mouse.canvas.y).node,
-        }
-        connection = objects[objectUnderCursor.object.id][objectUnderCursor.object.node].connection
     }
-    if (!objectUnderCursor.state) objectUnderCursor.object = undefined;
 
-    // conditions -
-    //          not the same node
-    //          node isnt already connected
-    //          not an output
-    
-    //TODO: FIXME: ADDING WIRES REFACTOR
-
-    //console.log(objects[objectUnderCursor.object.id][objectUnderCursor.object.node].connection)
-
-    if (objectUnderCursor.state && drawing && objectUnderCursor.prev.id !== objectUnderCursor.object.id && connection === undefined) {
-        let id = objectUnderCursor.object.id
-        let node = objectUnderCursor.object.node
-        let wireId = wires[(wires.length - 1)].id
-
-        wires[wires.length - 1].index2 = objectUnderCursor.object.id
-        wires[wires.length - 1].node2 = objectUnderCursor.object.node
-        // set connection to wire state
-        objects[id][node].connection = wireId
-
-        drawingLine = []
-    } else if (drawing) {
-        drawingLine = []
-        wires.pop()
+    if (objectUnderCursor.isNode && drawing) {
+        connectNodes(previousObject, previousNode)
     }
+
+    if (drawing) drawingLine = [];
 
     dragging = false;
     drawing = false;
@@ -456,6 +414,79 @@ canvas.onmouseup = function(e) {
     pointerEventsNone('remove');
     canvas.style.cursor = "crosshair";
 }
+
+function connectNodes(pObject, pNode) {
+    let connection = objectUnderCursor.object[objectUnderCursor.node].connection
+
+    if (connection !== undefined || !objectUnderCursor.isNode) {
+        return;
+    }
+
+    if ( pObject === objectUnderCursor.object ) {
+        return
+    }
+
+    // if inputs are both inputs or both outputs reject
+    if ( stringInString('output', pNode) && stringInString('output', objectUnderCursor.node) ) {
+        return
+    }
+
+    if ( stringInString('input', pNode) && stringInString('input', objectUnderCursor.node) ) {
+        return
+    }
+
+    wires.push(new Wire(pObject.id, pNode, pObject.x, pObject.y));
+
+    let id = objectUnderCursor.object.id
+    let node = objectUnderCursor.node
+    let wireId = wires[(wires.length - 1)].id
+
+    wires[wires.length - 1].index2 = id
+    wires[wires.length - 1].node2 = node
+    // set connection to wire state
+    objects[pObject.id][pNode].connection = wireId
+    objects[id][node].connection = wireId
+    
+}
+
+//returns component and node 
+function getObject(x, y) {
+    for (const ele in objects) {
+        for (const e of objects[ele].nodes) {
+            let a = objects[ele][e].x
+            let b = objects[ele][e].y
+            //.09 is detection radius from center of node
+            if (isCursorWithinCircle(a, b, 0.09, x, y)) {
+                objectUnderCursor.isComponent = false;
+                objectUnderCursor.isNode = true;
+                objectUnderCursor.object = objects[ele];
+                objectUnderCursor.node = e;
+                return; 
+            }
+        }
+    }
+    for (let [key, value] of Object.entries(objects)) {
+        if (value.x === Math.round(x) && value.y === Math.round(y)) {
+            objectUnderCursor.isComponent = true;
+            objectUnderCursor.isNode = false;
+            objectUnderCursor.object = objects[key];
+            objectUnderCursor.node = undefined;
+            return;
+        }
+    }
+    objectUnderCursor.isComponent = false;
+    objectUnderCursor.isNode = false;
+    objectUnderCursor.object = undefined;
+    objectUnderCursor.node = undefined;
+    return false
+}
+
+//returns true if 'a' is in 'b'
+function stringInString (a,b) {
+    const regex = new RegExp( a, 'gi' );
+    return regex.test(b)
+}
+
 
 
 //TODO: ORGANIZE
@@ -508,7 +539,7 @@ function locateRotateButtons() {
 rotateRight.onclick = function() {
     const angle = [270, 180, 90, 0];
     const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
-    let id = origin.selected.id
+    let id = objectUnderCursor.object.id
     objects[id].r = next(objects[id].r);
     objects[id].rotateNodes('left');
 }
@@ -516,10 +547,24 @@ rotateRight.onclick = function() {
 rotateLeft.onclick = function() {
     const angle = [0, 90, 180, 270];
     const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
-    let id = origin.selected.id
-    console.log(id)
+    let id = objectUnderCursor.object.id
     objects[id].r = next(objects[id].r);
     objects[id].rotateNodes('right');
+}
+
+undo.onclick = function() {
+    if (wires.length === 0) return;
+
+    let wireId = wires[(wires.length - 1)].id
+
+    for (const ele in objects) {
+        for (const e of objects[ele].nodes) {
+            if (objects[ele][e].connection === wireId) {
+                objects[ele][e].connection = undefined
+            }
+        }
+    }
+    wires.pop()
 }
 
 // TODO: MAKE A MENU
@@ -547,20 +592,6 @@ function mouseClickDuration(time) {
     }
 }
 
-function objectUnderMouse (x, y) {
-    if (getNode(x, y)) {
-        return getNode(x, y)
-    }
-    for (let [key, value] of Object.entries(objects)) {
-        if (value.x === Math.round(x) && value.y === Math.round(y)) {
-            objectUnderCursor.node = false;
-            objectUnderCursor.component = true;
-            return key;
-        }
-    }
-    return false
-};
-
 function drawRotated(image, x, y, w, h, degrees) {
     ctx.save();
     ctx.translate(x+(image.width/200)*z, y+(image.width/200)*z);
@@ -579,28 +610,13 @@ function drawLine (x1,y1,x2,y2,width) {
     ctx.stroke();
 }
 
-function getNode(x, y) {
-    for (const ele in objects) {
-        for (const e of objects[ele].nodes) {
-            let a = objects[ele][e].x
-            let b = objects[ele][e].y
-            if (isCursorWithinCircle(a, b, 0.08, x, y)) { //.08 is radius around center of node
-                objectUnderCursor.component = false;
-                objectUnderCursor.node = true;
-                return {component: objects[ele], node: e}; 
-            } 
-        }
-    }
-
-    return false
-}
-
 function drawNodes() {
     for (const ele in objects) {
         for (const e of objects[ele].nodes) {
             let a = objects[ele][e].x
             let b = objects[ele][e].y
-            drawCircle(a,b)
+            ctx.lineWidth = z/30;
+            drawCircle(a , b, .055)
         }
     }
 }
@@ -621,14 +637,13 @@ function isCursorWithinCircle(x, y, r, mouseX, mouseY) {
     return false;
 }
 
-function drawCircle(x1,y1) {
+function drawCircle(x,y,r) {
     ctx.strokeStyle = 'rgba(0,0,0,1)';
     ctx.fillStyle = '#FFFFFF';
-    ctx.lineWidth = z/35;
     ctx.setLineDash([]);
 
     ctx.beginPath();
-    ctx.arc((-origin.x + x1 + 0.5)* z, (origin.y - y1 + 0.5) * z, .06*z, 0, 2 * Math.PI);
+    ctx.arc((-origin.x + x + 0.5)* z, (origin.y - y + 0.5) * z, r*z, 0, 2 * Math.PI);
     ctx.stroke();
     ctx.fill();
 }
@@ -715,30 +730,30 @@ function drawRotatedImg(x, y, shape, degrees) {
 
 // FIXME:
 // - if screen is resized canvas does not resize
-// - highlight isn't on top ✓
+// ✓- highlight isn't on top
 // - rotate buttons
-// - can't connect to objects[0]
-// - can add wire into the same node IMPORTANT ✓
-// - pathfinding obstacle detection does not work correctly ✓
+// ✓- can't connect to objects[0]
+// ✓- can add wire into the same node IMPORTANT
+// ✓- pathfinding obstacle detection does not work correctly
 //      - can't find path outside of bounds (if no path increase by 1 ?) ✓
 // - wires should not be able to intersect ?
-// - look at currently drawn objects, get bounds +- 2, ✓
-//      generate grid from bounds and populate with components and wires ✓
-// - detects node in empty cell (something to do with last component being clicked having nodes) ✓
-// - connecting a gate output without wires at each input breaks the program ✓
-// - wire can't be drawn backwards
-
-
+// ✓- look at currently drawn objects, get bounds +- 2, 
+//      generate grid from bounds and populate with components and wires 
+// ✓- detects node in empty cell (something to do with last component being clicked having nodes) 
+// ✓- connecting a gate output without wires at each input breaks the program 
+// ✓- wire can't be drawn backwards
+// - components can be moved into occupied cells
+// - gates only work if both nodes have wires
 
 // TODO:
 // ADD:
-// - pathfinding for lines
+// ✓- pathfinding for lines
 //      - store on creation so its not recalculated
 //      - enable / disable pathfinding (create straight line)
 // - make lines selectable / add points
 // - drag and drop menu
 // - comment code
-// - first components: switch & LED ✓
+// ✓- first components: switch & LED
 // - open hand cursor when something draggable is under cursor
 // - draw cursor when node is under cursor
 // - if zoomed out (% ?) disable node selection
@@ -748,5 +763,7 @@ function drawRotatedImg(x, y, shape, degrees) {
 // - hide rotate buttons if zoom < XX%
 // - nodes should show state
 // - wire should show state
+// - add name component function
+// ✓- basic undo
 
 // - move gui functions to seperate file
