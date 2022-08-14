@@ -3,6 +3,9 @@ const ctx = canvas.getContext("2d", { alpha: false });
 ctx.imageSmoothingEnabled = true;
 ctx.imageSmoothingQuality = 'high';
 
+canvas.height = window.innerHeight;
+canvas.width = window.innerWidth;
+
 const zoomPercentage = document.getElementById("zoomlevel");
 const zoomIn = document.getElementById("zoom-in");
 const zoomOut = document.getElementById("zoom-out");
@@ -11,15 +14,15 @@ const rotateRight = document.getElementById("rotate-right");
 const undo = document.getElementById("undo");
 
 const gridDot = document.getElementById('source');
-const testbox = document.getElementById('testbox');
+//const testbox = document.getElementById('testbox');
 const onoff = document.getElementById('onoff');
 const andGate = document.getElementById('andgate');
 const nandGate = document.getElementById('nandgate');
-const orgate = document.getElementById('orgate');
-const norgate = document.getElementById('norgate');
-const xorgate = document.getElementById('xorgate');
-const xnorgate = document.getElementById('xnorgate');
-const notgate = document.getElementById('notgate');
+const orGate = document.getElementById('orgate');
+const norGate = document.getElementById('norgate');
+const xorGate = document.getElementById('xorgate');
+const xnorGate = document.getElementById('xnorgate');
+const notGate = document.getElementById('notgate');
 const testButton = document.getElementById('addTest');
 
 // default zoom
@@ -58,9 +61,6 @@ const idCreator = function* () {
 };
 const idsGenerator = idCreator();
 const generateId = () => idsGenerator.next().value;
-
-canvas.height = window.innerHeight;
-canvas.width = window.innerWidth;
 
 const canvasCenter = {
     x: - Number.parseFloat((canvas.width/(z*2)).toFixed(3)) + 0.5,
@@ -156,7 +156,9 @@ function makeXnor (x,y,r) {
 
 makeSwitch(-1,-2,0)
 makeSwitch(0,-2,0)
+makeSwitch(1,-2,0)
 makeLed(-2,2,0)
+makeLed(-1,2,0)
 //makeLed(-1,2,0)
 //makeLed(0,2,0)
 //makeLed(1,2,0)
@@ -715,7 +717,6 @@ function drawRotatedImg(x, y, shape, degrees) {
         xOrigin = -origin.y;
         yOrigin = origin.x;
     }
-    //ctx.translate(x+(w/12)*4, y+(h/22));
 
     ctx.translate(a, b)
     ctx.rotate(degrees * -Math.PI / 180);
@@ -744,9 +745,13 @@ function drawRotatedImg(x, y, shape, degrees) {
 // ✓- wire can't be drawn backwards
 // - components can be moved into occupied cells
 // - gates only work if both nodes have wires
+// - can add multiple wires to input.. ?
 
 // TODO:
 // ADD:
+// - create IC function
+//     - add name component function
+//
 // ✓- pathfinding for lines
 //      - store on creation so its not recalculated
 //      - enable / disable pathfinding (create straight line)
@@ -763,7 +768,6 @@ function drawRotatedImg(x, y, shape, degrees) {
 // - hide rotate buttons if zoom < XX%
 // - nodes should show state
 // - wire should show state
-// - add name component function
 // ✓- basic undo
 
 // - move gui functions to seperate file
