@@ -14,7 +14,6 @@ const rotateRight = document.getElementById("rotate-right");
 const undo = document.getElementById("undo");
 
 const gridDot = document.getElementById('source');
-//const testbox = document.getElementById('testbox');
 const onoff = document.getElementById('onoff');
 const andGate = document.getElementById('andgate');
 const nandGate = document.getElementById('nandgate');
@@ -39,8 +38,10 @@ let objectUnderCursor = {
     state: false,
     isComponent: false,
     isNode: false,
+    isWire: false,
     object: undefined,
     node: undefined,
+    wire: undefined,
 };
 
 let settings = {
@@ -85,15 +86,15 @@ let mouse = {
 };
 
 let objects = {};            // components
-let connection = [];         // links between components
-let wires = [];              // visual representation of links
+//let connection = [];         // links between components
+let wires = {};              // visual representation of links
 let drawingLine = []         // line shown when drawing connection
 
 // add a component
-function makeSwitch (x,y,r, component) {
+function makeOnOffSwitch (x,y,r) {
     let id = generateId()
     let nodes = ['output']
-    objects[id] = new OnOff(x, y, r, id)
+    objects[id] = new OnOffSwitch(x, y, r, id)
     defineNodes( id, nodes, objects[id] )
 }
 
@@ -102,6 +103,20 @@ function makeLed (x,y,r) {
     let nodes = ['input']
     objects[id] = new Led(x, y, r, id)
     defineNodes( id, nodes, objects[id] )
+}
+
+function makeClock (x,y,r, frequency) {
+    let id = generateId()
+    let nodes = ['output']
+    objects[id] = new Clock(x, y, r, id, frequency)
+    defineNodes( id, nodes, objects[id] )
+
+    function clock() {
+        objects[id].changeState
+        setTimeout(clock, frequency);
+    };
+
+    clock();
 }
 
 function makeAnd (x,y,r) {
@@ -153,27 +168,22 @@ function makeXnor (x,y,r) {
     defineNodes( id, nodes, objects[id] )
 }
 
+function makeNode (x,y,id,io) {
+    node = new Node(id, wires, io)
 
-makeSwitch(-1,-2,0)
-makeSwitch(0,-2,0)
-makeSwitch(1,-2,0)
-makeLed(-2,2,0)
-makeLed(-1,2,0)
-//makeLed(-1,2,0)
-//makeLed(0,2,0)
-//makeLed(1,2,0)
-//makeLed(2,2,0)
-makeAnd(-2,0,0)
-//makeOr(-1,0,0)
-//makeNand(0,0,0)
-//makeNor(1,0,0)
-//makeNot(2,0,0)
-//makeXor(3,0,0)
-//makeLed(3,2,0)
-//makeXnor(4,0,0)
-//makeLed(4,2,0)
+    Object.defineProperty(node, 'x', {
+        value: x
+    });
 
-let fps;
+    Object.defineProperty(node, 'y', {
+        value: y
+    });
+    return node
+}
+
+makeClock(0,0,0,1000)
+
+//let fps;
 let lastFrame = performance.now();
 
 function draw() {
@@ -262,22 +272,19 @@ function draw() {
     // show rotate buttons on selected component
     if (selected) {
         locateRotateButtons();
-        for (let i = 0; i < wires.length; i++) {
-            //wires[i].locateWires();
-        }
     }
 
-    drawNodes()
-
     if (drawingLine.length > 0) {
-        drawWire(drawingLine[0])
+        drawTempWire(drawingLine[0])
     }
 
     // draw wires
-    for(let i = 0, l = wires.length; i < l; ++i) {
+    for (let [key, value] of Object.entries(wires)) {
         ctx.setLineDash([]);
-        drawWire(wires[i])
+        drawWire(value)
     }
+
+    drawNodes()
 
     //Smooth Zoom transistion
     if(settings.smoothZoom) {
@@ -316,8 +323,13 @@ canvas.onmousemove = function(e) {
 
     // move object
     if (mouseDown && dragging && !drawing) {
-        objectUnderCursor.object.x = Math.round(mouse.canvas.x);
-        objectUnderCursor.object.y = Math.round(mouse.canvas.y);
+
+        //set to half increments
+        objectUnderCursor.object.x = Math.round(mouse.canvas.x*2)/2;
+        objectUnderCursor.object.y = Math.round(mouse.canvas.y*2)/2;
+
+        //objectUnderCursor.object.x = Math.round(mouse.canvas.x);
+        //objectUnderCursor.object.y = Math.round(mouse.canvas.y);
     }
 
     if (drawing === true) {
@@ -363,14 +375,31 @@ canvas.onmousedown = function(e) {
 
     if (objectUnderCursor.isNode) {
         drawing = true;
-        let id = objectUnderCursor.object.id;
-        let node = objectUnderCursor.node;
-        let x = objectUnderCursor.object.x;
-        let y = objectUnderCursor.object.y;
-        drawingLine.push(new TempLine(id, node, x, y));
 
+        //create temporary line with one ends location set to clicked node
+        drawingLine.push(new TempLine(objectUnderCursor.node));
+
+        // set seconds ends location to cursor
         drawingLine[0].x2 = (e.x / z - 0.5) + origin.x;
         drawingLine[0].y2 = (-e.y / z + 0.5) + origin.y;
+    }
+
+    if (objectUnderCursor.isWire) {
+
+        let node = makeNode(Math.round(mouse.canvas.x*2)/2, Math.round(mouse.canvas.y*2)/2 ,objectUnderCursor.wire.id, 'output')
+        objectUnderCursor.wire.nodes.push(node)
+
+
+        //objects[id].input.connection = objectUnderCursor.wire.id
+
+        //drawing = true;
+        // let id = objectUnderCursor.wire.id;
+        // let x = objectUnderCursor.object.x;
+        // let y = objectUnderCursor.object.y;
+        //drawingLine.push(new TempLine(id, node, x, y));
+
+        //drawingLine[0].x2 = (e.x / z - 0.5) + origin.x;
+        //drawingLine[0].y2 = (-e.y / z + 0.5) + origin.y;
     }
 
     if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
@@ -388,7 +417,6 @@ canvas.onmousedown = function(e) {
 canvas.onmouseup = function(e) {
     e.preventDefault();
 
-    let previousObject = objectUnderCursor.object;
     let previousNode = objectUnderCursor.node;
     getObject(mouse.canvas.x, mouse.canvas.y);
 
@@ -403,7 +431,7 @@ canvas.onmouseup = function(e) {
     }
 
     if (objectUnderCursor.isNode && drawing) {
-        connectNodes(previousObject, previousNode)
+        connectNodes(previousNode)
     }
 
     if (drawing) drawingLine = [];
@@ -417,69 +445,93 @@ canvas.onmouseup = function(e) {
     canvas.style.cursor = "crosshair";
 }
 
-function connectNodes(pObject, pNode) {
-    let connection = objectUnderCursor.object[objectUnderCursor.node].connection
-
-    if (connection !== undefined || !objectUnderCursor.isNode) {
+function connectNodes(pNode) {
+    if (pNode.connected || objectUnderCursor.node.connected || !objectUnderCursor.isNode) {
         return;
     }
 
-    if ( pObject === objectUnderCursor.object ) {
+    if ( pNode.id === objectUnderCursor.node.id) {
         return
     }
 
     // if inputs are both inputs or both outputs reject
-    if ( stringInString('output', pNode) && stringInString('output', objectUnderCursor.node) ) {
+    if ( stringInString('output', pNode.name) && stringInString('output', objectUnderCursor.node.name) ) {
         return
     }
 
-    if ( stringInString('input', pNode) && stringInString('input', objectUnderCursor.node) ) {
+    if ( stringInString('input', pNode.name) && stringInString('input', objectUnderCursor.node.name) ) {
         return
     }
 
-    wires.push(new Wire(pObject.id, pNode, pObject.x, pObject.y));
+    let wire = new Wire( { a: pNode, b: objectUnderCursor.node } );
+    wires[wire.id] = wire
 
-    let id = objectUnderCursor.object.id
-    let node = objectUnderCursor.node
-    let wireId = wires[(wires.length - 1)].id
+    pNode.connected = true;
+    objectUnderCursor.node.connected = true;
+    // set id for wire connected to node
+    pNode.wireId = wire.id;
+    objectUnderCursor.node.wireId = wire.id;
+    wires[wire.id].state
 
-    wires[wires.length - 1].index2 = id
-    wires[wires.length - 1].node2 = node
-    // set connection to wire state
-    objects[pObject.id][pNode].connection = wireId
-    objects[id][node].connection = wireId
-    
 }
+
+
 
 //returns component and node 
 function getObject(x, y) {
+    resetStates()
+    //detect node under cursor
     for (const ele in objects) {
         for (const e of objects[ele].nodes) {
             let a = objects[ele][e].x
             let b = objects[ele][e].y
             //.09 is detection radius from center of node
-            if (isCursorWithinCircle(a, b, 0.09, x, y)) {
-                objectUnderCursor.isComponent = false;
+            if (isCursorWithinCircle(a, b, 0.1, x, y)) {
                 objectUnderCursor.isNode = true;
                 objectUnderCursor.object = objects[ele];
-                objectUnderCursor.node = e;
+                objectUnderCursor.node = objects[ele][e];
                 return; 
             }
         }
     }
-    for (let [key, value] of Object.entries(objects)) {
-        if (value.x === Math.round(x) && value.y === Math.round(y)) {
+    for (let [key, wire] of Object.entries(wires)) {
+        for (const node of wire.nodes) {
+            let a = node.x
+            let b = node.y
+            //.09 is detection radius from center of node
+            if (isCursorWithinCircle(a, b, 0.1, x, y)) {
+                objectUnderCursor.isNode = true;
+                objectUnderCursor.object = node;
+                objectUnderCursor.node = node;
+                return; 
+            }
+        }
+    }
+    //detect component under cursor
+    for (let [key, obj] of Object.entries(objects)) {
+        if (isCursorWithinRectangle(obj.x - (obj.w/2), obj.y - (obj.h/2), obj.w, obj.h, x, y)) {
             objectUnderCursor.isComponent = true;
-            objectUnderCursor.isNode = false;
-            objectUnderCursor.object = objects[key];
-            objectUnderCursor.node = undefined;
+            objectUnderCursor.object = obj;
             return;
         }
     }
-    objectUnderCursor.isComponent = false;
-    objectUnderCursor.isNode = false;
-    objectUnderCursor.object = undefined;
-    objectUnderCursor.node = undefined;
+
+    //detect wire under cursor
+    for (let [key, w] of Object.entries(wires)) {
+        if (lineUnderCursor (w.loc.a.x, w.loc.a.y, w.loc.b.x ,w.loc.b.y, x, y)) {
+            objectUnderCursor.isWire = true;
+            objectUnderCursor.wire = w;
+            return
+        }
+    }
+    function resetStates() {
+        objectUnderCursor.isComponent = false;
+        objectUnderCursor.isNode = false;
+        objectUnderCursor.isWire = false;
+        objectUnderCursor.object = undefined;
+        objectUnderCursor.node = undefined;
+        objectUnderCursor.wire = undefined;
+    }
     return false
 }
 
@@ -487,6 +539,49 @@ function getObject(x, y) {
 function stringInString (a,b) {
     const regex = new RegExp( a, 'gi' );
     return regex.test(b)
+}
+
+function lineUnderCursor (x1,y1,x2,y2,x,y) {
+    let a = { x: x1, y: y1 }
+    let b = { x: x2, y: y2 }
+    let m;
+    let rectx;
+    let recty;
+
+    let width = minMax([a.x, b.x])[1] - minMax([a.x, b.x])[0]
+    let height = minMax([a.y, b.y])[1] - minMax([a.y, b.y])[0]
+
+    if (a.x === b.x) {
+        rectx = minMax([a.x, b.x])[0] - .04
+    } else {
+        rectx = minMax([a.x, b.x])[0]
+    }
+
+    if (a.y === b.y) {
+        recty = minMax([a.y, b.y])[0] - .04
+    } else {
+        recty = minMax([a.y, b.y])[0]
+    }
+
+    if (isCursorWithinRectangle(rectx, recty, Math.max(.08, width), Math.max(.08, height), x, y)) {
+        if (a.x === b.x) {
+            if (Math.abs(a.x - x) < .04) return true;
+        }
+
+        if (a.y === b.y) {
+            if (Math.abs(a.y - y) < .04) return true;
+        }
+
+        //get equation for line
+        m = slope(a.x, a.y, b.x, b.y)
+        b = -(m*a.x - a.y)
+        let line = m*x + b - y
+
+        if (Math.abs(line) < .04) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -569,13 +664,6 @@ undo.onclick = function() {
     wires.pop()
 }
 
-// TODO: MAKE A MENU
-let buttonCount = -4
-testButton.onclick = function() {
-    makeGate(buttonCount,-2,0)
-    buttonCount++
-};
-
 const pointerEventsNone = (x) => {
     let elements = [
         zoomIn,
@@ -604,7 +692,7 @@ function drawRotated(image, x, y, w, h, degrees) {
 }
 
 //draw line function
-function drawLine (x1,y1,x2,y2,width) {
+function drawLine (x1, y1, x2, y2, width) {
     ctx.lineWidth = z/width;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -613,6 +701,7 @@ function drawLine (x1,y1,x2,y2,width) {
 }
 
 function drawNodes() {
+    // get nodes on objects
     for (const ele in objects) {
         for (const e of objects[ele].nodes) {
             let a = objects[ele][e].x
@@ -621,7 +710,18 @@ function drawNodes() {
             drawCircle(a , b, .055)
         }
     }
+
+    //get nodes on wires
+    for (let [key, wire] of Object.entries(wires)) {
+        for (const node of wire.nodes) {
+            let a = node.x
+            let b = node.y
+            ctx.lineWidth = z/30;
+            drawCircle(a , b, .055)
+            }
+        }
 }
+
 
 // remove 'highlight' from all objects
 function removeHighlight () {
@@ -634,6 +734,13 @@ function isCursorWithinCircle(x, y, r, mouseX, mouseY) {
     var distSqr = Math.pow(x - mouseX, 2) + Math.pow(y - mouseY, 2);
 
     if(distSqr < r * r) {
+        return true;
+    }
+    return false;
+}
+
+function isCursorWithinRectangle(x, y, w, h, mouseX, mouseY) {
+    if(mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
         return true;
     }
     return false;
@@ -654,10 +761,45 @@ function drawWire(wire) {
     ctx.strokeStyle = 'rgba(0,0,0,1)';
     ctx.lineWidth = z/20;
     ctx.lineCap = 'round';
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo((-origin.x + wire.loc.a.x + 0.5)* z, (origin.y - wire.loc.a.y + 0.5) * z, z, z);
+    for (const node of wire.nodes) {
+        ctx.lineTo((-origin.x + node.x + 0.5)* z, (origin.y - node.y + 0.5) * z, z, z);
+    }
+    ctx.lineTo((-origin.x + wire.loc.b.x + 0.5)* z, (origin.y - wire.loc.b.y + 0.5) * z, z, z);
+    ctx.stroke();
+}
+
+function drawTempWire(wire) {
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.lineWidth = z/20;
+    ctx.lineCap = 'round';
+    ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo((-origin.x + wire.x1 + 0.5)* z, (origin.y - wire.y1 + 0.5) * z, z, z);
     ctx.lineTo((-origin.x + wire.x2 + 0.5)* z, (origin.y - wire.y2 + 0.5) * z, z, z);
     ctx.stroke();
+}
+
+function slope(x1, y1, x2, y2)
+{
+    if (x2 - x1 != 0)
+    {
+        return (y2 - y1) / (x2 - x1);
+    }
+    return Number.MAX_VALUE;
+}
+
+// get minimum and maximum of array
+function minMax(items) {
+    const map1 = items.map(ele => ele);
+
+    return map1.reduce((acc, val) => {
+        acc[0] = ( acc[0] === undefined || val < acc[0] ) ? val : acc[0]
+        acc[1] = ( acc[1] === undefined || val > acc[1] ) ? val : acc[1]
+        return acc;
+    }, []);
 }
 
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius, fill, stroke) {
@@ -722,7 +864,7 @@ function drawRotatedImg(x, y, shape, degrees) {
     ctx.rotate(degrees * -Math.PI / 180);
     ctx.translate(-a, -b)
 
-    shape(x, y, xOrigin, yOrigin)
+    shape(x, y, xOrigin, yOrigin, z)
 
     ctx.restore();
 }
@@ -744,30 +886,38 @@ function drawRotatedImg(x, y, shape, degrees) {
 // ✓- connecting a gate output without wires at each input breaks the program 
 // ✓- wire can't be drawn backwards
 // - components can be moved into occupied cells
-// - gates only work if both nodes have wires
-// - can add multiple wires to input.. ?
+// ✓- gates only work if both nodes have wires
+// ✓- can add multiple wires to input.. ?
+// ✓- making a latch breaks the program...
+// - dragging a component from the menu back to the menu should destroy it
 
 // TODO:
 // ADD:
 // - create IC function
 //     - add name component function
-//
+// - make wires selectable / add points
+
+// ✓- add clock
 // ✓- pathfinding for lines
 //      - store on creation so its not recalculated
 //      - enable / disable pathfinding (create straight line)
-// - make lines selectable / add points
-// - drag and drop menu
+// ✓- drag and drop menu
 // - comment code
 // ✓- first components: switch & LED
 // - open hand cursor when something draggable is under cursor
 // - draw cursor when node is under cursor
 // - if zoomed out (% ?) disable node selection
 // - add right click functions
-// - optimize draw function
+// ✓- optimize draw function
 // - bespoke outline for component
 // - hide rotate buttons if zoom < XX%
 // - nodes should show state
 // - wire should show state
-// ✓- basic undo
+// - basic undo
+// - delete component
+// - select and rotate a group of components
+// - add transistor
+// - add 'power'
+// - select wire nodes
 
 // - move gui functions to seperate file

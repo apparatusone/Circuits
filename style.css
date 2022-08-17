@@ -1,3 +1,8 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
 body {
     background: rgb(199, 199, 199);
     margin: 0;
@@ -23,7 +28,6 @@ canvas {
     top: 0;
     left: 0;
     outline: none;
-    border: 1px solid;
 }
 
 #canvas {
@@ -50,75 +54,68 @@ canvas {
 }
 
 #menu-close {
-    position: fixed;
-    top: 50vh;
+    position: absolute;
+    top: calc(50% - var(--menu-close-height)/2);
     /* left: var(--menu-width); */
+    color :white;
     left: 300px;
-    width: 15px;
-    height: 40px;
-    background-color: #26CE00;
+    width: 17px;
+    text-align: left;
+    padding-left: 3px;
+    --menu-close-height: 45px;
+    height: var(--menu-close-height);
+    background-color: #2d2d2d;
+    border-radius: 0 10px 10px 0;
     z-index: 5;
 }
 
 #action-menu {
     position: fixed;
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center;
-    top: -5px;
+    top: 6px;
     left: 50vw;
+    width: 200px;
+    height: 40px;
     color: white;
-    background: rgba(0, 7, 21, 0.654);
+    background: rgba(0, 7, 21, 0.738);
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
-    border-radius: 0 0 10px 10px;
+    border-radius: 10px;
     z-index: 2;
 }
 
 #undo {
-    width: 45px;
-    height: 45px;
-    font-size: 2.5em;
-}
-
-#zoomlevel, #zoom-in, #zoom-out{
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
+    font-size: 2em;
+    width: 50px;
 }
 
 #zoomlevel {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    width: 60px;
-    height: 29px;
-    border: 2px solid rgba(0, 0, 0, 0.806);
-    background-color: rgba(255, 255, 255, 0.492) ;
-    border-radius: 10px;
+    flex-grow: 2;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1.1em;
+    width: 100px;
+    height: 40px;
+    border-left: solid 2px;
+    border-right: solid 2px;
+    border-color: rgb(93, 93, 93);
     z-index: 1;
 }
 
 #zoom-in, #zoom-out {
-    position: fixed;
-    width: 29px;
-    height: 29px;
-    border: 2px solid rgba(0, 0, 0, 0.806);
-    background-color: rgba(255, 255, 255, 0.492) ;
-    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    width: 40px;
     z-index: 1;
 }
 
-#zoom-in {
-    top: 15px;
-    left: 78px;
-}
-
 #zoom-out {
-    top: 15px;
-    left: 110px;
+    height: 40px;
+    border-left: solid 2px;
+    border-color: rgb(93, 93, 93);
 }
 
 #rotate-left, #rotate-right {
@@ -140,21 +137,6 @@ canvas {
     pointer-events: none;
 }
 
-#addTest {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    top: 55px;
-    left: 15px;
-    width: 100px;
-    height: 40px;
-    border: 2px solid rgba(0, 0, 0, 0.806);
-    background-color: rgba(255, 255, 255, 0.492) ;
-    border-radius: 10px;
-    z-index: 1;
-}
-
 .a {
     fill:none;
 }
@@ -166,3 +148,8 @@ canvas {
 .b {
     fill:#fff;
 }
+
+.animated {
+    transition-property: left;
+    transition-duration: .7s;
+  }

@@ -15,17 +15,15 @@
 <body>
     <div id="action-menu">
         <button id="undo" title="Undo">&#9100</button>
+        <button id="zoomlevel"></button>
+        <button id="zoom-in">+</button>
+        <button id="zoom-out">-</button>
     </div>
 
-    <canvas id="menu-canvas" class="unselectable"></canvas>
+    <canvas id="menu-canvas" class="unselectable animated"></canvas> -->
+    <div id="menu-background" class="animated"></div>
+    <button id="menu-close" class="animated">&lt;</button>
 
-    <div id="menu-background"></div>
-    <button id="menu-close">&lt;</button>
-
-    <button id="zoomlevel"></button>
-    <button id="addTest">Add Test Component</button>
-    <button id="zoom-in">+</button>
-    <button id="zoom-out">-</button>
     <input id="rotate-left" class="hide" type="image" src="svg/rotateleft.svg" />
     <input id="rotate-right" class="hide" type="image" src="svg/rotateright.svg" />
     <canvas id="canvas"></canvas>

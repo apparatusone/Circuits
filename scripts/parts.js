@@ -1,58 +1,69 @@
 'use strict';
 
+
+
+
+function stringInString (a,b) {
+    const regex = new RegExp( a, 'gi' );
+    return regex.test(b)
+}
+
+
+
+
 class Wire {
-    constructor(index1, node1) {
-        this.index1 = index1;
-        this.index2 = index1;
-        this.node1 = node1;
-        this.node2 = node1;
-        this.wireCoordinates;
+    constructor(node) {
+        this.node = node
+
         this.id = generateId();
-        this.direct;                    // connect directly or along grid
+        this.nodes = [];
+
+        // connect directly or along grid
+        this.direct = true             
     }
 
-    type = 'wire'
-    wireCoordinates = [4,3] // test wire node
-
-    get x1 () {
-        return objects[this.index1][this.node1].x
+    get loc() {
+        return { 
+            a: { x: this.node.a.x , y: this.node.a.y },
+            b: { x: this.node.b.x , y: this.node.b.y },
+        }
     }
 
-    get y1 () {
-        return objects[this.index1][this.node1].y
-    }
+    //reduced(array) { return array.reduce((partialSum, a) => partialSum + a, 0); }
 
-    get x2 () {
-        return objects[this.index2][this.node2].x
-    }
-
-    get y2 () {
-        return objects[this.index2][this.node2].y
-    }
-
-    // get state of output, set wire state
     get state () {
-        if (this.node1 === 'output') {
-            return objects[this.index1].state
-        } else if (this.node2 === 'output') {
-            return objects[this.index2].state
+        let state;
+        if (this.node.a.name === 'output') {
+            state = this.node.a.state;
         } else {
-            return 0;
+            state = this.node.b.state;
         }
 
+        this.node.a.state = state;
+        this.node.b.state = state;
+
+        if (stringInString ('input',this.node.a.name)) {
+            this.node.a.state = state;
+        } else {
+            this.node.b.state = state;
+        }
+
+        for (let n of this.nodes) {
+            n.setter = state
+        }
+        return state;
     }
 }
 
 class TempLine {
-    constructor(index1, node1) {
-        this.index1 = index1;
-        this.node1 = node1;
+    constructor(node) {
+        this.node = node;
         this.x2;
         this.y2;
     }
 
-    get x1 () { return objects[this.index1][this.node1].x }
-    get y1 () { return objects[this.index1][this.node1].y }
+    get x1 () { return this.node.x }
+    get y1 () { return this.node.y }
 }
 
 class Generic {
@@ -61,17 +72,29 @@ class Generic {
         this.y = y;
         this.r = r;
         this.id = id;
+
+        this.w = 0.5;
+        this.h = 0.6;
+        this.highlight = false;
+        //location of the nodes relative to the center of the cell
+        this.offset =  {
+            input1: { x: -0.25, y: -0.5 },
+            input2: { x: 0.25, y: -0.5 },
+            output: { x: 0, y: 0.5 },
+        }
     }
 
-    type = 'non-interactive'
+    //type = 'non-interactive'
     img = 'svg'
-    highlight = false;
 
-//location of the nodes relative to the center of the cell
-    offset = {
-        input1: { x: -0.25, y: -0.5 },
-        input2: { x: 0.25, y: -0.5 },
-        output: { x: 0, y: 0.5 },
+    temp = 0;
+
+    get state () {
+        if (this.temp !== this.logic()) {
+            let state = this.logic();
+            this.temp = state;
+            this.output.setter = state
+        }
     }
 
     get gridCoordinates () {
@@ -90,72 +113,32 @@ class Generic {
     }
 }
 
-class OnOff extends Generic{
-    constructor(x,y,r,id) {
-        super(x,y,r,id);
-
-        this.state = 0;
-        this.image = document.getElementById('onoff');
+class Node {
+    constructor(id,connectionType,name) {
+        this.name = name;
+        this.connectionType = connectionType
+        this.type = 'node'
+        this.id = id;
+        this.wireId;
+        this.state = 0
+        this.connected = false;
     }
 
-    type = 'interactive'
-    img = 'button'
-    color = '#27CF00'
-
-    offset = {
-        output: { x: 0, y: 0.5 },
-    }
-// changes state of switch between 0 and 1
-    get changeState () {
-        this.state ^= 1;
+    set setter(state) {
+        this.state = state
+        if (this.wireId) wires[this.wireId].state
     }
 
-    shape (x, y, a, b) {
-        ctx.strokeStyle = 'rgba(0,0,0,1)';
-        ctx.lineWidth = z/15;
-        ctx.setLineDash([]);
-
-        const top = (b + y + .2) * z;
-        const left = (-a + x + .3) * z;
-        const width = .4*z;
-        const height = .6*z;
-        const radius = .075*z;
-        
-        ctx.beginPath();
-        ctx.moveTo(left + radius, top);
-        ctx.lineTo(left + width - radius, top);
-        ctx.arcTo(left + width, top, left + width, top + radius, radius);
-        ctx.lineTo(left + width, top + height - radius);
-        ctx.arcTo(left + width, top + height, left + width - radius, top + height, radius);
-        ctx.lineTo(left + radius, top + height);
-        ctx.arcTo(left, top + height, left, top + height - radius, radius);
-        ctx.lineTo(left, top + radius);
-        ctx.arcTo(left, top, left + radius, top, radius);
-        ctx.stroke();
-        ctx.fill()
-
-        ctx.lineWidth = z/25;
-        ctx.beginPath();
-        ctx.lineTo((-a + x + 0.5) * z, (b + y + .3) * z);
-        ctx.lineTo((-a + x + 0.5) * z, (b + y + .4) * z);
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.arc((-a + x + 0.5)* z, (b + y + 0.65) * z, .06*z, 0, 2 * Math.PI);
-        ctx.stroke();
-
-        ctx.lineCap = 'butt';
-        ctx.beginPath();
-        ctx.lineTo((-a + x + 0.5) * z, (b + y + 0) * z);
-        ctx.lineTo((-a + x + 0.5) * z, (b + y + .2) * z);
-        ctx.stroke();
-    }
+    get x () { return this.connectionType[this.id].x + this.connectionType[this.id].offset[this.name].x };
+    get y () { return this.connectionType[this.id].y + this.connectionType[this.id].offset[this.name].y };
 }
-
 
 class Led extends Generic{
     constructor(x,y,r,id) {
         super(x,y,r,id);
+
+        this.w = 0.4
+        this.h = 0.6
     }
 
     type = 'non-interactive'
@@ -168,58 +151,72 @@ class Led extends Generic{
     }
 
     get state () {
-        let wire = wires.find(o => o.id === this.input.connection);
+            return this.logic();
+    }
 
-        if ( wire !== undefined ) {
-            if (wire.state) {
-                return 1;
-            } else {
-                return 0;
-            }
+    logic() {
+        if (this.input.state) {
+            return 1;
+        } else {
+            return 0;
         }
     }
 
-    shape (x1, y1, a, b) {
-        ctx.strokeStyle = 'rgba(0,0,0,1)';
-        ctx.lineWidth = z/15;
-        ctx.setLineDash([]);
-    
-        ctx.beginPath();
-        ctx.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .10 * z, 0, 1 * Math.PI, true);
-        ctx.lineTo((-a+ x1 + 0.4) * z, (b + y1 + .75) * z);
-        ctx.lineTo((-a + x1 + 0.6) * z, (b + y1 + .75) * z);
-        ctx.lineTo((-a + x1 + 0.6) * z, (b + y1 + 0.5) * z);
-        ctx.stroke();
-        ctx.fill();
-    
-        ctx.lineWidth = z/25;
-        ctx.lineCap = 'butt';
-        ctx.beginPath();
-        ctx.lineTo((-a + x1 + 0.5) * z, (b + y1 + .75) * z);
-        ctx.lineTo((-a + x1 + 0.5) * z, (b + y1 + 1) * z);
-        ctx.stroke();
-    }
+
+    shape = ledPath
 }
 
-class NandGate extends Generic {
+class OnOffSwitch extends Generic{
     constructor(x,y,r,id) {
         super(x,y,r,id);
 
-        this.image = document.getElementById('nandgate');
-    }
-// logical element of the gate
-    get state () {
-        let wire1 = wires.find(o => o.id === this.input1.connection);
-        let wire2 = wires.find(o => o.id === this.input2.connection);
-
-        if ( wire1 !== undefined && wire2 !== undefined ) {
-            if (!wire1.state || !wire2.state) {
-                return 1;
-            } else {
-                return 0;
-            }
+        this.w = 0.5;
+        this.h = 0.65;
+        this.offset = {
+            output: { x: 0, y: 0.5 },
         }
     }
+
+    type = 'interactive'
+    img = 'button'
+    color = '#27CF00'
+
+    state = 0
+
+    // changes state of switch between 0 and 1
+    get changeState () {
+        this.state ^= 1;
+        this.output.setter = this.state
+    }
+
+    shape = onOffSwitchPath
+}
+
+class Clock extends Generic{
+    constructor(x,y,r,id,frequency) {
+        super(x,y,r,id);
+
+        this.w = 0.5;
+        this.h = 0.5;
+        this.frequency = frequency
+        this.offset = {
+            output: { x: 0.5, y: 0.0 },
+        }
+    }
+
+    type = 'interactive'
+    img = 'button'
+    color = '#27CF00'
+
+    state = 0
+    frequency = 500
+
+    get changeState () {
+        this.state ^= 1;
+        this.output.setter = this.state
+    }
+
+    shape = clockPath
 }
 
 class AndGate extends Generic {
@@ -229,17 +226,27 @@ class AndGate extends Generic {
         this.image = document.getElementById('andgate');
     }
 
-    get state () {
-        let wire1 = wires.find(o => o.id === this.input1.connection);
-        let wire2 = wires.find(o => o.id === this.input2.connection);
+    logic() {
+        if (this.input1.state && this.input2.state) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
 
-        //  added first if to fix break when output is connected to led without both inputs connected
-        if ( wire1 !== undefined && wire2 !== undefined ) {
-            if (wire1.state && wire2.state) {
-                return 1;
-            } else {
-                return 0;
-            }
+class NandGate extends Generic {
+    constructor(x,y,r,id) {
+        super(x,y,r,id);
+
+        this.image = document.getElementById('nandgate');
+    }
+
+    logic() {
+        if (!this.input1.state || !this.input2.state) {
+            return 1;
+        } else {
+            return 0;
         }
     }
 }
@@ -251,16 +258,11 @@ class OrGate extends Generic {
         this.image = document.getElementById('orgate');
     }
 
-    get state () {
-        let wire1 = wires.find(o => o.id === this.input1.connection);
-        let wire2 = wires.find(o => o.id === this.input2.connection);
-
-        if ( wire1 !== undefined && wire2 !== undefined ) {
-            if (wire1.state || wire2.state) {
-                return 1;
-            } else {
-                return 0;
-            }
+    logic() {
+        if (this.input1.state || this.input2.state) {
+            return 1;
+        } else {
+            return 0;
         }
     }
 }
@@ -272,16 +274,43 @@ class NorGate extends Generic {
         this.image = document.getElementById('norgate');
     }
 
-    get state () {
-        let wire1 = wires.find(o => o.id === this.input1.connection);
-        let wire2 = wires.find(o => o.id === this.input2.connection);
+    logic() {
+        if (!this.input1.state && !this.input2.state) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
 
-        if ( wire1 !== undefined && wire2 !== undefined ) {
-            if (!wire1.state && !wire2.state) {
-                return 1;
-            } else {
-                return 0;
-            }
+class XorGate extends Generic {
+    constructor(x,y,r,id) {
+        super(x,y,r,id);
+
+        this.image = document.getElementById('xorgate');
+    }
+
+    logic() {
+        if (this.input1.state * !this.input2.state + !this.input1.state * this.input2.state) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
+class XnorGate extends Generic {
+    constructor(x,y,r,id) {
+        super(x,y,r,id);
+
+        this.image = document.getElementById('xnorgate');
+    }
+
+    logic() {
+        if (this.input1.state * this.input2.state + !this.input1.state * !this.input2.state) {
+            return 1;
+        } else {
+            return 0;
         }
     }
 }
@@ -298,84 +327,148 @@ class NotGate extends Generic {
         output: { x: 0, y: 0.5 },
     }
 
-    get state () {
-        let wire1 = wires.find(o => o.id === this.input.connection);
-
-        if ( wire1 !== undefined ) {
-            if (!wire1.state) {
-                return 1;
-            } else {
-                return 0;
-            }
+    logic() {
+        if (!this.input.state) {
+            return 1;
+        } else {
+            return 0;
         }
     }
 }
-
-class XorGate extends Generic {
-    constructor(x,y,r,id) {
-        super(x,y,r,id);
-
-        this.image = document.getElementById('xorgate');
-    }
-
-    get state () {
-        let wire1 = wires.find(o => o.id === this.input1.connection);
-        let wire2 = wires.find(o => o.id === this.input2.connection);
-
-        if ( wire1 !== undefined && wire2 !== undefined ) {
-            if (wire1.state * !wire2.state + !wire1.state * wire2.state) {
-                return 1;
-            } else {
-                return 0;
-            }
-        }
-    }
-}
-
-class XnorGate extends Generic {
-    constructor(x,y,r,id) {
-        super(x,y,r,id);
-
-        this.image = document.getElementById('xnorgate');
-    }
-
-    get state () {
-        let wire1 = wires.find(o => o.id === this.input1.connection);
-        let wire2 = wires.find(o => o.id === this.input2.connection);
-
-        if ( wire1 !== undefined && wire2 !== undefined ) {
-            if (wire1.state * wire2.state + !wire1.state * !wire2.state) {
-                return 1;
-            } else {
-                return 0;
-            }
-        }
-    }
-}
-
 
 // gets list of nodes and adds nodes to gate
 function defineNodes(id,nodes,object) {
+    //set scope
+    let self = objects[id]
+
     for (const node of nodes) {
-        Object.defineProperty(object, node, {
-            value: {
-                //changing scope 
-                self: objects[id],
-                //id of the wire connected to the node
-                connection: undefined,
-                get x () { return this.self.x + this.self.offset[node].x },
-                get y () { return this.self.y + this.self.offset[node].y },
-                }
-        });
+        if (stringInString ('output',node)) {
+            Object.defineProperty(object, node, {
+                value: 
+                    new Node(self.id, objects, node) 
+            });
+        }
     }
 
-    // addes list of nodes to gate
+    for (const node of nodes) {
+        let targetObj = new Node(self.id, objects, node)
+        //if node is an input, add proxy
+        if (stringInString ('input',node)) {
+            Object.defineProperty(object, node, {
+                value: 
+                    new Proxy(targetObj, {
+                        set: function (target, key, value) {
+                            console.log(`${key} set to ${value}`);
+                            target[key] = value;
+                            //console.log(self)
+                            self.state
+                            return true;
+                        }
+                    })
+            });
+        }
+    }
+
+    // adds list of nodes to gate
     Object.defineProperty(object, 'nodes', {
         value: nodes
     });
 }
 
 
+
+// paths
+function ledPath (x1, y1, a, b, z) {
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.lineWidth = z/15;
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .10 * z, 0, 1 * Math.PI, true);
+    ctx.lineTo((-a+ x1 + 0.4) * z, (b + y1 + .75) * z);
+    ctx.lineTo((-a + x1 + 0.6) * z, (b + y1 + .75) * z);
+    ctx.lineTo((-a + x1 + 0.6) * z, (b + y1 + 0.5) * z);
+    ctx.stroke();
+    ctx.fill();
+
+    ctx.lineWidth = z/25;
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.lineTo((-a + x1 + 0.5) * z, (b + y1 + .75) * z);
+    ctx.lineTo((-a + x1 + 0.5) * z, (b + y1 + 1) * z);
+    ctx.stroke();
+}
+
+function clockPath (x1, y1, a, b, z) {
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.lineWidth = z/15;
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .25 * z, 0, 2 * Math.PI, true);
+    ctx.stroke();
+    ctx.fill();
+
+    ctx.lineWidth = z/25;
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.lineTo((-a + x1 + 0.75) * z, (b + y1 + 0.5) * z);
+    ctx.lineTo((-a + x1 + 1.0) * z, (b + y1 + 0.5) * z);
+    ctx.stroke();
+
+    ctx.lineWidth = z/40;
+    ctx.beginPath();
+    ctx.lineTo((-a + x1 + 0.38) * z, (b + y1 + 0.6) * z);
+    ctx.lineTo((-a + x1 + 0.38) * z, (b + y1 + 0.41) * z);
+    ctx.lineTo((-a + x1 + 0.46) * z, (b + y1 + 0.41) * z);
+    ctx.lineTo((-a + x1 + 0.46) * z, (b + y1 + 0.59) * z);
+    ctx.lineTo((-a + x1 + 0.54) * z, (b + y1 + 0.59) * z);
+    ctx.lineTo((-a + x1 + 0.54) * z, (b + y1 + 0.41) * z);
+    ctx.lineTo((-a + x1 + 0.62) * z, (b + y1 + 0.41) * z);
+    ctx.lineTo((-a + x1 + 0.62) * z, (b + y1 + 0.6) * z);
+    ctx.stroke();
+}
+
+function onOffSwitchPath (x, y, a, b, z) {
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.lineWidth = z/15;
+    ctx.setLineDash([]);
+
+    const top = (b + y + .2) * z;
+    const left = (-a + x + .3) * z;
+    const width = .4*z;
+    const height = .6*z;
+    const radius = .075*z;
+    
+    ctx.beginPath();
+    ctx.moveTo(left + radius, top);
+    ctx.lineTo(left + width - radius, top);
+    ctx.arcTo(left + width, top, left + width, top + radius, radius);
+    ctx.lineTo(left + width, top + height - radius);
+    ctx.arcTo(left + width, top + height, left + width - radius, top + height, radius);
+    ctx.lineTo(left + radius, top + height);
+    ctx.arcTo(left, top + height, left, top + height - radius, radius);
+    ctx.lineTo(left, top + radius);
+    ctx.arcTo(left, top, left + radius, top, radius);
+    ctx.stroke();
+    ctx.fill()
+
+    ctx.lineWidth = z/25;
+    ctx.beginPath();
+    ctx.lineTo((-a + x + 0.5) * z, (b + y + .3) * z);
+    ctx.lineTo((-a + x + 0.5) * z, (b + y + .4) * z);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.arc((-a + x + 0.5)* z, (b + y + 0.65) * z, .06*z, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.lineTo((-a + x + 0.5) * z, (b + y + 0) * z);
+    ctx.lineTo((-a + x + 0.5) * z, (b + y + .2) * z);
+    ctx.stroke();
+}
 
 
 
