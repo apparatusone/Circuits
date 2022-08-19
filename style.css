@@ -53,7 +53,7 @@ canvas {
     z-index: 2;
 }
 
-#menu-close {
+#menu-hide {
     position: absolute;
     top: calc(50% - var(--menu-close-height)/2);
     /* left: var(--menu-width); */
@@ -70,25 +70,26 @@ canvas {
 }
 
 #action-menu {
-    position: fixed;
+    --action-width: 260px;
+    position: fixed; 
     display: flex;
     justify-content: space-around;
     align-items: center;
     top: 6px;
-    left: 50vw;
-    width: 200px;
+    left: calc(50% - var(--action-width)/2);
+    width: var(--action-width);
     height: 40px;
     color: white;
     background: rgba(0, 7, 21, 0.738);
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
     border-radius: 10px;
-    z-index: 2;
+    z-index: 5;
 }
 
 #undo {
     font-size: 2em;
-    width: 50px;
+    width: 47px;
 }
 
 #zoomlevel {
@@ -100,23 +101,49 @@ canvas {
     border-left: solid 2px;
     border-right: solid 2px;
     border-color: rgb(93, 93, 93);
-    z-index: 1;
+    z-index: 5;
 }
 
-#zoom-in, #zoom-out {
+#zoom-in, #zoom-out{
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 2em;
-    width: 40px;
-    z-index: 1;
+    width: 43px;
+    z-index: 5;
 }
 
-#zoom-out {
+#zoom-out, #select {
     height: 40px;
     border-left: solid 2px;
     border-color: rgb(93, 93, 93);
 }
+
+#select {
+    font-size: 1.1em;
+    width: 47px;
+    z-index: 5;
+}
+
+.action-menu-item-highlight {
+    border: 1px dashed rgba(255, 255, 255, 0.276);
+    background-color: rgba(35, 130, 255, 0.709);
+    border-radius: 0 10px 10px 0;
+}
+
+.menu-item-highlight {
+    border: 1px dashed rgba(255, 255, 255, 0.276);
+    background-color: rgba(35, 130, 255, 0.709);
+    border-radius: 10px;
+}
+
+.menu-item-unhighlight {
+    border: 2px solid #A2A2A2;
+    background-color: #8a8a8a17;
+    border-radius: 10px;
+}
+
+
 
 #rotate-left, #rotate-right {
     position: fixed;
@@ -153,3 +180,62 @@ canvas {
     transition-property: left;
     transition-duration: .7s;
   }
+
+
+
+
+  /* right click stuff */
+#right-click{
+    position:absolute;
+    display: none; /* change to flex to display menu */
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: column;
+    gap: 2px;
+    z-index:100;
+}
+
+menu {
+    left:0px;
+    top:0px;
+    padding: 5px;
+    margin:0;
+    border: .6px double #858387d6;
+    outline: .1px solid rgba(0, 0, 0, 0.833);
+    /* outline-offset: -1.5px; */
+    border-radius: 7px;
+    background-color: #2b2b2baa;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    font-weight:normal;
+    white-space:nowrap;
+}
+
+.options:hover{
+    background-color: #2289ffe7;
+}
+
+.options {
+    display: flex;
+    align-items: center;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #F0F0F0;
+    flex: 0,1,auto;
+    text-align: left;
+    padding-left: 10px;
+    font-size: 12px;
+    border-radius: 3px;
+    width: 150px;
+    height: 20px;
+}
+
+/* horizontal line */
+hr {
+    height: 1px;
+    border: 0;
+    border-top: 1px solid;
+    border-color: rgba(204, 204, 204, 0.288);
+    width: 145px;
+    margin: .1em 0;
+    padding: 0;
+}

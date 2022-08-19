@@ -12,6 +12,10 @@ const zoomOut = document.getElementById("zoom-out");
 const rotateLeft = document.getElementById("rotate-left");
 const rotateRight = document.getElementById("rotate-right");
 const undo = document.getElementById("undo");
+const selectButton = document.getElementById("select");
+const deleteButton = document.getElementById("delete");
+const rightClickMenu = document.getElementById("right-click");
+rightClickMenu.addEventListener("click", toggleRightClickMenu, false);
 
 const gridDot = document.getElementById('source');
 const onoff = document.getElementById('onoff');
@@ -32,6 +36,12 @@ let smoothZoom = z;
 let dragging = false;
 let drawing = false;
 let mouseDown = false;
+let rightClick = false;
+
+// function to select components
+let select = false;
+
+// TODO: maybe refactor selected variable out
 let selected = false;
 
 let objectUnderCursor = {
@@ -89,9 +99,10 @@ let objects = {};            // components
 //let connection = [];         // links between components
 let wires = {};              // visual representation of links
 let drawingLine = []         // line shown when drawing connection
+let drawingRect = []
 
 // add a component
-function makeOnOffSwitch (x,y,r) {
+function makeSwitch (x,y,r) {
     let id = generateId()
     let nodes = ['output']
     objects[id] = new OnOffSwitch(x, y, r, id)
@@ -105,7 +116,7 @@ function makeLed (x,y,r) {
     defineNodes( id, nodes, objects[id] )
 }
 
-function makeClock (x,y,r, frequency) {
+function makeClock (x,y,r, frequency = 1000) {
     let id = generateId()
     let nodes = ['output']
     objects[id] = new Clock(x, y, r, id, frequency)
@@ -181,7 +192,7 @@ function makeNode (x,y,id,io) {
     return node
 }
 
-makeClock(0,0,0,1000)
+//makeClock(0,0,0,1000)
 
 //let fps;
 let lastFrame = performance.now();
@@ -236,6 +247,17 @@ function draw() {
         }
     }
 
+    // X @ center of canvas
+    ctx.lineWidth = z/60;
+    ctx.strokeStyle = '#6F6F6F';
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo((-origin.x - .1 + 0.5)* z, (origin.y + .1 + 0.5) * z, z, z);
+    ctx.lineTo((-origin.x + .1 + 0.5)* z, (origin.y - .1 + 0.5) * z, z, z);
+    ctx.moveTo((-origin.x - .1 + 0.5)* z, (origin.y - .1 + 0.5) * z, z, z);
+    ctx.lineTo((-origin.x + .1 + 0.5)* z, (origin.y + .1 + 0.5) * z, z, z);
+    ctx.stroke();
+
     // draw objects
     for (let [key, value] of Object.entries(objects)) {
         ctx.fillStyle = "rgba(0,0,0,.4)";
@@ -281,10 +303,28 @@ function draw() {
     // draw wires
     for (let [key, value] of Object.entries(wires)) {
         ctx.setLineDash([]);
+        ctx.lineJoin = 'round';
         drawWire(value)
     }
 
     drawNodes()
+
+    if (select && drawingRect.length) {
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#006eff';
+        ctx.lineCap = 'square';
+        ctx.setLineDash([4,15]);
+        ctx.beginPath();
+        ctx.moveTo(drawingRect[0].x, drawingRect[0].y);
+        ctx.lineTo(drawingRect[0].x + drawingRect[0].w, drawingRect[0].y);
+        ctx.lineTo(drawingRect[0].x + drawingRect[0].w, drawingRect[0].y + drawingRect[0].h);
+
+        ctx.moveTo(drawingRect[0].x, drawingRect[0].y);
+        ctx.lineTo(drawingRect[0].x, drawingRect[0].y + drawingRect[0].h);
+        ctx.lineTo(drawingRect[0].x + drawingRect[0].w, drawingRect[0].y + drawingRect[0].h);
+
+        ctx.stroke();
+    }
 
     //Smooth Zoom transistion
     if(settings.smoothZoom) {
@@ -316,7 +356,7 @@ canvas.onmousemove = function(e) {
     mouse.canvas.y = Number.parseFloat((-e.y / z + origin.y) + .5).toFixed(2);
 
     // move canvas
-    if (mouseDown && !dragging && !drawing) {
+    if (mouseDown && !dragging && !drawing && !select) {
         origin.x = origin.prev.x + (origin.click.x - e.x)/z;
         origin.y = origin.prev.y - (origin.click.y - e.y)/z;
     };
@@ -336,7 +376,27 @@ canvas.onmousemove = function(e) {
         drawingLine[0].x2 = (e.x / z - 0.5) + origin.x
         drawingLine[0].y2 = (-e.y / z + 0.5) + origin.y
     }
+
+    if (select && drawingRect.length) {
+        drawingRect[0].w = e.x - origin.click.x
+        drawingRect[0].h = e.y - origin.click.y
+
+        // get objects within selected rectangle
+        for (let [key, value] of Object.entries(objects)) {
+            let x1 = (origin.click.x / z + origin.x) - 0.5
+            let y1 = (-origin.click.y / z + origin.y) + 0.5
+
+            if (!((x1 - value.x) * (mouse.canvas.x - value.x) <= 0)) continue
+            if (!((y1 - value.y) * (mouse.canvas.y - value.y) <= 0)) continue
+
+            value.highlight = true;
+        }
+
+        return
+    }
 };
+
+
 
 canvas.onmousewheel = function(e) {
     e.preventDefault();
@@ -357,7 +417,6 @@ canvas.onmousewheel = function(e) {
 
 canvas.onmousedown = function(e) {
     e.preventDefault();
-    mouseDown = true;
 
     origin.click.x = e.x;
     origin.click.y = e.y;
@@ -365,6 +424,21 @@ canvas.onmousedown = function(e) {
     origin.prev.y = origin.y;
 
     getObject(mouse.canvas.x,mouse.canvas.y)
+
+    // detect right click
+    if (e.button === 2) {
+        if (objectUnderCursor.isComponent) {
+            removeHighlight();
+            objectUnderCursor.object.highlight = true;
+        }
+        rightClick = true;
+        return
+    }
+
+    if (select) {
+        drawingRect.push(rect = {x: origin.click.x, y: origin.click.y, w: 0, h: 0})
+        return
+    }
 
     if (objectUnderCursor.isComponent) {
         removeHighlight();
@@ -389,25 +463,16 @@ canvas.onmousedown = function(e) {
         let node = makeNode(Math.round(mouse.canvas.x*2)/2, Math.round(mouse.canvas.y*2)/2 ,objectUnderCursor.wire.id, 'output')
         objectUnderCursor.wire.nodes.push(node)
 
-
-        //objects[id].input.connection = objectUnderCursor.wire.id
-
-        //drawing = true;
-        // let id = objectUnderCursor.wire.id;
-        // let x = objectUnderCursor.object.x;
-        // let y = objectUnderCursor.object.y;
-        //drawingLine.push(new TempLine(id, node, x, y));
-
-        //drawingLine[0].x2 = (e.x / z - 0.5) + origin.x;
-        //drawingLine[0].y2 = (-e.y / z + 0.5) + origin.y;
     }
 
     if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
+        rightClickMenu.style.display = "none";
         removeHighlight();
         selected = false;
         rotateButtons('hide')
     }
 
+    mouseDown = true;
     //start timer for mouse click duration
     timerStart = new Date().getTime() / 1000                        
     pointerEventsNone('add');
@@ -420,9 +485,16 @@ canvas.onmouseup = function(e) {
     let previousNode = objectUnderCursor.node;
     getObject(mouse.canvas.x, mouse.canvas.y);
 
-    mouseDown = false;
+    mouseDown = false
     //end timer for mouse click duration
     timerEnd = new Date().getTime() / 1000;
+
+    if (select) {
+        selectButton.classList.remove("action-menu-item-highlight");
+        drawingRect = [];
+        select = false;
+        return
+    }
 
     if (objectUnderCursor.isComponent) {
         if (mouseClickDuration(.2)) {
@@ -436,6 +508,7 @@ canvas.onmouseup = function(e) {
 
     if (drawing) drawingLine = [];
 
+    rightClick = false;
     dragging = false;
     drawing = false;
     if (mouseClickDuration(.2) && selected) {
@@ -577,7 +650,7 @@ function lineUnderCursor (x1,y1,x2,y2,x,y) {
         b = -(m*a.x - a.y)
         let line = m*x + b - y
 
-        if (Math.abs(line) < .04) {
+        if (Math.abs(line) < .07) {
             return true;
         }
     }
@@ -664,6 +737,25 @@ undo.onclick = function() {
     wires.pop()
 }
 
+selectButton.onclick = function() {
+    if (select) {
+        select = false;
+        selectButton.classList.remove("action-menu-item-highlight")
+    } else {
+        select = true;
+        selectButton.classList.add("action-menu-item-highlight")
+    }
+}
+
+deleteButton.onclick = function() {
+    if (!objectUnderCursor.object) return
+    deleteComponent(objectUnderCursor.object.id)
+}
+
+function toggleRightClickMenu() {
+    rightClickMenu.style.display = 'none';
+}
+
 const pointerEventsNone = (x) => {
     let elements = [
         zoomIn,
@@ -707,7 +799,7 @@ function drawNodes() {
             let a = objects[ele][e].x
             let b = objects[ele][e].y
             ctx.lineWidth = z/30;
-            drawCircle(a , b, .055)
+            drawCircle(a , b, .055, ctx)
         }
     }
 
@@ -717,11 +809,10 @@ function drawNodes() {
             let a = node.x
             let b = node.y
             ctx.lineWidth = z/30;
-            drawCircle(a , b, .055)
+            drawCircle(a , b, .055, ctx)
             }
         }
 }
-
 
 // remove 'highlight' from all objects
 function removeHighlight () {
@@ -746,15 +837,15 @@ function isCursorWithinRectangle(x, y, w, h, mouseX, mouseY) {
     return false;
 }
 
-function drawCircle(x,y,r) {
-    ctx.strokeStyle = 'rgba(0,0,0,1)';
-    ctx.fillStyle = '#FFFFFF';
-    ctx.setLineDash([]);
+function drawCircle(x,y,r,context) {
+    context.strokeStyle = 'rgba(0,0,0,1)';
+    context.fillStyle = '#FFFFFF';
+    context.setLineDash([]);
 
-    ctx.beginPath();
-    ctx.arc((-origin.x + x + 0.5)* z, (origin.y - y + 0.5) * z, r*z, 0, 2 * Math.PI);
-    ctx.stroke();
-    ctx.fill();
+    context.beginPath();
+    context.arc((-origin.x + x + 0.5)* z, (origin.y - y + 0.5) * z, r*z, 0, 2 * Math.PI);
+    context.stroke();
+    context.fill();
 }
 
 function drawWire(wire) {
@@ -869,7 +960,55 @@ function drawRotatedImg(x, y, shape, degrees) {
     ctx.restore();
 }
 
+function deleteComponent(id) {
+    for (let node of objects[id].nodes) {
+        deleteWire(objects[id][node].wireId)
+    }
+    rotateButtons('hide')
+    delete objects[id]
+}
 
+function deleteWire(id) {
+    if (!wires[id]) return
+
+    for (let node of wires[id].nodes) {
+        deleteWire(node.wireId)
+    }
+
+    let node = { 
+        a: wires[id].node.a,
+        b: wires[id].node.b,
+    }
+
+    wires[id].node.a.wireId = undefined
+    wires[id].node.a.connected = false;
+
+    wires[id].node.b.wireId = undefined
+    wires[id].node.b.connected = false;
+    
+    if (stringInString ('input', wires[id].node.a.name)) {
+        node.a.setter = 0;
+    } else {
+        node.b.setter = 0;
+    }
+
+    delete wires[id]
+
+    if (node.a.connectionType === objects) {
+        objects[node.a.id].state
+    }
+    if (node.b.connectionType === objects) {
+        objects[node.b.id].state
+    }
+}
+
+//right click
+document.addEventListener('contextmenu', function(e) {
+    rightClickMenu.style.display = "flex";
+    rightClickMenu.style.left = (event.pageX - 10)+"px";
+    rightClickMenu.style.top = (event.pageY - 10)+"px";
+    e.preventDefault();
+}, false);
 
 // FIXME:
 // - if screen is resized canvas does not resize
@@ -880,6 +1019,7 @@ function drawRotatedImg(x, y, shape, degrees) {
 // ✓- pathfinding obstacle detection does not work correctly
 //      - can't find path outside of bounds (if no path increase by 1 ?) ✓
 // - wires should not be able to intersect ?
+//      - or add C hump where lines intersect
 // ✓- look at currently drawn objects, get bounds +- 2, 
 //      generate grid from bounds and populate with components and wires 
 // ✓- detects node in empty cell (something to do with last component being clicked having nodes) 
@@ -890,6 +1030,13 @@ function drawRotatedImg(x, y, shape, degrees) {
 // ✓- can add multiple wires to input.. ?
 // ✓- making a latch breaks the program...
 // - dragging a component from the menu back to the menu should destroy it
+// - component in drag and drop menu don't have nodes
+// - change drag and drop menu to use existing onClick function?
+// - grid
+// - nodes get added to end of wire node list, splice to correct location
+// - wire detection breaks when node is added
+// - make temporary objects container ( merge drawingline, drawingrect)
+// - if a wire is connected to a high wire, its state is not updated
 
 // TODO:
 // ADD:
@@ -907,7 +1054,6 @@ function drawRotatedImg(x, y, shape, degrees) {
 // - open hand cursor when something draggable is under cursor
 // - draw cursor when node is under cursor
 // - if zoomed out (% ?) disable node selection
-// - add right click functions
 // ✓- optimize draw function
 // - bespoke outline for component
 // - hide rotate buttons if zoom < XX%
@@ -918,6 +1064,18 @@ function drawRotatedImg(x, y, shape, degrees) {
 // - select and rotate a group of components
 // - add transistor
 // - add 'power'
-// - select wire nodes
-
+// - select and move wire nodes
 // - move gui functions to seperate file
+// - add component info menu to right side
+// - make modules file
+
+
+// ✓- x to center of canvas
+// ✓- add right click menu
+// ✓- added delete function for components
+// ✓- added drag to select function
+// - add right click functions
+// ✓- adding clock from drag and drop menu causes visual aberrations on added clock
+        // no default value for frequency
+// - fixed no .name error
+// add on hover text to buttons

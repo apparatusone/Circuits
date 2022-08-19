@@ -196,8 +196,8 @@ class Clock extends Generic{
     constructor(x,y,r,id,frequency) {
         super(x,y,r,id);
 
-        this.w = 0.5;
-        this.h = 0.5;
+        this.w = 0.6;
+        this.h = 0.6;
         this.frequency = frequency
         this.offset = {
             output: { x: 0.5, y: 0.0 },
@@ -376,63 +376,62 @@ function defineNodes(id,nodes,object) {
 }
 
 
-
 // paths
-function ledPath (x1, y1, a, b, z) {
-    ctx.strokeStyle = 'rgba(0,0,0,1)';
-    ctx.lineWidth = z/15;
-    ctx.setLineDash([]);
+function ledPath (x1, y1, a, b, z, context = ctx) {
+    context.strokeStyle = 'rgba(0,0,0,1)';
+    context.lineWidth = z/15;
+    context.setLineDash([]);
 
-    ctx.beginPath();
-    ctx.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .10 * z, 0, 1 * Math.PI, true);
-    ctx.lineTo((-a+ x1 + 0.4) * z, (b + y1 + .75) * z);
-    ctx.lineTo((-a + x1 + 0.6) * z, (b + y1 + .75) * z);
-    ctx.lineTo((-a + x1 + 0.6) * z, (b + y1 + 0.5) * z);
-    ctx.stroke();
-    ctx.fill();
+    context.beginPath();
+    context.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .10 * z, 0, 1 * Math.PI, true);
+    context.lineTo((-a+ x1 + 0.4) * z, (b + y1 + .75) * z);
+    context.lineTo((-a + x1 + 0.6) * z, (b + y1 + .75) * z);
+    context.lineTo((-a + x1 + 0.6) * z, (b + y1 + 0.5) * z);
+    context.stroke();
+    context.fill();
 
-    ctx.lineWidth = z/25;
-    ctx.lineCap = 'butt';
-    ctx.beginPath();
-    ctx.lineTo((-a + x1 + 0.5) * z, (b + y1 + .75) * z);
-    ctx.lineTo((-a + x1 + 0.5) * z, (b + y1 + 1) * z);
-    ctx.stroke();
+    context.lineWidth = z/25;
+    context.lineCap = 'butt';
+    context.beginPath();
+    context.lineTo((-a + x1 + 0.5) * z, (b + y1 + .75) * z);
+    context.lineTo((-a + x1 + 0.5) * z, (b + y1 + 1) * z);
+    context.stroke();
 }
 
-function clockPath (x1, y1, a, b, z) {
-    ctx.strokeStyle = 'rgba(0,0,0,1)';
-    ctx.lineWidth = z/15;
-    ctx.setLineDash([]);
+function clockPath (x1, y1, a, b, z, context = ctx) {
+    context.strokeStyle = 'rgba(0,0,0,1)';
+    context.lineWidth = z/15;
+    context.setLineDash([]);
 
-    ctx.beginPath();
-    ctx.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .25 * z, 0, 2 * Math.PI, true);
-    ctx.stroke();
-    ctx.fill();
+    context.beginPath();
+    context.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .25 * z, 0, 2 * Math.PI, true);
+    context.stroke();
+    context.fill();
 
-    ctx.lineWidth = z/25;
-    ctx.lineCap = 'butt';
-    ctx.beginPath();
-    ctx.lineTo((-a + x1 + 0.75) * z, (b + y1 + 0.5) * z);
-    ctx.lineTo((-a + x1 + 1.0) * z, (b + y1 + 0.5) * z);
-    ctx.stroke();
+    context.lineWidth = z/25;
+    context.lineCap = 'butt';
+    context.beginPath();
+    context.lineTo((-a + x1 + 0.75) * z, (b + y1 + 0.5) * z);
+    context.lineTo((-a + x1 + 1.0) * z, (b + y1 + 0.5) * z);
+    context.stroke();
 
-    ctx.lineWidth = z/40;
-    ctx.beginPath();
-    ctx.lineTo((-a + x1 + 0.38) * z, (b + y1 + 0.6) * z);
-    ctx.lineTo((-a + x1 + 0.38) * z, (b + y1 + 0.41) * z);
-    ctx.lineTo((-a + x1 + 0.46) * z, (b + y1 + 0.41) * z);
-    ctx.lineTo((-a + x1 + 0.46) * z, (b + y1 + 0.59) * z);
-    ctx.lineTo((-a + x1 + 0.54) * z, (b + y1 + 0.59) * z);
-    ctx.lineTo((-a + x1 + 0.54) * z, (b + y1 + 0.41) * z);
-    ctx.lineTo((-a + x1 + 0.62) * z, (b + y1 + 0.41) * z);
-    ctx.lineTo((-a + x1 + 0.62) * z, (b + y1 + 0.6) * z);
-    ctx.stroke();
+    context.lineWidth = z/40;
+    context.beginPath();
+    context.lineTo((-a + x1 + 0.38) * z, (b + y1 + 0.6) * z);
+    context.lineTo((-a + x1 + 0.38) * z, (b + y1 + 0.41) * z);
+    context.lineTo((-a + x1 + 0.46) * z, (b + y1 + 0.41) * z);
+    context.lineTo((-a + x1 + 0.46) * z, (b + y1 + 0.59) * z);
+    context.lineTo((-a + x1 + 0.54) * z, (b + y1 + 0.59) * z);
+    context.lineTo((-a + x1 + 0.54) * z, (b + y1 + 0.41) * z);
+    context.lineTo((-a + x1 + 0.62) * z, (b + y1 + 0.41) * z);
+    context.lineTo((-a + x1 + 0.62) * z, (b + y1 + 0.6) * z);
+    context.stroke();
 }
 
-function onOffSwitchPath (x, y, a, b, z) {
-    ctx.strokeStyle = 'rgba(0,0,0,1)';
-    ctx.lineWidth = z/15;
-    ctx.setLineDash([]);
+function onOffSwitchPath (x, y, a, b, z, context = ctx) {
+    context.strokeStyle = 'rgba(0,0,0,1)';
+    context.lineWidth = z/15;
+    context.setLineDash([]);
 
     const top = (b + y + .2) * z;
     const left = (-a + x + .3) * z;
@@ -440,45 +439,32 @@ function onOffSwitchPath (x, y, a, b, z) {
     const height = .6*z;
     const radius = .075*z;
     
-    ctx.beginPath();
-    ctx.moveTo(left + radius, top);
-    ctx.lineTo(left + width - radius, top);
-    ctx.arcTo(left + width, top, left + width, top + radius, radius);
-    ctx.lineTo(left + width, top + height - radius);
-    ctx.arcTo(left + width, top + height, left + width - radius, top + height, radius);
-    ctx.lineTo(left + radius, top + height);
-    ctx.arcTo(left, top + height, left, top + height - radius, radius);
-    ctx.lineTo(left, top + radius);
-    ctx.arcTo(left, top, left + radius, top, radius);
-    ctx.stroke();
-    ctx.fill()
+    context.beginPath();
+    context.moveTo(left + radius, top);
+    context.lineTo(left + width - radius, top);
+    context.arcTo(left + width, top, left + width, top + radius, radius);
+    context.lineTo(left + width, top + height - radius);
+    context.arcTo(left + width, top + height, left + width - radius, top + height, radius);
+    context.lineTo(left + radius, top + height);
+    context.arcTo(left, top + height, left, top + height - radius, radius);
+    context.lineTo(left, top + radius);
+    context.arcTo(left, top, left + radius, top, radius);
+    context.stroke();
+    context.fill()
 
-    ctx.lineWidth = z/25;
-    ctx.beginPath();
-    ctx.lineTo((-a + x + 0.5) * z, (b + y + .3) * z);
-    ctx.lineTo((-a + x + 0.5) * z, (b + y + .4) * z);
-    ctx.stroke();
+    context.lineWidth = z/25;
+    context.beginPath();
+    context.lineTo((-a + x + 0.5) * z, (b + y + .3) * z);
+    context.lineTo((-a + x + 0.5) * z, (b + y + .4) * z);
+    context.stroke();
     
-    ctx.beginPath();
-    ctx.arc((-a + x + 0.5)* z, (b + y + 0.65) * z, .06*z, 0, 2 * Math.PI);
-    ctx.stroke();
+    context.beginPath();
+    context.arc((-a + x + 0.5)* z, (b + y + 0.65) * z, .06*z, 0, 2 * Math.PI);
+    context.stroke();
 
-    ctx.lineCap = 'butt';
-    ctx.beginPath();
-    ctx.lineTo((-a + x + 0.5) * z, (b + y + 0) * z);
-    ctx.lineTo((-a + x + 0.5) * z, (b + y + .2) * z);
-    ctx.stroke();
+    context.lineCap = 'butt';
+    context.beginPath();
+    context.lineTo((-a + x + 0.5) * z, (b + y + 0) * z);
+    context.lineTo((-a + x + 0.5) * z, (b + y + .2) * z);
+    context.stroke();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

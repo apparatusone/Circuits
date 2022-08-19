@@ -18,11 +18,12 @@
         <button id="zoomlevel"></button>
         <button id="zoom-in">+</button>
         <button id="zoom-out">-</button>
+        <button id="select">SEL</button>
     </div>
 
-    <canvas id="menu-canvas" class="unselectable animated"></canvas> -->
+    <canvas id="menu-canvas" class="unselectable animated"></canvas>
     <div id="menu-background" class="animated"></div>
-    <button id="menu-close" class="animated">&lt;</button>
+    <button id="menu-hide" class="animated">&lt;</button>
 
     <input id="rotate-left" class="hide" type="image" src="svg/rotateleft.svg" />
     <input id="rotate-right" class="hide" type="image" src="svg/rotateright.svg" />
@@ -82,6 +83,20 @@
              src="svg/xnor.svg"
              width="100" height="100">
     </div>
-    
+
+    <menu id="right-click">
+        <div class="options">Add Node</div>
+        <div class="options">Create Component</div>
+        <hr/>
+        <div class="options">Undo</div>
+        <hr/>
+        <div class="options">Cut</div>
+        <div class="options">Copy</div>
+        <div class="options">Paste</div>
+        <hr/>
+        <div id="delete" class="options">Delete</div>
+    </menu>
+    <div id="notepad"></div>
+
 </body>
 </html>
