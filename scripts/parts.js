@@ -121,6 +121,7 @@ class Node {
         this.id = id;
         this.wireId;
         this.state = 0
+        this.highlight = false;
         this.connected = false;
     }
 
@@ -344,8 +345,8 @@ function defineNodes(id,nodes,object) {
     for (const node of nodes) {
         if (stringInString ('output',node)) {
             Object.defineProperty(object, node, {
-                value: 
-                    new Node(self.id, objects, node) 
+                value: new Node(self.id, objects, node),
+                writable: true
             });
         }
     }
@@ -364,14 +365,16 @@ function defineNodes(id,nodes,object) {
                             self.state
                             return true;
                         }
-                    })
+                    }),
+                writable: true
             });
         }
     }
 
     // adds list of nodes to gate
     Object.defineProperty(object, 'nodes', {
-        value: nodes
+        value: nodes,
+        writable: true
     });
 }
 

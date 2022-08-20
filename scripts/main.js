@@ -1,3 +1,5 @@
+'use strict';
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
 ctx.imageSmoothingEnabled = true;
@@ -180,14 +182,16 @@ function makeXnor (x,y,r) {
 }
 
 function makeNode (x,y,id,io) {
-    node = new Node(id, wires, io)
+    let node = new Node(id, wires, io)
 
     Object.defineProperty(node, 'x', {
-        value: x
+        value: x,
+        writable: true
     });
 
     Object.defineProperty(node, 'y', {
-        value: y
+        value: y,
+        writable: true
     });
     return node
 }
@@ -308,6 +312,7 @@ function draw() {
     }
 
     drawNodes()
+    drawNodeHighlight()
 
     if (select && drawingRect.length) {
         ctx.lineWidth = 3;
@@ -344,7 +349,7 @@ function draw() {
         };
 
     lastFrame = performance.now();
-    fps = 1/((performance.now() - lastFrame)/1000);
+    //fps = 1/((performance.now() - lastFrame)/1000);
 
     window.requestAnimationFrame(draw);
 }
@@ -361,20 +366,27 @@ canvas.onmousemove = function(e) {
         origin.y = origin.prev.y - (origin.click.y - e.y)/z;
     };
 
+    // move node
+    if (objectUnderCursor.node && mouseDown && dragging && !drawing ) {
+        console.log(objectUnderCursor.node.x, Math.round(mouse.canvas.x*2)/2)
+        objectUnderCursor.node.x = Math.round(mouse.canvas.x*2)/2;
+        objectUnderCursor.node.y = Math.round(mouse.canvas.y*2)/2;
+        return
+    }
+
     // move object
     if (mouseDown && dragging && !drawing) {
-
-        //set to half increments
         objectUnderCursor.object.x = Math.round(mouse.canvas.x*2)/2;
         objectUnderCursor.object.y = Math.round(mouse.canvas.y*2)/2;
-
-        //objectUnderCursor.object.x = Math.round(mouse.canvas.x);
-        //objectUnderCursor.object.y = Math.round(mouse.canvas.y);
     }
 
     if (drawing === true) {
         drawingLine[0].x2 = (e.x / z - 0.5) + origin.x
         drawingLine[0].y2 = (-e.y / z + 0.5) + origin.y
+    }
+
+    if (mouseDown) {
+        //detectWireIntersection()
     }
 
     if (select && drawingRect.length) {
@@ -436,7 +448,7 @@ canvas.onmousedown = function(e) {
     }
 
     if (select) {
-        drawingRect.push(rect = {x: origin.click.x, y: origin.click.y, w: 0, h: 0})
+        drawingRect.push({x: origin.click.x, y: origin.click.y, w: 0, h: 0})
         return
     }
 
@@ -447,7 +459,12 @@ canvas.onmousedown = function(e) {
         selected = true;
     }
 
-    if (objectUnderCursor.isNode) {
+    if (objectUnderCursor.isNode) do {
+        if (objectUnderCursor.node.highlight) {
+            dragging = true;
+            selected = true;
+            break
+        }
         drawing = true;
 
         //create temporary line with one ends location set to clicked node
@@ -456,7 +473,7 @@ canvas.onmousedown = function(e) {
         // set seconds ends location to cursor
         drawingLine[0].x2 = (e.x / z - 0.5) + origin.x;
         drawingLine[0].y2 = (-e.y / z + 0.5) + origin.y;
-    }
+    } while (false)
 
     if (objectUnderCursor.isWire) {
 
@@ -467,6 +484,7 @@ canvas.onmousedown = function(e) {
 
     if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
         rightClickMenu.style.display = "none";
+        clearHighlightOnNodes()
         removeHighlight();
         selected = false;
         rotateButtons('hide')
@@ -502,9 +520,15 @@ canvas.onmouseup = function(e) {
         } 
     }
 
-    if (objectUnderCursor.isNode && drawing) {
+    if (objectUnderCursor.isNode) do {
+        if (mouseClickDuration(.2)) {
+            if (objectUnderCursor.node.connectionType === wires) {
+                objectUnderCursor.node.highlight = true;
+            }
+            break;
+        } 
         connectNodes(previousNode)
-    }
+    } while (false);
 
     if (drawing) drawingLine = [];
 
@@ -546,6 +570,14 @@ function connectNodes(pNode) {
     objectUnderCursor.node.wireId = wire.id;
     wires[wire.id].state
 
+}
+
+function clearHighlightOnNodes() {
+    for (let [key, wire] of Object.entries(wires)) {
+        for (const node of wire.nodes) {
+            node.highlight = false;
+        }
+    }
 }
 
 
@@ -591,7 +623,7 @@ function getObject(x, y) {
 
     //detect wire under cursor
     for (let [key, w] of Object.entries(wires)) {
-        if (lineUnderCursor (w.loc.a.x, w.loc.a.y, w.loc.b.x ,w.loc.b.y, x, y)) {
+        if (pointOnLine (w.loc.a.x, w.loc.a.y, w.loc.b.x ,w.loc.b.y, x, y, .09)) {
             objectUnderCursor.isWire = true;
             objectUnderCursor.wire = w;
             return
@@ -614,7 +646,7 @@ function stringInString (a,b) {
     return regex.test(b)
 }
 
-function lineUnderCursor (x1,y1,x2,y2,x,y) {
+function pointOnLine (x1,y1,x2,y2,x,y,radius) {
     let a = { x: x1, y: y1 }
     let b = { x: x2, y: y2 }
     let m;
@@ -636,7 +668,7 @@ function lineUnderCursor (x1,y1,x2,y2,x,y) {
         recty = minMax([a.y, b.y])[0]
     }
 
-    if (isCursorWithinRectangle(rectx, recty, Math.max(.08, width), Math.max(.08, height), x, y)) {
+    if (isCursorWithinRectangle(rectx, recty, Math.max(radius, width), Math.max(radius, height), x, y)) {
         if (a.x === b.x) {
             if (Math.abs(a.x - x) < .04) return true;
         }
@@ -798,8 +830,11 @@ function drawNodes() {
         for (const e of objects[ele].nodes) {
             let a = objects[ele][e].x
             let b = objects[ele][e].y
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
             ctx.lineWidth = z/30;
+
             drawCircle(a , b, .055, ctx)
+            ctx.fill();
         }
     }
 
@@ -808,10 +843,27 @@ function drawNodes() {
         for (const node of wire.nodes) {
             let a = node.x
             let b = node.y
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
             ctx.lineWidth = z/30;
             drawCircle(a , b, .055, ctx)
+            ctx.fill();
             }
         }
+}
+
+function drawNodeHighlight() {
+    //get nodes on wires
+    for (let [key, wire] of Object.entries(wires)) {
+        for (const node of wire.nodes) {
+            if (node.highlight) {
+                let a = node.x
+                let b = node.y
+                ctx.lineWidth = z/20;
+                ctx.strokeStyle = '#26CE00';
+                drawCircle(a , b, .155, ctx)
+            }
+        }
+    }
 }
 
 // remove 'highlight' from all objects
@@ -838,14 +890,12 @@ function isCursorWithinRectangle(x, y, w, h, mouseX, mouseY) {
 }
 
 function drawCircle(x,y,r,context) {
-    context.strokeStyle = 'rgba(0,0,0,1)';
     context.fillStyle = '#FFFFFF';
     context.setLineDash([]);
 
     context.beginPath();
     context.arc((-origin.x + x + 0.5)* z, (origin.y - y + 0.5) * z, r*z, 0, 2 * Math.PI);
     context.stroke();
-    context.fill();
 }
 
 function drawWire(wire) {
@@ -960,6 +1010,62 @@ function drawRotatedImg(x, y, shape, degrees) {
     ctx.restore();
 }
 
+function getWireSegments(wire) {
+    let queue = []
+    // add coordinates of a node to que
+    queue.push([wire.node.a.x, wire.node.a.y])
+    // add coordinates of each node in node array
+    for (const node of wire.nodes) {
+        queue.push([node.x,node.y])
+    }
+    // add coordinates of b node to que
+    queue.push([wire.node.b.x, wire.node.b.y])
+
+    let segments = []
+	while (queue.length > 1) {
+        // remove first set of node coordinates and assign to variable
+        const current = queue.shift();
+        // push first set and second set of coordinates to segments array
+        segments.push([current,queue[0]]);
+	}
+    return segments
+}
+
+function detectWireIntersection() {
+    let points = []
+
+    for (let [key, wire1] of Object.entries(wires)) {
+        let segments = getWireSegments(wire1)
+        for (const co of segments) {
+            const p1 = { x: co[0][0], y: co[0][1] }
+            const q1 = { x: co[1][0], y: co[1][1] }
+            
+            for (let [key, wire2] of Object.entries(wires)) {
+                let segments = getWireSegments(wire2)
+                for (const co of segments) {
+                    const p2 = { x: co[0][0], y: co[0][1] }
+                    const q2 = { x: co[1][0], y: co[1][1] }
+                    if (p1 === p2 && q1 === q2) continue
+
+                    let px = ((p1.x * q1.y - p1.y * q1.x)*(p2.x-q2.x) - (p2.x * q2.y - p2.y * q2.x)*(p1.x-q1.x)) / ((p1.x-q1.x) * (p2.y-q2.y) -(p1.y-q1.y) * (p2.x-q2.x));
+                    let py = ((p1.x * q1.y - p1.y * q1.x)*(p2.y-q2.y) - (p2.x * q2.y - p2.y * q2.x)*(p1.y-q1.y)) / ((p1.x-q1.x) * (p2.y-q2.y) -(p1.y-q1.y) * (p2.x-q2.x));
+
+                    if ( isNaN(px) || isNaN(py) ) continue
+
+                    if (!pointOnLine (p1.x,p1.y,q1.x,q1.y,px,py, .1)) continue
+                    if (!pointOnLine (p2.x,p2.y,q2.x,q2.y,px,py, .1)) continue
+
+                    points.push( {x: px, y: py, w1: wire1, w2: wire2} )
+                }
+            }
+        }
+    }
+
+    //filter duplicates
+    let array = points.filter((v,i,a)=>a.findIndex(v2=>(v.label === v2.label && v.value===v2.value))===i)
+    return array
+}
+
 function deleteComponent(id) {
     for (let node of objects[id].nodes) {
         deleteWire(objects[id][node].wireId)
@@ -1036,7 +1142,10 @@ document.addEventListener('contextmenu', function(e) {
 // - nodes get added to end of wire node list, splice to correct location
 // - wire detection breaks when node is added
 // - make temporary objects container ( merge drawingline, drawingrect)
-// - if a wire is connected to a high wire, its state is not updated
+// ✓- if a wire is connected to a high wire, its state is not updated
+// ✓- adding clock from drag and drop menu causes visual aberrations on added clock
+        // no default value for frequency
+// - fixed no .name error
 
 // TODO:
 // ADD:
@@ -1068,14 +1177,10 @@ document.addEventListener('contextmenu', function(e) {
 // - move gui functions to seperate file
 // - add component info menu to right side
 // - make modules file
-
-
 // ✓- x to center of canvas
 // ✓- add right click menu
 // ✓- added delete function for components
 // ✓- added drag to select function
 // - add right click functions
-// ✓- adding clock from drag and drop menu causes visual aberrations on added clock
-        // no default value for frequency
-// - fixed no .name error
-// add on hover text to buttons
+// - add on hover text to buttons
+// - shift click to select multiple components

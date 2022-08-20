@@ -119,8 +119,10 @@ function menuDraw(newtime) {
         for (const [key, node] of Object.entries(ghostObject[0].obj.offset)) {
             let a = ghostObject[0].x/z + origin.x + node.x
             let b = -ghostObject[0].y/z + origin.y + node.y
+            menu.strokeStyle = 'rgba(0,0,0,1)';
             menu.lineWidth = z/30;
             drawCircle(a , b, .055, menu)
+            menu.fill();
         }
     }
 
