@@ -15,8 +15,13 @@ const rotateLeft = document.getElementById("rotate-left");
 const rotateRight = document.getElementById("rotate-right");
 const undo = document.getElementById("undo");
 const selectButton = document.getElementById("select");
+const saveButton = document.getElementById("save");
 const deleteButton = document.getElementById("delete");
+const customComponentButton = document.getElementById("custom-component");
+const nameButton = document.getElementById("name-component");
 const rightClickMenu = document.getElementById("right-click");
+const nameFormContainer = document.getElementById("name-form-container");
+const nameForm = document.getElementById("name-form");
 rightClickMenu.addEventListener("click", toggleRightClickMenu, false);
 
 const gridDot = document.getElementById('source');
@@ -102,6 +107,9 @@ let objects = {};            // components
 let wires = {};              // visual representation of links
 let drawingLine = []         // line shown when drawing connection
 let drawingRect = []
+
+//load from localstorage
+//loadSave()
 
 // add a component
 function makeSwitch (x,y,r) {
@@ -196,7 +204,28 @@ function makeNode (x,y,id,io) {
     return node
 }
 
-//makeClock(0,0,0,1000)
+makeLed(0,2,0)
+//makeSwitch(0,0,0)
+makeSwitch(1,0,0)
+makeSwitch(2,0,0)
+makeSwitch(3,0,0)
+makeSwitch(4,0,0)
+makeSwitch(5,0,0)
+makeSwitch(6,0,0)
+makeSwitch(7,0,0)
+//makeSwitch(8,0,0)
+objects[1].name = "out"
+objects[2].name = "in"
+objects[3].name = "in2"
+objects[4].name = "in3"
+objects[5].name = "in4"
+objects[6].name = "in5"
+objects[7].name = "in6"
+objects[8].name = "in7"
+//objects[9].name = "in8"
+//objects[2].name = "in"
+
+//makeCustomComponent()
 
 //let fps;
 let lastFrame = performance.now();
@@ -269,11 +298,11 @@ function draw() {
         if (value.img !== 'svg') {
             if (value.state) {
                 ctx.fillStyle = value.color;
-                drawRotatedImg(value.x, -value.y, value.shape, value.r)
+                drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
             }
             if (!value.state) {
                 ctx.fillStyle = '#FFFFFF';
-                drawRotatedImg(value.x, -value.y, value.shape, value.r)
+                drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
             }
         }
     }
@@ -311,9 +340,46 @@ function draw() {
         drawWire(value)
     }
 
+    // draw component text
+
+
     drawNodes()
     drawNodeHighlight()
 
+    // TODO: rotate text
+    for (let [key, value] of Object.entries(objects)) {
+        if (value.constructor === CustomComponent) {
+            //console.log(value)
+            for (let [key, off] of Object.entries(value.offset)) {
+                //draw pins
+                let pinOffset = .21
+                if (off.x > 0) {
+                    pinOffset*=-1
+                }
+                ctx.fillStyle = 'grey'
+                icPins (off.x + pinOffset, off.y, origin.x, origin.y)
+
+                //draw labels
+                let fontSize = z/9
+                ctx.fillStyle = 'white'
+                ctx.lineWidth = z/250;
+                ctx.strokeStyle = 'grey';
+                ctx.font = `${fontSize}px sans-serif`;
+                if (off.x < 0) {
+                    ctx.textAlign = 'right'
+                } else {
+                    ctx.textAlign = 'left'
+                }
+                ctx.textBaseline = 'middle'
+                let x = (-origin.x + .5 + off.x/15 + value.x) * z
+                let y = (origin.y + .5  + off.y - value.y) * z
+                ctx.fillText(key, x, y);
+                ctx.strokeText(key, x, y)
+            }
+        }
+    }
+
+    // draw selection rectangle
     if (select && drawingRect.length) {
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#006eff';
@@ -368,7 +434,6 @@ canvas.onmousemove = function(e) {
 
     // move node
     if (objectUnderCursor.node && mouseDown && dragging && !drawing ) {
-        console.log(objectUnderCursor.node.x, Math.round(mouse.canvas.x*2)/2)
         objectUnderCursor.node.x = Math.round(mouse.canvas.x*2)/2;
         objectUnderCursor.node.y = Math.round(mouse.canvas.y*2)/2;
         return
@@ -781,7 +846,31 @@ selectButton.onclick = function() {
 
 deleteButton.onclick = function() {
     if (!objectUnderCursor.object) return
-    deleteComponent(objectUnderCursor.object.id)
+    deleteComponent(objectUnderCursor.object.id, true)
+}
+
+saveButton.onclick = function() {
+    window.localStorage.setItem("objects", JSON.stringify(objects));
+    window.localStorage.setItem("wires", JSON.stringify(wires));
+    //localStorage.setItem('objects', objects);
+    //localStorage.setItem('wires', wires);
+}
+
+function loadSave() {
+    objects = {};
+    wires = {};   
+
+    if (localStorage.getItem('objects')) {
+        console.log(JSON.parse(window.localStorage.getItem("objects")))
+        //objects = JSON.parse(window.localStorage.getItem("objects"))
+    }
+    if (localStorage.getItem('wires')) {
+        //wires = JSON.parse(window.localStorage.getItem("wires"))
+    }
+}
+
+customComponentButton.onclick = function() {
+    makeCustomComponent()
 }
 
 function toggleRightClickMenu() {
@@ -974,7 +1063,7 @@ CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, ra
 }
 
 
-function drawRotatedImg(x, y, shape, degrees) {
+function drawRotatedImg(x, y, shape, degrees, w = 1, h = 1) {
     ctx.save();
 
     let a = z/2 + x*z
@@ -1005,7 +1094,7 @@ function drawRotatedImg(x, y, shape, degrees) {
     ctx.rotate(degrees * -Math.PI / 180);
     ctx.translate(-a, -b)
 
-    shape(x, y, xOrigin, yOrigin, z)
+    shape(x, y, xOrigin, yOrigin, z, w, h)
 
     ctx.restore();
 }
@@ -1066,40 +1155,47 @@ function detectWireIntersection() {
     return array
 }
 
-function deleteComponent(id) {
+
+// id of component, boolean for reseting component states/connections
+function deleteComponent(id,reset) {
     for (let node of objects[id].nodes) {
-        deleteWire(objects[id][node].wireId)
+        deleteWire(objects[id][node].wireId,reset)
     }
     rotateButtons('hide')
     delete objects[id]
 }
 
-function deleteWire(id) {
+function deleteWire(id,reset) {
     if (!wires[id]) return
 
     for (let node of wires[id].nodes) {
         deleteWire(node.wireId)
     }
 
-    let node = { 
+    let node = {
         a: wires[id].node.a,
         b: wires[id].node.b,
     }
 
-    wires[id].node.a.wireId = undefined
-    wires[id].node.a.connected = false;
+    if( reset) {
 
-    wires[id].node.b.wireId = undefined
-    wires[id].node.b.connected = false;
-    
-    if (stringInString ('input', wires[id].node.a.name)) {
-        node.a.setter = 0;
-    } else {
-        node.b.setter = 0;
+        wires[id].node.a.wireId = undefined
+        wires[id].node.a.connected = false;
+
+        wires[id].node.b.wireId = undefined
+        wires[id].node.b.connected = false;
+
+        if (stringInString('input', wires[id].node.a.name)) {
+            node.a.setter = 0;
+        } else {
+            node.b.setter = 0;
+        }
     }
 
     delete wires[id]
 
+    if (reset) return
+ 
     if (node.a.connectionType === objects) {
         objects[node.a.id].state
     }
@@ -1107,6 +1203,324 @@ function deleteWire(id) {
         objects[node.b.id].state
     }
 }
+
+function highlightedComponents() {
+    selected = []
+    for (let [key, value] of Object.entries(objects)) {
+        if (value.highlight) {
+            selected.push(value)
+        }
+    }
+    return selected
+}
+
+function makeCustomComponent() {
+    // check if switches and led's have names
+    let parts = highlightedComponents()
+    for (const part of parts) {
+        if (part.constructor === Led || part.constructor === OnOffSwitch) {
+            if(part.name === 'undefined') {
+                alert('Not all i/o has been named')
+                return
+            }
+        }
+    }
+
+    // check if names are unique
+
+    let inputs = []
+    let outputs = []
+
+    // get count of inputs and outputs
+    for (let [key, io] of Object.entries(parts)) {
+        if (io.constructor === OnOffSwitch) {
+            inputs.push(io.name)
+        }
+        if (io.constructor === Led) {
+            outputs.push(io.name)
+        }
+    }
+
+    function heightCalc(h) {
+        let height;
+        if (h < 2) return 1
+        for (let n = 4; n < h + 3; n++) {
+            height = ((n >> 1)*.5)
+        }
+        console.assert(height !== undefined, 'height function error')
+        return height
+    }
+    let width = .5
+    //get height of component
+    let height = Math.max(1, heightCalc(inputs.length), heightCalc(outputs.length))
+
+    // generate node offsets
+    let offsets = {}
+    let i = 0
+    let value = 0
+    while (i < inputs.length) {
+        value = Math.abs(value)
+        let increments = [.25, 0]
+        let pn = [1, -1]
+        //if odd
+        if ( inputs.length % 2 !== 0 && i === inputs.length - 1) {
+            offsets[inputs[i]] = { x: -.5, y: 0}
+            i++
+            continue
+        }
+        value+=increments[i%2]
+        value=value*pn[i%2]
+        offsets[inputs[i]] = { x: -.5, y: value}
+        i++
+    }
+    i = 0
+    value = 0
+    while (i < outputs.length) {
+        value = Math.abs(value)
+        let increments = [.25, 0]
+        let pn = [1, -1]
+        //if odd
+        if ( outputs.length % 2 !== 0 && i === outputs.length - 1) {
+            offsets[outputs[i]] = { x: 0.5, y: 0}
+            i++
+            continue
+        }
+        value+=increments[i%2]
+        value=value*pn[i%2]
+        offsets[outputs[i]] = { x: .5, y: value}
+        i++
+    }
+
+    //create component
+    let id = generateId()
+    let component = new CustomComponent(0, 0, 0, width, height, id) //temp 0,0 for x,y (x,y,r,id)
+
+    //add offsets to component
+    component.offset = offsets
+
+    // copy components and wires to custom component
+    for (const part of parts) {
+        component.objects[part.id] = part
+        for (let node of part.nodes) {
+            if (part[node].wireId) {
+                component.wires[part[node].wireId] = wires[part[node].wireId]
+                //moveWire(part[node].wireId)
+            }
+        }
+    }
+
+    //delete components and wires from objects
+    for (const part of parts) {
+        deleteComponent(part.id, false)
+    }
+
+    // change nodes -> setter, getx, gety
+    for (let [key, value] of Object.entries(component.objects)) {
+        for (let node of value.nodes) {
+
+            // change scope
+            if (value[node].connectionType === objects) {
+                value[node].connectionType = component.objects
+                //value[node].id = id
+            }
+            if (value[node].connectionType === wires) {
+                value[node].connectionType = component.wires
+            }
+
+            Object.defineProperty(value[node], 'setter', {
+                set (state) {
+                    this.state = state
+                    if (this.wireId) component.wires[value[node].wireId].state
+                },
+                enumerable: true,
+                configurable: true
+            });
+        }
+    }
+
+    // change scope of wire nodes
+    for (let [key, value] of Object.entries(component.wires)) {
+        for (let node of value.nodes) {
+            if (node.connectionType === wires) {
+                node.connectionType = component.wires
+            }
+
+            Object.defineProperty(node, 'setter', {
+                set (state) {
+                    this.state = state
+                    if (this.wireId) component.wires[node.wireId].state
+                },
+                enumerable: true,
+                configurable: true
+            });
+        }
+    }
+
+    for (let [key, io] of Object.entries(component.objects)) {
+        if (io.constructor === OnOffSwitch) {
+            component.nodes.push(io.name)
+
+            // proxy node that runs changestate on switch on change
+            let targetObj = new Node(id, component.objects, io.name)
+            //if node is an input, add proxy
+            Object.defineProperty(component, io.name, {
+                value: 
+                    new Proxy(targetObj, {
+                        set: function (target, key, value) {
+                            console.log(`${key} set to ${value}`);
+                            target[key] = value;
+                            component.objects[io.id].state = targetObj.state
+                            component.objects[io.id].changeState
+                            return true;
+                        }
+                    }),
+                writable: true
+            });
+
+            // fix node
+            Object.defineProperty(io["output"], 'setter', {
+                set (state) {
+                    this.state = state
+                    if (this.wireId) component.wires[io['output'].wireId].state
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            // fix onoffswitch
+            Object.defineProperty(io, 'changeState', {
+                get () {
+                    this.output.setter = this.state
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            Object.defineProperty(component[io.name], 'name', {
+                value: io.name,
+                enumerable: true,
+                configurable: true
+              });
+
+            Object.defineProperty(component[io.name], 'x', {
+                get() { return objects[this.id].x + objects[this.id].offset[this.name].x },
+                //get() { return 0 },
+                enumerable: true,
+                configurable: true
+              });
+
+              Object.defineProperty(component[io.name], 'y', {
+                get() { return objects[this.id].y + objects[this.id].offset[this.name].y },
+                //get() { return 0 },
+                enumerable: true,
+                configurable: true
+              });
+
+        }
+
+        //broken replace 'input'
+        if (io.constructor === Led) {
+            component.nodes.push(io.name)
+
+            //modify led node to propogate change
+            let self = io
+            console.log(io['input'].wireId)
+            let targetObj = new Node(self.id, component.objects, 'input')
+            targetObj.wireId = io['input'].wireId
+
+            //recreate node with propogation in handler
+            Object.defineProperty(io, 'input', {
+                value: 
+                    new Proxy(targetObj, {
+                        set: function (target, key, value) {
+                            target[key] = value;
+                            component[io.name].setter = self.state
+                            return true;
+                        }
+                    }),
+                writable: true
+            });
+
+            // change node on wire
+            if (stringInString ('in', component.wires[targetObj.wireId].node.a.name)) {
+                component.wires[targetObj.wireId].node.a = io['input']
+            } else {
+                component.wires[targetObj.wireId].node.b = io['input']
+            }
+
+            Object.defineProperty(component, io.name, {
+                value: new Node(id, component, io.name),
+                enumerable: true,
+                configurable: true
+              });
+
+            // change 'connected' value of node to false
+            Object.defineProperty(component[io.name], 'connected', {
+                value: false,
+                enumerable: true,
+                configurable: true
+              });
+
+            Object.defineProperty(component[io.name], 'name', {
+                value: io.name,
+                enumerable: true,
+                configurable: true
+              });
+
+            Object.defineProperty(component[io.name], 'x', {
+                get() { return objects[this.id].x + objects[this.id].offset[this.name].x },
+                enumerable: true,
+                configurable: true
+              });
+
+              Object.defineProperty(component[io.name], 'y', {
+                get() { return objects[this.id].y + objects[this.id].offset[this.name].y },
+                enumerable: true,
+                configurable: true
+              });
+
+        }
+        
+    }
+
+    objects[id] = component
+
+    //get center of parts for cc x and y
+
+    function moveWire(id) {
+        // for (let node of wires[id].nodes) {
+        //     moveWire(node.wireId)
+        // }
+        component.wires[id] = wires[id]
+    }
+}
+
+
+nameButton.onclick = function() {
+    if (!objectUnderCursor.object) return
+    nameComponent()
+}
+
+function nameComponent() {
+    if (highlightedComponents().length === 1) {
+        nameFormContainer.style.display = "flex";
+    }
+    
+}
+
+function handleForm(event) { event.preventDefault(); 
+    let input = document.getElementById("fname").value;
+    const myRe = new RegExp('[<>\\\/?@#\$\^&*()+=!:;.,\'\"\~\`]', 'gmi');
+    const invalid = input.match(myRe);
+    if (invalid !== null) {
+        alert(`Invalid Character ${invalid}`)
+        return
+    }
+    objectUnderCursor.object.name = input
+    nameFormContainer.style.display = "none";
+} 
+//nameForm.addEventListener('submit', handleForm);
+
 
 //right click
 document.addEventListener('contextmenu', function(e) {
@@ -1145,7 +1559,7 @@ document.addEventListener('contextmenu', function(e) {
 // ✓- if a wire is connected to a high wire, its state is not updated
 // ✓- adding clock from drag and drop menu causes visual aberrations on added clock
         // no default value for frequency
-// - fixed no .name error
+// ✓- fixed no .name error
 
 // TODO:
 // ADD:
@@ -1169,11 +1583,11 @@ document.addEventListener('contextmenu', function(e) {
 // - nodes should show state
 // - wire should show state
 // - basic undo
-// - delete component
+// ✓- delete component
 // - select and rotate a group of components
 // - add transistor
 // - add 'power'
-// - select and move wire nodes
+// ✓- select and move wire nodes
 // - move gui functions to seperate file
 // - add component info menu to right side
 // - make modules file
@@ -1184,3 +1598,4 @@ document.addEventListener('contextmenu', function(e) {
 // - add right click functions
 // - add on hover text to buttons
 // - shift click to select multiple components
+// - delete nodes

@@ -19,6 +19,13 @@
         <button id="zoom-in">+</button>
         <button id="zoom-out">-</button>
         <button id="select">SEL</button>
+        <button id="save">Save</button>
+    </div>
+
+    <div id="name-form-container">
+        <form id="name-form" onsubmit="handleForm(event)">
+            <input type="text" id="fname" name="fname" placeholder="Component Name" style="width: 200px">
+        </form>
     </div>
 
     <canvas id="menu-canvas" class="unselectable animated"></canvas>
@@ -86,7 +93,8 @@
 
     <menu id="right-click">
         <div class="options">Add Node</div>
-        <div class="options">Create Component</div>
+        <div id="custom-component"class="options">Create Component</div>
+        <div id="name-component" class="options">Name Component</div>
         <hr/>
         <div class="options">Undo</div>
         <hr/>

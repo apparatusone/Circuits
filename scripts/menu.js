@@ -90,7 +90,8 @@ function menuDraw(newtime) {
         }
         if (value.type === 'shape') {
             menu.fillStyle = "#fff";
-            value.obj.shape(value.x/100, value.y/100, 0,0, 100, menu)
+            
+            value.obj.shape(value.x/100, value.y/100, 0, 0, 100, value.w, value.h, menu)
         }
         //draw nodes
         for (const [key, node] of Object.entries(value.obj.offset)) {
@@ -114,7 +115,7 @@ function menuDraw(newtime) {
         }
         if (ghostObject[0].type === 'shape') {
             menu.fillStyle = "#fff";
-            ghostObject[0].obj.shape(ghostObject[0].x/z, ghostObject[0].y/z, 0,0, z, menu)
+            ghostObject[0].obj.shape(ghostObject[0].x/z, ghostObject[0].y/z, 0,0, z, ghostObject[0].w, ghostObject[0].h, menu)
         }
         for (const [key, node] of Object.entries(ghostObject[0].obj.offset)) {
             let a = ghostObject[0].x/z + origin.x + node.x
@@ -139,14 +140,14 @@ window.onmousemove = function(e) {
     };
 }
 
-window.onmousewheel = function(e) {
-    e.preventDefault();
+// window.onmousewheel = function(e) {
+//     e.preventDefault();
 
-    if (create) {
-        ghostObject[0].x = e.x - (.5 * z)
-        ghostObject[0].y = e.y - (.5 * z)
-    };
-}
+//     if (create) {
+//         ghostObject[0].x = e.x - (.5 * z)
+//         ghostObject[0].y = e.y - (.5 * z)
+//     };
+// }
 
 window.onmousedown = function(e) {
     fpsInterval = 1000 / 60;

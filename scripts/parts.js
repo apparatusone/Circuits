@@ -8,9 +8,6 @@ function stringInString (a,b) {
     return regex.test(b)
 }
 
-
-
-
 class Wire {
     constructor(node) {
         this.node = node
@@ -31,22 +28,24 @@ class Wire {
 
     //reduced(array) { return array.reduce((partialSum, a) => partialSum + a, 0); }
 
+    nodeState = { a: 0, b: 0}
+
     get state () {
         let state;
-        if (this.node.a.name === 'output') {
-            state = this.node.a.state;
-        } else {
-            state = this.node.b.state;
+
+        //update nodes on state change
+        if (this.node.a.state !== this.nodeState.a) {
+            state = this.node.a.state
+        }
+
+        if(this.node.b.state !== this.nodeState.b) {
+            state = this.node.b.state
         }
 
         this.node.a.state = state;
         this.node.b.state = state;
-
-        if (stringInString ('input',this.node.a.name)) {
-            this.node.a.state = state;
-        } else {
-            this.node.b.state = state;
-        }
+        this.nodeState.a = state
+        this.nodeState.b = state
 
         for (let n of this.nodes) {
             n.setter = state
@@ -75,6 +74,7 @@ class Generic {
 
         this.w = 0.5;
         this.h = 0.6;
+        this.name = 'undefined'
         this.highlight = false;
         //location of the nodes relative to the center of the cell
         this.offset =  {
@@ -94,6 +94,7 @@ class Generic {
             let state = this.logic();
             this.temp = state;
             this.output.setter = state
+            return state
         }
     }
 
@@ -111,6 +112,10 @@ class Generic {
             this.offset[ele].y = b
         }
     }
+
+    // static fromJSON(serializedJson) {
+    //     return Object.assign(new ExcitingMath(), JSON.parse(serializedJson))
+    // }
 }
 
 class Node {
@@ -337,6 +342,42 @@ class NotGate extends Generic {
     }
 }
 
+class CustomComponent {
+    constructor(x,y,r,w,h,id) {
+        this.x = x
+        this.y = y
+        this.r = r
+        this.id = id
+
+        this.objects = {}
+        this.wires = {}
+
+        this.w = w
+        this.h = h
+        this.name = 'undefined'
+        this.highlight = false;
+        this.nodes = []
+        this.offset =  {}
+    }
+
+    get gridCoordinates () {
+        return { x: (-origin.x + this.x) * z, y: (origin.y - this.y) * z }
+    }
+
+    rotateNodes(dir) {
+        for (let ele in this.offset) {
+            let a = this.offset[ele].x
+            let b = this.offset[ele].y
+            if (dir === 'right') [a, b] = [-b, a];
+            if (dir === 'left') [a, b] = [b, -a];
+            this.offset[ele].x = a
+            this.offset[ele].y = b
+        }
+    }
+
+    shape = custom
+}
+
 // gets list of nodes and adds nodes to gate
 function defineNodes(id,nodes,object) {
     //set scope
@@ -359,9 +400,7 @@ function defineNodes(id,nodes,object) {
                 value: 
                     new Proxy(targetObj, {
                         set: function (target, key, value) {
-                            console.log(`${key} set to ${value}`);
                             target[key] = value;
-                            //console.log(self)
                             self.state
                             return true;
                         }
@@ -380,7 +419,7 @@ function defineNodes(id,nodes,object) {
 
 
 // paths
-function ledPath (x1, y1, a, b, z, context = ctx) {
+function ledPath (x1, y1, a, b, z, w, h, context = ctx) {
     context.strokeStyle = 'rgba(0,0,0,1)';
     context.lineWidth = z/15;
     context.setLineDash([]);
@@ -401,7 +440,7 @@ function ledPath (x1, y1, a, b, z, context = ctx) {
     context.stroke();
 }
 
-function clockPath (x1, y1, a, b, z, context = ctx) {
+function clockPath (x1, y1, a, b, z, w, h, context = ctx) {
     context.strokeStyle = 'rgba(0,0,0,1)';
     context.lineWidth = z/15;
     context.setLineDash([]);
@@ -431,7 +470,7 @@ function clockPath (x1, y1, a, b, z, context = ctx) {
     context.stroke();
 }
 
-function onOffSwitchPath (x, y, a, b, z, context = ctx) {
+function onOffSwitchPath (x, y, a, b, z, w, h, context = ctx) {
     context.strokeStyle = 'rgba(0,0,0,1)';
     context.lineWidth = z/15;
     context.setLineDash([]);
@@ -470,4 +509,82 @@ function onOffSwitchPath (x, y, a, b, z, context = ctx) {
     context.lineTo((-a + x + 0.5) * z, (b + y + 0) * z);
     context.lineTo((-a + x + 0.5) * z, (b + y + .2) * z);
     context.stroke();
+}
+
+function custom (x1, y1, a, b, z, w, h, context = ctx) {
+    context.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.fillStyle = "#3E3F41";
+    context.lineWidth = z/55;
+    context.setLineDash([]);
+    context.beginPath();
+
+    let radius = .08
+    let cornerRadius = { upperLeft: radius*z, upperRight: radius*z, lowerLeft: radius*z, lowerRight: radius*z };
+
+    let width = w * z
+    let height = h * z
+    let x = ((-a + x1 + 0.5) * z) - (width/2)
+    let y = ((b + y1 + .5) * z) - (height/2)
+
+    ctx.beginPath();
+    ctx.moveTo(x + cornerRadius.upperLeft, y);
+    ctx.lineTo(x + width - cornerRadius.upperRight, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + cornerRadius.upperRight);
+    ctx.lineTo(x + width, y + height - cornerRadius.lowerRight);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - cornerRadius.lowerRight, y + height);
+    ctx.lineTo(x + cornerRadius.lowerLeft, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - cornerRadius.lowerLeft);
+    ctx.lineTo(x, y + cornerRadius.upperLeft);
+    ctx.quadraticCurveTo(x, y, x + cornerRadius.upperLeft, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    context.fillStyle = "grey";
+    context.lineWidth = z/100;
+    context.beginPath();
+    context.arc(x + width/2, y + .05*z, .08 * z, 0, 1 * Math.PI, false);
+    context.lineTo(x + width/2 - .08*z, y + .01*z);
+    context.lineTo(x + width/2 + .08*z, y + .01*z);
+    context.closePath();
+    context.stroke();
+    context.fill();
+}
+
+function icPins (x,y,a,b, context = ctx) {
+    context.beginPath();
+    context.rect((-a + x + 0.47) * z, (b + y + .45) * z, .06*z, .1*z);
+    context.closePath();
+    context.fill();
+}
+
+
+CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius, fill, stroke) {
+    var cornerRadius = { upperLeft: 0, upperRight: 0, lowerLeft: 0, lowerRight: 0 };
+    if (typeof stroke == "undefined") {
+        stroke = true;
+    }
+    if (typeof radius === "object") {
+        for (var side in radius) {
+            cornerRadius[side] = radius[side];
+        }
+    }
+
+    this.beginPath();
+    this.moveTo(x + cornerRadius.upperLeft, y);
+    this.lineTo(x + width - cornerRadius.upperRight, y);
+    this.quadraticCurveTo(x + width, y, x + width, y + cornerRadius.upperRight);
+    this.lineTo(x + width, y + height - cornerRadius.lowerRight);
+    this.quadraticCurveTo(x + width, y + height, x + width - cornerRadius.lowerRight, y + height);
+    this.lineTo(x + cornerRadius.lowerLeft, y + height);
+    this.quadraticCurveTo(x, y + height, x, y + height - cornerRadius.lowerLeft);
+    this.lineTo(x, y + cornerRadius.upperLeft);
+    this.quadraticCurveTo(x, y, x + cornerRadius.upperLeft, y);
+    this.closePath();
+    if (stroke) {
+        this.stroke();
+    }
+    if (fill) {
+        this.fill();
+    }
 }

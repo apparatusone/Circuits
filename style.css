@@ -113,13 +113,19 @@ canvas {
     z-index: 5;
 }
 
-#zoom-out, #select {
+#zoom-out, #select, #save{
     height: 40px;
     border-left: solid 2px;
     border-color: rgb(93, 93, 93);
 }
 
 #select {
+    font-size: 1.1em;
+    width: 40px;
+    z-index: 5;
+}
+
+#save {
     font-size: 1.1em;
     width: 47px;
     z-index: 5;
@@ -141,6 +147,30 @@ canvas {
     border: 2px solid #A2A2A2;
     background-color: #8a8a8a17;
     border-radius: 10px;
+}
+
+#name-form-container {
+    position: fixed;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    top: calc(50% - 120px/2);
+    left: calc(50% - 300px/2);
+    width: 300px;
+    height: 120px;
+
+    border: .6px double #858387d6;
+    outline: .1px solid rgba(0, 0, 0, 0.779);
+    /* outline-offset: -1.5px; */
+    border-radius: 7px;
+    background-color: #000000ba;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    z-index: 2;
+}
+
+#name-form {
+    display: flex;
 }
 
 
