@@ -13,7 +13,8 @@ import {
 } from "./parts.js"
 
 import { shape } from "./shapes.js"
-import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave } from "../node_modules/@mdi/js/mdi.js";
+//import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave } from "../node_modules/@mdi/js/mdi.js";
+import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave } from '@mdi/js';
 import { within, drawShape, generateId, stringInString, minMax, slope } from "./utilities.js";
 
 const canvas = document.getElementById("canvas");
