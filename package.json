@@ -1,0 +1,22 @@
+{
+  "name": "calculator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apparatusone/Calculator.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/apparatusone/Calculator/issues"
+  },
+  "homepage": "https://github.com/apparatusone/Calculator#readme",
+  "dependencies": {
+    "@mdi/js": "^7.0.96"
+  }
+}
