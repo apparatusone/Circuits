@@ -1,16 +1,6 @@
 'use strict';
 
-import {
-    Wire,
-    TempLine,
-    Node,
-    Led,
-    OnOffSwitch,
-
-    make,
-
-    CustomComponent,
-} from "./parts.js"
+import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent } from "./parts.js"
 
 import { shape } from "./shapes.js"
 //import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave } from "../node_modules/@mdi/js/mdi.js";
@@ -22,8 +12,18 @@ const ctx = canvas.getContext("2d", { alpha: false });
 ctx.imageSmoothingEnabled = true;
 ctx.imageSmoothingQuality = 'high';
 
-canvas.height = window.innerHeight;
-canvas.width = window.innerWidth;
+// Start listening to resize events and draw canvas.
+window.addEventListener('resize', resizeCanvas, false);
+resizeCanvas()
+
+function resizeCanvas() {
+    // Set actual size in memory (scaled to account for extra pixel density).
+    //const scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas.
+    const scale = 1;
+    canvas.width = Math.floor(window.innerWidth * scale);
+    canvas.height = Math.floor(window.innerHeight * scale);
+}
+
 
 const zoomPercentage = document.getElementById("zoomlevel");
 const zoomInButton = document.getElementById("zoom-in");
@@ -152,11 +152,6 @@ let drawingRect = []
 
 //load from localstorage
 loadSave()
-
-
-//TODO: refactor 'MAKE' components
-// add a component
-
 
 make.led(0,2,0)
 make.switch(-1,-2,0)
