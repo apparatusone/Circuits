@@ -27,15 +27,23 @@ class Wire {
     nodeState = { a: 0, b: 0}
 
     get state () {
-        let state;
+        let state = 0;
 
         //update nodes on state change
         if (this.node.a.state !== this.nodeState.a) {
+            if (this.node.a.state === undefined) {
+                this.node.a.state = 0
+            }
             state = this.node.a.state
+            console.log('a',state)
         }
 
         if(this.node.b.state !== this.nodeState.b) {
+            if (this.node.b.state === undefined) {
+                this.node.b.state = 0
+            }
             state = this.node.b.state
+            console.log('b',state)
         }
 
         this.node.a.state = state;

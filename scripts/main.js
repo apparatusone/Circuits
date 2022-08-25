@@ -1443,6 +1443,33 @@ function handleForm(event) { event.preventDefault();
 } 
 window.handleForm = handleForm
 
+const tooltip = document.getElementById("tooltip")
+const toolText = document.getElementById("tooltip-text")
+
+undobutton.onmouseover = function() {
+    tooltip.style.display = "flex";
+    toolText.textContent = "Undo"
+    tooltip.style.width = "70px"
+    // get div with after name
+    tooltip.style.left = (event.pageX - 30)+"px";
+    tooltip.style.top = (event.pageY + 20)+"px";
+}
+undobutton.onmouseout = function() {
+    tooltip.style.display = "none";
+}
+
+zoomPercentage.onmouseover = function() {
+    tooltip.style.display = "flex";
+    toolText.textContent = "Reset Zoom"
+    tooltip.style.width = "100px"
+    // get div with after name
+    tooltip.style.left = (event.pageX - 30)+"px";
+    tooltip.style.top = (event.pageY + 20)+"px";
+}
+zoomPercentage.onmouseout = function() {
+    tooltip.style.display = "none";
+}
+
 
 //right click
 document.addEventListener('contextmenu', function(e) {
@@ -1496,7 +1523,7 @@ export function defineNodes (id, nodes, object, objects) {
 
 
 // FIXME:
-// - if screen is resized canvas does not resize
+// ✓- if screen is resized canvas does not resize
 // ✓- highlight isn't on top
 // - rotate buttons
 // ✓- can't connect to objects[0]
@@ -1515,7 +1542,7 @@ export function defineNodes (id, nodes, object, objects) {
 // ✓- can add multiple wires to input.. ?
 // ✓- making a latch breaks the program...
 // - dragging a component from the menu back to the menu should destroy it
-// - component in drag and drop menu don't have nodes
+// ✓- component in drag and drop menu don't have nodes
 // - change drag and drop menu to use existing onClick function?
 // - grid
 // - nodes get added to end of wire node list, splice to correct location
@@ -1528,8 +1555,8 @@ export function defineNodes (id, nodes, object, objects) {
 
 // TODO:
 // ADD:
-// - create IC function
-//     - add name component function
+// ✓- create IC function
+//     ✓- add name component function
 // - make wires selectable / add points
 
 // ✓- add clock
@@ -1540,7 +1567,6 @@ export function defineNodes (id, nodes, object, objects) {
 // - comment code
 // ✓- first components: switch & LED
 // - open hand cursor when something draggable is under cursor
-// - draw cursor when node is under cursor
 // - if zoomed out (% ?) disable node selection
 // ✓- optimize draw function
 // - bespoke outline for component
@@ -1564,3 +1590,4 @@ export function defineNodes (id, nodes, object, objects) {
 // - add on hover text to buttons
 // - shift click to select multiple components
 // - delete nodes
+// - group move
