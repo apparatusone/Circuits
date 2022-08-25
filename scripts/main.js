@@ -1,5 +1,21 @@
 'use strict';
 
+import {
+    Wire,
+    TempLine,
+    Node,
+    Led,
+    OnOffSwitch,
+
+    make,
+
+    CustomComponent,
+} from "./parts.js"
+
+import { shape } from "./shapes.js"
+import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave } from "../node_modules/@mdi/js/mdi.js";
+import { within, drawShape, generateId, stringInString, minMax, slope } from "./utilities.js";
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
 ctx.imageSmoothingEnabled = true;
@@ -9,11 +25,11 @@ canvas.height = window.innerHeight;
 canvas.width = window.innerWidth;
 
 const zoomPercentage = document.getElementById("zoomlevel");
-const zoomIn = document.getElementById("zoom-in");
-const zoomOut = document.getElementById("zoom-out");
+const zoomInButton = document.getElementById("zoom-in");
+const zoomOutButton = document.getElementById("zoom-out");
 const rotateLeft = document.getElementById("rotate-left");
 const rotateRight = document.getElementById("rotate-right");
-const undo = document.getElementById("undo");
+const undobutton = document.getElementById("undo");
 const selectButton = document.getElementById("select");
 const saveButton = document.getElementById("save");
 const deleteButton = document.getElementById("delete");
@@ -33,13 +49,47 @@ const norGate = document.getElementById('norgate');
 const xorGate = document.getElementById('xorgate');
 const xnorGate = document.getElementById('xnorgate');
 const notGate = document.getElementById('notgate');
-const testButton = document.getElementById('addTest');
+const cc = document.getElementById('cc');
+
+
+
+
+function addMdi(mdi,domObject) {
+    let iconSvg = document.createElementNS("http://www.w3.org/2000/svg", 'svg'); //Create a path in SVG's namespace
+    const iconPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+    
+    iconSvg.setAttribute('fill', 'white');
+    iconSvg.setAttribute('viewBox', '0 0 24 24');
+    //iconSvg.setAttribute('stroke', 'white');
+    iconSvg.classList.add('post-icon');
+
+    iconPath.setAttribute(
+    'd',
+    mdi
+    );
+    iconPath.setAttribute('stroke-linecap', 'round');
+    iconPath.setAttribute('stroke-linejoin', 'round');
+    iconPath.setAttribute('stroke-width', '1');
+    iconSvg.appendChild(iconPath);
+    iconSvg.setAttribute('width', '24');
+    iconSvg.setAttribute('height', '24');
+    domObject.appendChild(iconSvg);
+}
+
+addMdi(mdiContentSave,saveButton)
+addMdi(mdiSelection,selectButton)
+addMdi(mdiUndoVariant,undobutton)
+addMdi(mdiPlus,zoomInButton)
+addMdi(mdiMinus,zoomOutButton)
+
 
 // default zoom
-let z = 100;                                            
+export let z = 100;                                            
 let objectIndex = 0;
 let smoothZoom = z;
 
+
+//global conditions
 let dragging = false;
 let drawing = false;
 let mouseDown = false;
@@ -72,21 +122,13 @@ let settings = {
 let timerStart;
 let timerEnd;
 
-// function to generate unique id for components
-const idCreator = function* () {
-    let i = 1;
-    while (true) yield i++;
-};
-const idsGenerator = idCreator();
-const generateId = () => idsGenerator.next().value;
-
 const canvasCenter = {
     x: - Number.parseFloat((canvas.width/(z*2)).toFixed(3)) + 0.5,
     y: Number.parseFloat((canvas.height/(z*2)).toFixed(3)) - 0.5
 }
 
 //set origin to center of screen
-let origin = {                                         
+export let origin = {                                         
     x: canvasCenter.x,
     y: canvasCenter.y,
     click: { x:0, y:0 },
@@ -96,136 +138,32 @@ let origin = {
 };
 
 // location of cursor
-let mouse = {
+export let mouse = {
     screen: { x: 0, y: 0 },
     canvas: { x: 0, y: 0 },
     cell: {x: 0, y: 0}
 };
 
-let objects = {};            // components
-//let connection = [];         // links between components
-let wires = {};              // visual representation of links
+export let objects = {};            // components
+export let wires = {};              // visual representation of links
 let drawingLine = []         // line shown when drawing connection
 let drawingRect = []
 
 //load from localstorage
-//loadSave()
+loadSave()
 
+
+//TODO: refactor 'MAKE' components
 // add a component
-function makeSwitch (x,y,r) {
-    let id = generateId()
-    let nodes = ['output']
-    objects[id] = new OnOffSwitch(x, y, r, id)
-    defineNodes( id, nodes, objects[id] )
-}
 
-function makeLed (x,y,r) {
-    let id = generateId()
-    let nodes = ['input']
-    objects[id] = new Led(x, y, r, id)
-    defineNodes( id, nodes, objects[id] )
-}
 
-function makeClock (x,y,r, frequency = 1000) {
-    let id = generateId()
-    let nodes = ['output']
-    objects[id] = new Clock(x, y, r, id, frequency)
-    defineNodes( id, nodes, objects[id] )
+make.led(0,2,0)
+make.switch(-1,-2,0)
+make.switch(1,-2,0)
+make.and(0,0,0)
 
-    function clock() {
-        objects[id].changeState
-        setTimeout(clock, frequency);
-    };
+console.log(objects[1])
 
-    clock();
-}
-
-function makeAnd (x,y,r) {
-    let id = generateId()
-    let nodes = ['input1', 'input2', 'output']
-    objects[id] = new AndGate(x, y, r, id)
-    defineNodes( id, nodes, objects[id] )
-}
-
-function makeOr (x,y,r) {
-    let id = generateId()
-    let nodes = ['input1', 'input2', 'output']
-    objects[id] = new OrGate(x, y, r, id)
-    defineNodes( id, nodes, objects[id] )
-}
-
-function makeNor (x,y,r) {
-    let id = generateId()
-    let nodes = ['input1', 'input2', 'output']
-    objects[id] = new NorGate(x, y, r, id)
-    defineNodes( id, nodes, objects[id] )
-}
-
-function makeNand (x,y,r) {
-    let id = generateId()
-    let nodes = ['input1', 'input2', 'output']
-    objects[id] = new NandGate(x, y, r, id)
-    defineNodes( id, nodes, objects[id] )
-}
-
-function makeNot (x,y,r) {
-    let id = generateId()
-    let nodes = ['input', 'output']
-    objects[id] = new NotGate(x, y, r, id)
-    defineNodes( id, nodes, objects[id] )
-}
-
-function makeXor (x,y,r) {
-    let id = generateId()
-    let nodes = ['input1', 'input2', 'output']
-    objects[id] = new XorGate(x, y, r, id)
-    defineNodes( id, nodes, objects[id] )
-}
-
-function makeXnor (x,y,r) {
-    let id = generateId()
-    let nodes = ['input1', 'input2', 'output']
-    objects[id] = new XnorGate(x, y, r, id)
-    defineNodes( id, nodes, objects[id] )
-}
-
-function makeNode (x,y,id,io) {
-    let node = new Node(id, wires, io)
-
-    Object.defineProperty(node, 'x', {
-        value: x,
-        writable: true
-    });
-
-    Object.defineProperty(node, 'y', {
-        value: y,
-        writable: true
-    });
-    return node
-}
-
-makeLed(0,2,0)
-//makeSwitch(0,0,0)
-makeSwitch(1,0,0)
-makeSwitch(2,0,0)
-makeSwitch(3,0,0)
-makeSwitch(4,0,0)
-makeSwitch(5,0,0)
-makeSwitch(6,0,0)
-makeSwitch(7,0,0)
-//makeSwitch(8,0,0)
-objects[1].name = "out"
-objects[2].name = "in"
-objects[3].name = "in2"
-objects[4].name = "in3"
-objects[5].name = "in4"
-objects[6].name = "in5"
-objects[7].name = "in6"
-objects[8].name = "in7"
-//objects[9].name = "in8"
-//objects[2].name = "in"
-
-//makeCustomComponent()
 
 //let fps;
 let lastFrame = performance.now();
@@ -315,11 +253,11 @@ function draw() {
             ctx.lineWidth = z/20;
             ctx.strokeStyle = '#26CE00';
             ctx.setLineDash([]);
-            ctx.roundRect(value.gridCoordinates.x - z/20,
+            shape.roundRectangle(value.gridCoordinates.x - z/20,
                             value.gridCoordinates.y - z/20,
                             z*1.1,
                             z*1.1,
-                            {upperLeft: z/5,upperRight: z/5,lowerLeft: z/5}, false, true);
+                            {upperLeft: z/5,upperRight: z/5,lowerLeft: z/5}, false, true, ctx);
             ctx.stroke();
         }
     }
@@ -349,15 +287,14 @@ function draw() {
     // TODO: rotate text
     for (let [key, value] of Object.entries(objects)) {
         if (value.constructor === CustomComponent) {
-            //console.log(value)
             for (let [key, off] of Object.entries(value.offset)) {
                 //draw pins
                 let pinOffset = .21
                 if (off.x > 0) {
                     pinOffset*=-1
                 }
-                ctx.fillStyle = 'grey'
-                icPins (off.x + pinOffset, off.y, origin.x, origin.y)
+                ctx.fillStyle = '#969696'
+                shape.pins (off.x + pinOffset + value.x, off.y - value.y, origin.x, origin.y, z, ctx)
 
                 //draw labels
                 let fontSize = z/9
@@ -473,8 +410,6 @@ canvas.onmousemove = function(e) {
     }
 };
 
-
-
 canvas.onmousewheel = function(e) {
     e.preventDefault();
 
@@ -504,11 +439,15 @@ canvas.onmousedown = function(e) {
 
     // detect right click
     if (e.button === 2) {
+        rightClick = true;
+        if (highlightedComponents().length > 1) {
+            return
+        }
+
         if (objectUnderCursor.isComponent) {
             removeHighlight();
             objectUnderCursor.object.highlight = true;
         }
-        rightClick = true;
         return
     }
 
@@ -542,12 +481,15 @@ canvas.onmousedown = function(e) {
 
     if (objectUnderCursor.isWire) {
 
-        let node = makeNode(Math.round(mouse.canvas.x*2)/2, Math.round(mouse.canvas.y*2)/2 ,objectUnderCursor.wire.id, 'output')
+        let node = make.node(Math.round(mouse.canvas.x*2)/2, Math.round(mouse.canvas.y*2)/2 ,objectUnderCursor.wire.id, 'output')
         objectUnderCursor.wire.nodes.push(node)
 
     }
 
     if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
+        nameFormContainer.style.display = "none";
+        document.getElementById("fname").value = ''
+
         rightClickMenu.style.display = "none";
         clearHighlightOnNodes()
         removeHighlight();
@@ -645,8 +587,6 @@ function clearHighlightOnNodes() {
     }
 }
 
-
-
 //returns component and node 
 function getObject(x, y) {
     resetStates()
@@ -656,7 +596,7 @@ function getObject(x, y) {
             let a = objects[ele][e].x
             let b = objects[ele][e].y
             //.09 is detection radius from center of node
-            if (isCursorWithinCircle(a, b, 0.1, x, y)) {
+            if (within.circle(a, b, 0.1, x, y)) {
                 objectUnderCursor.isNode = true;
                 objectUnderCursor.object = objects[ele];
                 objectUnderCursor.node = objects[ele][e];
@@ -669,7 +609,7 @@ function getObject(x, y) {
             let a = node.x
             let b = node.y
             //.09 is detection radius from center of node
-            if (isCursorWithinCircle(a, b, 0.1, x, y)) {
+            if (within.circle(a, b, 0.1, x, y)) {
                 objectUnderCursor.isNode = true;
                 objectUnderCursor.object = node;
                 objectUnderCursor.node = node;
@@ -679,7 +619,7 @@ function getObject(x, y) {
     }
     //detect component under cursor
     for (let [key, obj] of Object.entries(objects)) {
-        if (isCursorWithinRectangle(obj.x - (obj.w/2), obj.y - (obj.h/2), obj.w, obj.h, x, y)) {
+        if (within.rectangle(obj.x - (obj.w/2), obj.y - (obj.h/2), obj.w, obj.h, x, y)) {
             objectUnderCursor.isComponent = true;
             objectUnderCursor.object = obj;
             return;
@@ -705,12 +645,6 @@ function getObject(x, y) {
     return false
 }
 
-//returns true if 'a' is in 'b'
-function stringInString (a,b) {
-    const regex = new RegExp( a, 'gi' );
-    return regex.test(b)
-}
-
 function pointOnLine (x1,y1,x2,y2,x,y,radius) {
     let a = { x: x1, y: y1 }
     let b = { x: x2, y: y2 }
@@ -733,7 +667,7 @@ function pointOnLine (x1,y1,x2,y2,x,y,radius) {
         recty = minMax([a.y, b.y])[0]
     }
 
-    if (isCursorWithinRectangle(rectx, recty, Math.max(radius, width), Math.max(radius, height), x, y)) {
+    if (within.rectangle(rectx, recty, Math.max(radius, width), Math.max(radius, height), x, y)) {
         if (a.x === b.x) {
             if (Math.abs(a.x - x) < .04) return true;
         }
@@ -743,7 +677,7 @@ function pointOnLine (x1,y1,x2,y2,x,y,radius) {
         }
 
         //get equation for line
-        m = slope(a.x, a.y, b.x, b.y)
+        m = slope( a, b )
         b = -(m*a.x - a.y)
         let line = m*x + b - y
 
@@ -769,14 +703,14 @@ zoomPercentage.onclick = function() {
     zoomPercentage.innerHTML = Math.round(z) + '%';
 };
 
-zoomIn.onclick = function() {
+zoomInButton.onclick = function() {
     mouse.screen.x = canvas.width / 2;
     mouse.screen.y = canvas.height /2;
     smoothZoom = Math.min(500, Math.round(smoothZoom + settings.zoomButtons));
     zoomPercentage.innerHTML = Math.round(smoothZoom) + '%';
 };
 
-zoomOut.onclick = function() {
+zoomOutButton.onclick = function() {
     mouse.screen.x = canvas.width / 2;
     mouse.screen.y = canvas.height /2;
     smoothZoom = Math.max(10, Math.round(smoothZoom - settings.zoomButtons));
@@ -819,7 +753,7 @@ rotateLeft.onclick = function() {
     objects[id].rotateNodes('right');
 }
 
-undo.onclick = function() {
+undobutton.onclick = function() {
     if (wires.length === 0) return;
 
     let wireId = wires[(wires.length - 1)].id
@@ -850,23 +784,72 @@ deleteButton.onclick = function() {
 }
 
 saveButton.onclick = function() {
-    window.localStorage.setItem("objects", JSON.stringify(objects));
-    window.localStorage.setItem("wires", JSON.stringify(wires));
-    //localStorage.setItem('objects', objects);
-    //localStorage.setItem('wires', wires);
+    window.localStorage.clear();
+
+
+    let obj = objects[1]
+    window.localStorage.setItem('1', JSON.stringify(obj));
+
+    // for (let [key, value] of Object.entries(objects)) {
+    //     for (let nest of Object.getOwnPropertyNames(value)) {
+    //         if (typeof value[nest] === 'object') {
+    //             for (let nest1 of Object.getOwnPropertyNames(value[nest])) {
+    //                 console.log(value[nest], nest1)
+    //             }
+    //         }
+    //         //console.log(Object.getPrototypeOf(value[nest]))
+    //     }
+    //     //window.localStorage.setItem(key, value.serialize());
+    // }
+
+    //let json = foo.serialize();
+
+    // function deserialize(json){
+    //     //o is [Object object], but it contains every state of the original object
+    //     let o = JSON.parse(json);
+    //     //Get original class instance
+    //     let original_class = eval(o.classname);
+    
+    //     //Create new object of the original class, then restore back property values
+    //     //NOTE: You may not need to pass any parameter to the constructor, since
+    //     //every state of the original object will be restored from o.
+    //     return Object.assign(new original_class(), o);
+    // }
+    
+    // let _foo = deserialize(json);
+    // console.log(_foo instanceof Foo); // returns true;
 }
 
 function loadSave() {
-    objects = {};
-    wires = {};   
+    if (!window.localStorage.getItem("1")) return
 
-    if (localStorage.getItem('objects')) {
-        console.log(JSON.parse(window.localStorage.getItem("objects")))
-        //objects = JSON.parse(window.localStorage.getItem("objects"))
+    var led = JSON.parse(window.localStorage.getItem("1"))
+
+    let id = window[`make${led.classname}`](0,0,0)
+
+    Object.defineProperty(objects[id], id, {
+        value: led.id,
+        enumerable: true,
+        configurable: true
+      });
+
+    id = led.id
+
+    for (let [key, value] of Object.entries(led)) {
+        Object.defineProperty(objects[id], key, {
+            value: value,
+            enumerable: true,
+            configurable: true
+          });
     }
-    if (localStorage.getItem('wires')) {
-        //wires = JSON.parse(window.localStorage.getItem("wires"))
-    }
+
+
+
+
+
+    // if (localStorage.getItem('wires')) {
+    //     //wires = JSON.parse(window.localStorage.getItem("wires"))
+    // }
 }
 
 customComponentButton.onclick = function() {
@@ -879,8 +862,8 @@ function toggleRightClickMenu() {
 
 const pointerEventsNone = (x) => {
     let elements = [
-        zoomIn,
-        zoomOut,
+        zoomInButton,
+        zoomOutButton,
         zoomPercentage
     ]
     for (const ele of elements) {
@@ -922,7 +905,7 @@ function drawNodes() {
             ctx.strokeStyle = 'rgba(0,0,0,1)';
             ctx.lineWidth = z/30;
 
-            drawCircle(a , b, .055, ctx)
+            drawShape.circle(a , b, .055, ctx)
             ctx.fill();
         }
     }
@@ -934,7 +917,7 @@ function drawNodes() {
             let b = node.y
             ctx.strokeStyle = 'rgba(0,0,0,1)';
             ctx.lineWidth = z/30;
-            drawCircle(a , b, .055, ctx)
+            drawShape.circle(a , b, .055, ctx)
             ctx.fill();
             }
         }
@@ -949,7 +932,7 @@ function drawNodeHighlight() {
                 let b = node.y
                 ctx.lineWidth = z/20;
                 ctx.strokeStyle = '#26CE00';
-                drawCircle(a , b, .155, ctx)
+                drawShape.circle(a , b, .155, ctx)
             }
         }
     }
@@ -960,31 +943,6 @@ function removeHighlight () {
     for (let [key, value] of Object.entries(objects)) {
         value.highlight = false;
     }
-}
-
-function isCursorWithinCircle(x, y, r, mouseX, mouseY) {
-    var distSqr = Math.pow(x - mouseX, 2) + Math.pow(y - mouseY, 2);
-
-    if(distSqr < r * r) {
-        return true;
-    }
-    return false;
-}
-
-function isCursorWithinRectangle(x, y, w, h, mouseX, mouseY) {
-    if(mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
-        return true;
-    }
-    return false;
-}
-
-function drawCircle(x,y,r,context) {
-    context.fillStyle = '#FFFFFF';
-    context.setLineDash([]);
-
-    context.beginPath();
-    context.arc((-origin.x + x + 0.5)* z, (origin.y - y + 0.5) * z, r*z, 0, 2 * Math.PI);
-    context.stroke();
 }
 
 function drawWire(wire) {
@@ -1012,55 +970,6 @@ function drawTempWire(wire) {
     ctx.stroke();
 }
 
-function slope(x1, y1, x2, y2)
-{
-    if (x2 - x1 != 0)
-    {
-        return (y2 - y1) / (x2 - x1);
-    }
-    return Number.MAX_VALUE;
-}
-
-// get minimum and maximum of array
-function minMax(items) {
-    const map1 = items.map(ele => ele);
-
-    return map1.reduce((acc, val) => {
-        acc[0] = ( acc[0] === undefined || val < acc[0] ) ? val : acc[0]
-        acc[1] = ( acc[1] === undefined || val > acc[1] ) ? val : acc[1]
-        return acc;
-    }, []);
-}
-
-CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius, fill, stroke) {
-    var cornerRadius = { upperLeft: 0, upperRight: 0, lowerLeft: 0, lowerRight: 0 };
-    if (typeof stroke == "undefined") {
-        stroke = true;
-    }
-    if (typeof radius === "object") {
-        for (var side in radius) {
-            cornerRadius[side] = radius[side];
-        }
-    }
-
-    this.beginPath();
-    this.moveTo(x + cornerRadius.upperLeft, y);
-    this.lineTo(x + width - cornerRadius.upperRight, y);
-    this.quadraticCurveTo(x + width, y, x + width, y + cornerRadius.upperRight);
-    this.lineTo(x + width, y + height - cornerRadius.lowerRight);
-    this.quadraticCurveTo(x + width, y + height, x + width - cornerRadius.lowerRight, y + height);
-    this.lineTo(x + cornerRadius.lowerLeft, y + height);
-    this.quadraticCurveTo(x, y + height, x, y + height - cornerRadius.lowerLeft);
-    this.lineTo(x, y + cornerRadius.upperLeft);
-    this.quadraticCurveTo(x, y, x + cornerRadius.upperLeft, y);
-    this.closePath();
-    if (stroke) {
-        this.stroke();
-    }
-    if (fill) {
-        this.fill();
-    }
-}
 
 
 function drawRotatedImg(x, y, shape, degrees, w = 1, h = 1) {
@@ -1094,7 +1003,7 @@ function drawRotatedImg(x, y, shape, degrees, w = 1, h = 1) {
     ctx.rotate(degrees * -Math.PI / 180);
     ctx.translate(-a, -b)
 
-    shape(x, y, xOrigin, yOrigin, z, w, h)
+    shape(x, y, xOrigin, yOrigin, z, w, h, ctx)
 
     ctx.restore();
 }
@@ -1156,7 +1065,7 @@ function detectWireIntersection() {
 }
 
 
-// id of component, boolean for reseting component states/connections
+// id of component, boolean for resetting component states/connections
 function deleteComponent(id,reset) {
     for (let node of objects[id].nodes) {
         deleteWire(objects[id][node].wireId,reset)
@@ -1250,6 +1159,7 @@ function makeCustomComponent() {
         console.assert(height !== undefined, 'height function error')
         return height
     }
+
     let width = .5
     //get height of component
     let height = Math.max(1, heightCalc(inputs.length), heightCalc(outputs.length))
@@ -1309,7 +1219,7 @@ function makeCustomComponent() {
         }
     }
 
-    //delete components and wires from objects
+    //delete components and wires from main objects
     for (const part of parts) {
         deleteComponent(part.id, false)
     }
@@ -1502,10 +1412,24 @@ nameButton.onclick = function() {
 }
 
 function nameComponent() {
-    if (highlightedComponents().length === 1) {
-        nameFormContainer.style.display = "flex";
+    if (highlightedComponents().length === 0) {
+        return
     }
+
+    if (highlightedComponents().length === 1) {
+        removeHighlight();
+        objectUnderCursor.object.highlight = true;
+    }
+
+    nameFormContainer.style.display = "flex";
+
+    document.getElementById('name-form-type').textContent = objectUnderCursor.object.classname
     
+    if (objectUnderCursor.object.name !== "undefined") {
+        document.getElementById('name-form-label').textContent = objectUnderCursor.object.name
+    } else {
+        document.getElementById('name-form-label').textContent = ''
+    }
 }
 
 function handleForm(event) { event.preventDefault(); 
@@ -1518,8 +1442,10 @@ function handleForm(event) { event.preventDefault();
     }
     objectUnderCursor.object.name = input
     nameFormContainer.style.display = "none";
+
+    document.getElementById("fname").value = ''
 } 
-//nameForm.addEventListener('submit', handleForm);
+window.handleForm = handleForm
 
 
 //right click
@@ -1529,6 +1455,49 @@ document.addEventListener('contextmenu', function(e) {
     rightClickMenu.style.top = (event.pageY - 10)+"px";
     e.preventDefault();
 }, false);
+
+// gets list of nodes and adds nodes to gate
+export function defineNodes (id, nodes, object, objects) {
+    //set scope
+    let self = objects[id]
+
+    for (const node of nodes) {
+        if (stringInString ('output',node)) {
+            Object.defineProperty(object, node, {
+                value: new Node(self.id, objects, node),
+                writable: true
+            });
+        }
+    }
+
+    for (const node of nodes) {
+        let targetObj = new Node(self.id, objects, node)
+        //if node is an input, add proxy
+        if (stringInString ('input',node)) {
+            Object.defineProperty(object, node, {
+                value: 
+                    new Proxy(targetObj, {
+                        set: function (target, key, value) {
+                            target[key] = value;
+                            self.state
+                            return true;
+                        }
+                    }),
+                writable: true
+            });
+        }
+    }
+
+    // adds list of nodes to gate
+    Object.defineProperty(object, 'nodes', {
+        value: nodes,
+        writable: true
+    });
+}
+
+
+
+
 
 // FIXME:
 // - if screen is resized canvas does not resize

@@ -88,7 +88,9 @@ canvas {
 }
 
 #undo {
-    font-size: 2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 47px;
 }
 
@@ -120,13 +122,17 @@ canvas {
 }
 
 #select {
-    font-size: 1.1em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 40px;
     z-index: 5;
 }
 
 #save {
-    font-size: 1.1em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 47px;
     z-index: 5;
 }
@@ -152,13 +158,14 @@ canvas {
 #name-form-container {
     position: fixed;
     display: none;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
     top: calc(50% - 120px/2);
     left: calc(50% - 300px/2);
     width: 300px;
     height: 120px;
-
+    gap: 2px;
     border: .6px double #858387d6;
     outline: .1px solid rgba(0, 0, 0, 0.779);
     /* outline-offset: -1.5px; */
@@ -169,8 +176,28 @@ canvas {
     z-index: 2;
 }
 
+#name-form-container div:first-child {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 28px;
+    margin-top: 15px;
+    margin-left: 15px;
+    align-self: flex-start;
+    color: white
+}
+
+#name-form-container div:nth-child(2) {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 20px;
+    margin-left: 15px;
+    align-self: flex-start;
+    color: white
+}
+
 #name-form {
     display: flex;
+    /* flex-grow: 2;
+    height: 20px; */
+
 }
 
 

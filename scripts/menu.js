@@ -1,3 +1,24 @@
+import {
+    Wire,
+    TempLine,
+    Node,
+    Led,
+    OnOffSwitch,
+    Clock,
+    AndGate,
+    NandGate,
+    OrGate,
+    NorGate,
+    XorGate,
+    XnorGate,
+    NotGate,
+    CustomComponent,
+    make,
+} from "./parts.js"
+
+import { within, drawShape } from './utilities.js'
+import { mouse, origin, z } from './main.js'
+
 const menuCanvas = document.getElementById("menu-canvas");
 const menu = menuCanvas.getContext("2d", { alpha: true });
 menu.imageSmoothingEnabled = true;
@@ -20,6 +41,7 @@ const menuObjects = {
     xnor: {x: 165, y: 505, obj: new XnorGate, name: 'Xnor', type: 'svg'},
     not: {x: 35, y: 640, obj: new NotGate, name: 'Not', type: 'svg'},
     clock: {x: 165, y: 640, obj: new Clock, name: 'Clock', type: 'shape'},
+    cc: {x: 35, y: 775, obj: new CustomComponent, name: 'CustomComponent', type: 'svg'},
 }
 
 for (const [key, value] of Object.entries(menuObjects)) {
@@ -48,7 +70,7 @@ for (const [key, value] of Object.entries(menuObjects)) {
 }
 
 const ghostObject = []
-let clickedObject;
+export let clickedObject;
 
 let fpsInterval, startTime, now, then, elapsed;
 let stop = false
@@ -64,22 +86,22 @@ function startAnimating() {
 }
 
 function menuDraw(newtime) {
-        requestAnimationFrame(menuDraw);
+    requestAnimationFrame(menuDraw);
 
-        if (stop) {
-            menu.clearRect(0, 0, menuCanvas.width, menuCanvas.height);
-            return
-        }
-    
-        // calc elapsed time since last loop
-        now = newtime;
-        elapsed = now - then;
-    
-        // if enough time has elapsed, draw the next frame
-        if (elapsed > fpsInterval) {
-            // Get ready for next frame by setting then=now, but...
-            // Also, adjust for fpsInterval not being multiple of 16.67
-            then = now - (elapsed % fpsInterval);
+    if (stop) {
+        menu.clearRect(0, 0, menuCanvas.width, menuCanvas.height);
+        return
+    }
+
+    // calc elapsed time since last loop
+    now = newtime;
+    elapsed = now - then;
+
+    // if enough time has elapsed, draw the next frame
+    if (elapsed > fpsInterval) {
+        // Get ready for next frame by setting then=now, but...
+        // Also, adjust for fpsInterval not being multiple of 16.67
+        then = now - (elapsed % fpsInterval);
 
     menu.clearRect(0, 0, menuCanvas.width, menuCanvas.height);
 
@@ -122,10 +144,24 @@ function menuDraw(newtime) {
             let b = -ghostObject[0].y/z + origin.y + node.y
             menu.strokeStyle = 'rgba(0,0,0,1)';
             menu.lineWidth = z/30;
-            drawCircle(a , b, .055, menu)
+            drawShape.circle(a , b, .055, menu)
             menu.fill();
         }
     }
+
+    //transparency at top and bottom of menu
+    menu.globalCompositeOperation = 'destination-out';
+    let grd = menu.createLinearGradient(150, 0, 150, window.innerHeight);
+    grd.addColorStop(0, "black");
+    grd.addColorStop(.05, "transparent");
+    grd.addColorStop(.95, "transparent");
+    grd.addColorStop(1, "black");
+    menu.rect(0,0,300,window.innerHeight)
+    menu.fillStyle = grd;
+    menu.fill()
+    menu.fill()
+    menu.fill()
+    menu.globalCompositeOperation = 'source-over';
 
     }
 }
@@ -154,7 +190,7 @@ window.onmousedown = function(e) {
     if (create) {
 
         for (let [key, value] of Object.entries(menuObjects)) {
-            if (isCursorWithinRectangle(value.x, value.y, 100, 100, e.x, e.y)) {
+            if (within.rectangle(value.x, value.y, 100, 100, e.x, e.y)) {
                 clickedObject = value;
             }
         }
@@ -175,7 +211,7 @@ window.onmousedown = function(e) {
 
 window.onmouseup = function(e) {
     if (create && clickedObject) {
-        window[`make${clickedObject.name}`](Math.round(mouse.canvas.x*2)/2,Math.round(mouse.canvas.y*2)/2,0)
+        make[clickedObject.name.toLowerCase()](Math.round(mouse.canvas.x*2)/2,Math.round(mouse.canvas.y*2)/2,0)
 
         // remove menu highlight
         const element = document.getElementById(`${clickedObject.name.toLowerCase()}-box`);
@@ -185,7 +221,6 @@ window.onmouseup = function(e) {
 
         create = false
     }
-
 
     clickedObject = undefined
     // delay and set fps to 1
