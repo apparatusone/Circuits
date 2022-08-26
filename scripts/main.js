@@ -1609,13 +1609,13 @@ export function defineNodes (id, nodes, object, objects) {
 // ✓- select and move wire nodes
 // - move gui functions to seperate file
 // - add component info menu to right side
-// - make modules file
+// ✓- make modules files
 // ✓- x to center of canvas
 // ✓- add right click menu
 // ✓- added delete function for components
 // ✓- added drag to select function
 // - add right click functions
-// - add on hover text to buttons
+// ✓- add on hover text to buttons
 // - shift click to select multiple components
 // - delete nodes
 // - group move

@@ -62,6 +62,7 @@ canvas {
     margin-top: -14px;
     background-color: black;
     transform: rotate(45deg);
+
 }
 
 #menu-canvas {
@@ -115,6 +116,15 @@ canvas {
     backdrop-filter: blur(6px);
     border-radius: 10px;
     z-index: 5;
+
+    box-shadow:
+        0px 2px 2.2px rgba(0, 0, 0, 0.02),
+        0px 4.7px 5.3px rgba(0, 0, 0, 0.028),
+        0px 8.9px 10px rgba(0, 0, 0, 0.035),
+        0px 15.9px 17.9px rgba(0, 0, 0, 0.042),
+        0px 29.7px 33.4px rgba(0, 0, 0, 0.05),
+        0px 71px 80px rgba(0, 0, 0, 0.07)
+    ;
 }
 
 #undo {
@@ -210,6 +220,15 @@ canvas {
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
     z-index: 2;
+
+    box-shadow:
+        2.8px 2.8px 2.2px rgba(0, 0, 0, 0.02),
+        6.7px 6.7px 5.3px rgba(0, 0, 0, 0.028),
+        12.5px 12.5px 10px rgba(0, 0, 0, 0.035),
+        22.3px 22.3px 17.9px rgba(0, 0, 0, 0.042),
+        41.8px 41.8px 33.4px rgba(0, 0, 0, 0.05),
+        100px 100px 80px rgba(0, 0, 0, 0.07)
+    ;
 }
 
 #name-form-container div:first-child {
@@ -286,6 +305,15 @@ canvas {
     flex-direction: column;
     gap: 2px;
     z-index:100;
+
+    box-shadow:
+        2.8px 2.8px 2.2px rgba(0, 0, 0, 0.011),
+        6.7px 6.7px 5.3px rgba(0, 0, 0, 0.016),
+        12.5px 12.5px 10px rgba(0, 0, 0, 0.02),
+        22.3px 22.3px 17.9px rgba(0, 0, 0, 0.024),
+        41.8px 41.8px 33.4px rgba(0, 0, 0, 0.029),
+        100px 100px 80px rgba(0, 0, 0, 0.04)
+  ;
 }
 
 menu {
