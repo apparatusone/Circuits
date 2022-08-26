@@ -34,6 +34,43 @@ canvas {
     cursor: crosshair;
 }
 
+#welcome {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* align-items: center; */
+    gap: 10px;
+    width: 350px;
+    height: 450px;
+    margin: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+    top: 300px;
+    white-space: pre-wrap;
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    background: rgba(0, 7, 21, 0.738);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border-radius: 10px;
+    z-index: 10;
+}
+
+#welcome button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 50px;
+    height: 50px;
+}
+
+#welcome ul {
+    display: grid;
+    gap: 10px;
+}
+
 #tooltip {
     position: relative;
     display: none;
@@ -213,8 +250,7 @@ canvas {
     height: 120px;
     gap: 2px;
     border: .6px double #858387d6;
-    outline: .1px solid rgba(0, 0, 0, 0.779);
-    /* outline-offset: -1.5px; */
+    box-shadow: 0 0 0 .1px rgba(0, 0, 0, 0.779);
     border-radius: 7px;
     background-color: #000000ba;
     -webkit-backdrop-filter: blur(6px);
@@ -322,8 +358,7 @@ menu {
     padding: 5px;
     margin:0;
     border: .6px double #858387d6;
-    outline: .1px solid rgba(0, 0, 0, 0.833);
-    /* outline-offset: -1.5px; */
+    box-shadow: 0 0 0 .1px rgba(0, 0, 0, 0.779);
     border-radius: 7px;
     background-color: #2b2b2baa;
     -webkit-backdrop-filter: blur(6px);

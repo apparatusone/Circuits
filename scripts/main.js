@@ -3,8 +3,8 @@
 import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent } from "./parts.js"
 
 import { shape } from "./shapes.js"
-//import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave } from "../node_modules/@mdi/js/mdi.js";
-import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave } from './shapes.js';
+//import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, } from "../node_modules/@mdi/js/mdi.js";
+import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle } from './shapes.js';
 import { within, drawShape, generateId, stringInString, minMax, slope, capitalize } from "./utilities.js";
 
 const canvas = document.getElementById("canvas");
@@ -82,6 +82,7 @@ addMdi(mdiSelection,selectButton)
 addMdi(mdiUndoVariant,undobutton)
 addMdi(mdiPlus,zoomInButton)
 addMdi(mdiMinus,zoomOutButton)
+
 
 
 // default zoom
@@ -1498,6 +1499,12 @@ currentBtn.addEventListener('mouseout', function() {
     });
 })
 
+const welcomeClose = document.getElementById("welcome-close");
+addMdi(mdiCloseCircle,welcomeClose)
+const welcome = document.getElementById("welcome");
+welcomeClose.onclick = function() {
+    welcome.style.display = "none";
+}
 
 //right click
 document.addEventListener('contextmenu', function(e) {
