@@ -5,11 +5,11 @@ import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent } from ".
 import { shape } from "./shapes.js"
 //import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave } from "../node_modules/@mdi/js/mdi.js";
 import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave } from './shapes.js';
-import { within, drawShape, generateId, stringInString, minMax, slope } from "./utilities.js";
+import { within, drawShape, generateId, stringInString, minMax, slope, capitalize } from "./utilities.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
-ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingEnabled = false;
 ctx.imageSmoothingQuality = 'high';
 
 // Start listening to resize events and draw canvas.
@@ -18,8 +18,8 @@ resizeCanvas()
 
 function resizeCanvas() {
     // Set actual size in memory (scaled to account for extra pixel density).
-    //const scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas.
-    const scale = 1;
+    const scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas.
+    //const scale = 1;
     canvas.width = Math.floor(window.innerWidth * scale);
     canvas.height = Math.floor(window.innerHeight * scale);
 }
@@ -124,8 +124,8 @@ let timerStart;
 let timerEnd;
 
 const canvasCenter = {
-    x: - Number.parseFloat((canvas.width/(z*2)).toFixed(3)) + 0.5,
-    y: Number.parseFloat((canvas.height/(z*2)).toFixed(3)) - 0.5
+    x: - Number.parseFloat((window.innerWidth/(z*2)).toFixed(3)) + 0.5,
+    y: Number.parseFloat((window.innerHeight/(z*2)).toFixed(3)) - 0.5
 }
 
 //set origin to center of screen
@@ -225,9 +225,39 @@ function draw() {
     ctx.lineTo((-origin.x + .1 + 0.5)* z, (origin.y + .1 + 0.5) * z, z, z);
     ctx.stroke();
 
+    //highlight selection //TODO: FIXME:
+    for (let [key, value] of Object.entries(objects)) {
+        if (value.highlight === true) {
+            if (value.img !== 'svg') {
+                ctx.lineWidth = z/4;
+                ctx.strokeStyle = '#00B6FF';
+                ctx.lineJoin = 'round';
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#00B6FF';
+                drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
+
+            }
+            ctx.stroke();
+
+            //highlight connected wires
+            if (highlightedComponents().length < 2) continue
+            for (const node of value.nodes) {
+                if (value[node].wireId !== undefined) {
+                    ctx.strokeStyle = '#00B6FF';
+                    ctx.lineWidth = z/5;
+                    drawWire(wires[value[node].wireId])
+                }
+                
+            }
+        }
+    }
+    
+
     // draw objects
     for (let [key, value] of Object.entries(objects)) {
         ctx.fillStyle = "rgba(0,0,0,.4)";
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.lineWidth = z/15;
         if (value.img === 'svg') drawRotated(value.image, value.gridCoordinates.x, value.gridCoordinates.y, z, z, value.r)
         if (value.img !== 'svg') {
             if (value.state) {
@@ -238,23 +268,6 @@ function draw() {
                 ctx.fillStyle = '#FFFFFF';
                 drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
             }
-        }
-    }
-
-    //highlight selection //TODO: FIXME:
-    for (let [key, value] of Object.entries(objects)) {
-        if (value.highlight === true) {
-            origin.selected.x = value.gridCoordinates.x
-            origin.selected.y = value.gridCoordinates.y
-            ctx.lineWidth = z/20;
-            ctx.strokeStyle = '#26CE00';
-            ctx.setLineDash([]);
-            shape.roundRectangle(value.gridCoordinates.x - z/20,
-                            value.gridCoordinates.y - z/20,
-                            z*1.1,
-                            z*1.1,
-                            {upperLeft: z/5,upperRight: z/5,lowerLeft: z/5}, false, true, ctx);
-            ctx.stroke();
         }
     }
 
@@ -271,6 +284,8 @@ function draw() {
     for (let [key, value] of Object.entries(wires)) {
         ctx.setLineDash([]);
         ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.lineWidth = z/20;
         drawWire(value)
     }
 
@@ -942,8 +957,6 @@ function removeHighlight () {
 }
 
 function drawWire(wire) {
-    ctx.strokeStyle = 'rgba(0,0,0,1)';
-    ctx.lineWidth = z/20;
     ctx.lineCap = 'round';
     ctx.setLineDash([]);
     ctx.beginPath();
@@ -1082,7 +1095,7 @@ function deleteWire(id,reset) {
         b: wires[id].node.b,
     }
 
-    if( reset) {
+    if(reset) {
 
         wires[id].node.a.wireId = undefined
         wires[id].node.a.connected = false;
@@ -1418,6 +1431,7 @@ function nameComponent() {
     }
 
     nameFormContainer.style.display = "flex";
+    document.getElementById("fname").focus()
 
     document.getElementById('name-form-type').textContent = objectUnderCursor.object.classname
     
@@ -1446,29 +1460,43 @@ window.handleForm = handleForm
 const tooltip = document.getElementById("tooltip")
 const toolText = document.getElementById("tooltip-text")
 
-undobutton.onmouseover = function() {
-    tooltip.style.display = "flex";
-    toolText.textContent = "Undo"
-    tooltip.style.width = "70px"
-    // get div with after name
-    tooltip.style.left = (event.pageX - 30)+"px";
-    tooltip.style.top = (event.pageY + 20)+"px";
-}
-undobutton.onmouseout = function() {
-    tooltip.style.display = "none";
-}
+const buttons = document.querySelectorAll('.btn')
 
-zoomPercentage.onmouseover = function() {
+buttons.forEach(function(currentBtn){
+  currentBtn.addEventListener('mouseover', function() {
+    let left = getOffset(currentBtn).left;
+    let top = getOffset(currentBtn).top;
+    let width = getOffset(currentBtn).width;
+    let label = capitalize(currentBtn.id)
+    //adjust width by number of characters
+    let labelWidth = label.length * 10 + 20
+
+    tooltip.style.left = (left - labelWidth/2 + width/2)+"px";
+    tooltip.style.top = (top+50)+"px";
+
     tooltip.style.display = "flex";
-    toolText.textContent = "Reset Zoom"
-    tooltip.style.width = "100px"
-    // get div with after name
-    tooltip.style.left = (event.pageX - 30)+"px";
-    tooltip.style.top = (event.pageY + 20)+"px";
-}
-zoomPercentage.onmouseout = function() {
-    tooltip.style.display = "none";
-}
+    toolText.textContent = label
+
+    tooltip.style.width = (labelWidth)+"px";
+    });
+})
+
+function getOffset(el) {
+    const rect = el.getBoundingClientRect();
+
+    return {
+      left: rect.left + window.scrollX,
+      top: rect.top + window.scrollY,
+      width: rect.width,
+      height: rect.height
+    };
+  }
+
+buttons.forEach(function(currentBtn){
+currentBtn.addEventListener('mouseout', function() {
+        tooltip.style.display = "none";
+    });
+})
 
 
 //right click
@@ -1591,3 +1619,4 @@ export function defineNodes (id, nodes, object, objects) {
 // - shift click to select multiple components
 // - delete nodes
 // - group move
+// - labels

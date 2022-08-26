@@ -112,7 +112,8 @@ function menuDraw(newtime) {
         }
         if (value.type === 'shape') {
             menu.fillStyle = "#fff";
-            
+            menu.strokeStyle = 'rgba(0,0,0,1)';
+            menu.lineWidth = 7;
             value.obj.shape(value.x/100, value.y/100, 0, 0, 100, value.w, value.h, menu)
         }
         //draw nodes
@@ -137,6 +138,8 @@ function menuDraw(newtime) {
         }
         if (ghostObject[0].type === 'shape') {
             menu.fillStyle = "#fff";
+            menu.strokeStyle = 'rgba(0,0,0,1)';
+            menu.lineWidth = z/15;
             ghostObject[0].obj.shape(ghostObject[0].x/z, ghostObject[0].y/z, 0,0, z, ghostObject[0].w, ghostObject[0].h, menu)
         }
         for (const [key, node] of Object.entries(ghostObject[0].obj.offset)) {

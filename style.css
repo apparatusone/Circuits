@@ -39,8 +39,6 @@ canvas {
     display: none;
     justify-content: center;
     align-items: center;
-    top: 20px;
-    left: 20px;
     width: 70px;
     height: 30px;
     background-color: rgb(0, 0, 0);
@@ -51,7 +49,7 @@ canvas {
 #tooltip-text {
     position: relative;
     color: white;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 14px;
     z-index: 11;
 }
@@ -124,11 +122,15 @@ canvas {
     justify-content: center;
     align-items: center;
     width: 47px;
+    height: 40px;
 }
 
 #zoomlevel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     flex-grow: 2;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 1.1em;
     width: 100px;
     height: 40px;
@@ -144,11 +146,11 @@ canvas {
     align-items: center;
     font-size: 2em;
     width: 43px;
+    height: 40px;
     z-index: 5;
 }
 
 #zoom-out, #select, #save{
-    height: 40px;
     border-left: solid 2px;
     border-color: rgb(93, 93, 93);
 }
@@ -158,6 +160,7 @@ canvas {
     justify-content: center;
     align-items: center;
     width: 40px;
+    height: 40px;
     z-index: 5;
 }
 
@@ -166,6 +169,7 @@ canvas {
     justify-content: center;
     align-items: center;
     width: 47px;
+    height: 40px;
     z-index: 5;
 }
 
@@ -209,7 +213,7 @@ canvas {
 }
 
 #name-form-container div:first-child {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 28px;
     margin-top: 15px;
     margin-left: 15px;

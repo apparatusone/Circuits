@@ -3,8 +3,6 @@
 export const shape = (function() {
     // paths
     const ledPath = function (x1, y1, a, b, z, w, h, context) {
-        context.strokeStyle = 'rgba(0,0,0,1)';
-        context.lineWidth = z/15;
         context.setLineDash([]);
 
         context.beginPath();
@@ -24,21 +22,27 @@ export const shape = (function() {
     };
 
     const clockPath = function (x1, y1, a, b, z, w, h, context) {
-        context.strokeStyle = 'rgba(0,0,0,1)';
-        context.lineWidth = z/15;
         context.setLineDash([]);
 
-        context.beginPath();
-        context.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .25 * z, 0, 2 * Math.PI, true);
-        context.stroke();
-        context.fill();
+        // set linewidth when not highlight
+        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+            context.lineWidth = z/25;
+        }
 
-        context.lineWidth = z/25;
-        context.lineCap = 'butt';
         context.beginPath();
         context.lineTo((-a + x1 + 0.75) * z, (b + y1 + 0.5) * z);
         context.lineTo((-a + x1 + 1.0) * z, (b + y1 + 0.5) * z);
         context.stroke();
+
+        
+        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+            context.lineWidth = z/15;
+        }
+        
+        context.beginPath();
+        context.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .25 * z, 0, 2 * Math.PI, true);
+        context.stroke();
+        context.fill();
 
         context.lineWidth = z/40;
         context.beginPath();
@@ -54,8 +58,6 @@ export const shape = (function() {
     };
 
     const onOffSwitchPath = function (x, y, a, b, z, w, h, context) {
-        context.strokeStyle = 'rgba(0,0,0,1)';
-        context.lineWidth = z/15;
         context.setLineDash([]);
 
         const top = (b + y + .2) * z;
@@ -95,9 +97,16 @@ export const shape = (function() {
     };
 
     const custom  = function (x1, y1, a, b, z, w, h, context) {
-        context.strokeStyle = 'rgba(0,0,0,1)';
-        context.fillStyle = "#3E3F41";
-        context.lineWidth = z/55;
+
+        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+            context.lineWidth = z/55;
+            context.fillStyle = "#3E3F41";
+            context.strokeStyle = 'rgba(0,0,0,1)';
+        }
+
+        //context.strokeStyle = 'rgba(0,0,0,1)';
+        //context.fillStyle = "#3E3F41";
+        //context.lineWidth = z/55;
         context.setLineDash([]);
         context.beginPath();
 

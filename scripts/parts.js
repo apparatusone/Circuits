@@ -35,7 +35,6 @@ class Wire {
                 this.node.a.state = 0
             }
             state = this.node.a.state
-            console.log('a',state)
         }
 
         if(this.node.b.state !== this.nodeState.b) {
@@ -43,7 +42,6 @@ class Wire {
                 this.node.b.state = 0
             }
             state = this.node.b.state
-            console.log('b',state)
         }
 
         this.node.a.state = state;
