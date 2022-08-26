@@ -69,6 +69,7 @@ canvas {
 #welcome ul {
     display: grid;
     gap: 10px;
+    padding-left: 25px;
 }
 
 #tooltip {

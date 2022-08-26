@@ -494,8 +494,44 @@ canvas.onmousedown = function(e) {
     if (objectUnderCursor.isWire) {
 
         let node = make.node(Math.round(mouse.canvas.x*2)/2, Math.round(mouse.canvas.y*2)/2 ,objectUnderCursor.wire.id, 'output')
-        objectUnderCursor.wire.nodes.push(node)
+        //place new node between correct nodes
 
+        let newNodesArray = []
+        if (objectUnderCursor.wire.nodes.length < 1) {
+            newNodesArray.push(node);
+            objectUnderCursor.wire.nodes = newNodesArray;
+            return
+        }
+    
+        let wire = objectUnderCursor.wire
+        let orderedPoints = []
+        // add coordinates of node 'a' to queue
+        orderedPoints.push(wire.node.a)
+        //add coordinates of each node in node array
+        for (const ele of wire.nodes) {
+            orderedPoints.push(ele)
+        }
+        // add coordinates of node 'b' to queue
+        orderedPoints.push(wire.node.b)
+        
+        while (orderedPoints.length > 1) {
+            // remove first set of node coordinates and assign to variable
+
+            const current = orderedPoints.shift();
+            newNodesArray.push(current)
+
+            if (((current.x - node.x) * (orderedPoints[0].x - node.x) <= 0) &&
+                ((current.y - node.y) * (orderedPoints[0].y - node.y) <= 0)) {
+                    console.log('true')
+                    newNodesArray.push(node)
+                }
+        }
+
+        newNodesArray.shift()
+        
+        objectUnderCursor.wire.nodes = newNodesArray
+
+        console.log('objectUnderCursor.wire', objectUnderCursor.wire);
     }
 
     if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
@@ -639,13 +675,18 @@ function getObject(x, y) {
     }
 
     //detect wire under cursor
-    for (let [key, w] of Object.entries(wires)) {
-        if (pointOnLine (w.loc.a.x, w.loc.a.y, w.loc.b.x ,w.loc.b.y, x, y, .09)) {
-            objectUnderCursor.isWire = true;
-            objectUnderCursor.wire = w;
-            return
+    for (let [key, wire] of Object.entries(wires)) {
+        for (const segment of getWireSegments(wire)) {
+            //console.log(segment[0][0],segment[0][1],segment[1][0],segment[1][1])
+            if (pointOnLine (segment[0][0],segment[0][1],segment[1][0],segment[1][1], x, y, .09)) {
+                objectUnderCursor.isWire = true;
+                objectUnderCursor.wire = wire;
+                return
+            }
+
         }
     }
+
     function resetStates() {
         objectUnderCursor.isComponent = false;
         objectUnderCursor.isNode = false;
@@ -1020,13 +1061,13 @@ function drawRotatedImg(x, y, shape, degrees, w = 1, h = 1) {
 
 function getWireSegments(wire) {
     let queue = []
-    // add coordinates of a node to que
+    // add coordinates of node 'a' to queue
     queue.push([wire.node.a.x, wire.node.a.y])
     // add coordinates of each node in node array
     for (const node of wire.nodes) {
         queue.push([node.x,node.y])
     }
-    // add coordinates of b node to que
+    // add coordinates of node 'b' to queue
     queue.push([wire.node.b.x, wire.node.b.y])
 
     let segments = []
