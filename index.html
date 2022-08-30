@@ -36,18 +36,19 @@
         <p>Hai Friends</p>
         <button id="welcome-close"></button>
     </div>
+
     <div id="tooltip">
         <div id="tooltip-text">undo</div>
         <div id="tooltip-tail"></div>
     </div>
 
     <div id="action-menu">
-        <button id="undo" class="btn"></button>
-        <button id="zoomlevel" class="btn"></button>
-        <button id="zoom-in" class="btn"></button>
-        <button id="zoom-out" class="btn"></button>
-        <button id="select" class="btn"></button>
-        <button id="save" class="btn"></button>
+        <button name="Undo" id="undo" class="btn"></button>
+        <button name="Reset Zoom" id="zoomlevel" class="btn"></button>
+        <button name="Increase Zoom" id="zoom-in" class="btn"></button>
+        <button name="Decrease Zoom" id="zoom-out" class="btn"></button>
+        <button name="Select" id="select" class="btn"></button>
+        <button name="Save" id="save" class="btn"></button>
     </div>
 
     <div id="name-form-container">
@@ -62,8 +63,10 @@
     <div id="menu-background" class="animated"></div>
     <button id="menu-hide" class="animated">&lt;</button>
 
-    <input id="rotate-left" class="hide" type="image" src="svg/rotateleft.svg" />
-    <input id="rotate-right" class="hide" type="image" src="svg/rotateright.svg" />
+    <button id="rotate-left" class="hide"></button>
+    <button id="rotate-right" class="hide"></button>
+    <!-- <input id="rotate-left" class="hide" type="image" src="svg/rotateleft.svg" /> -->
+    <!-- <input id="rotate-right" class="hide" type="image" src="svg/rotateright.svg" /> -->
     <canvas id="canvas"></canvas>
     <div style="display:none;">
         <img id="source"

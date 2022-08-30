@@ -16,8 +16,8 @@ import {
     make,
 } from "./parts.js"
 
-import { within, drawShape } from './utilities.js'
-import { mouse, origin, z } from './main.js'
+import { within, drawShape, idCreator } from './utilities.js'
+import { mouse, objects, origin, wires, z } from './main.js'
 
 const menuCanvas = document.getElementById("menu-canvas");
 const menu = menuCanvas.getContext("2d", { alpha: true });

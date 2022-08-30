@@ -1,5 +1,22 @@
 "use strict";
 
+import {
+    Wire,
+    TempLine,
+    Node,
+    Led,
+    OnOffSwitch,
+    Clock,
+    AndGate,
+    NandGate,
+    OrGate,
+    NorGate,
+    XorGate,
+    XnorGate,
+    NotGate,
+    CustomComponent,
+    make,
+} from "./parts.js"
 
 import { origin, z } from './main.js'
 
@@ -55,7 +72,9 @@ export const drawShape = (function() {
 })();
 
 // function to generate unique id for components
-const idCreator = function* () {
+//export let iterate = 1
+export function modifyIterate( value ) { iterate = value; }
+export const idCreator = function* () {
     let i = 1;
     while (true) yield i++;
 };
@@ -85,3 +104,18 @@ export const slope = function ( a, b)
 
 // Capitalize first letter of a string
 export const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+var _cls_ = {}; // serves as a cache, speed up later lookups
+export function getClass(name){
+  if (!_cls_[name]) {
+    // cache is not ready, fill it up
+    if (name.match(/^[a-zA-Z0-9_]+$/)) {
+      // proceed only if the name is a single word string
+      _cls_[name] = eval(name);
+    } else {
+      // arbitrary code is detected 
+      throw new Error("?");
+    }
+  }
+  return _cls_[name];
+}

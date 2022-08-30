@@ -4,8 +4,8 @@ import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent } from ".
 
 import { shape } from "./shapes.js"
 //import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, } from "../node_modules/@mdi/js/mdi.js";
-import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle } from './shapes.js';
-import { within, drawShape, generateId, stringInString, minMax, slope, capitalize } from "./utilities.js";
+import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle, dltRotate } from './shapes.js';
+import { within, drawShape, generateId, stringInString, minMax, slope, capitalize, getClass, modifyIterate } from "./utilities.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
@@ -55,12 +55,12 @@ const cc = document.getElementById('cc');
 
 
 
-function addMdi(mdi,domObject) {
+function addMdi(mdi, domObject, color, viewBox, scale) {
     let iconSvg = document.createElementNS("http://www.w3.org/2000/svg", 'svg'); //Create a path in SVG's namespace
     const iconPath = document.createElementNS('http://www.w3.org/2000/svg','path');
     
-    iconSvg.setAttribute('fill', 'white');
-    iconSvg.setAttribute('viewBox', '0 0 24 24');
+    iconSvg.setAttribute('fill', color);
+    iconSvg.setAttribute('viewBox', `0 0 ${viewBox} ${viewBox}`);
     //iconSvg.setAttribute('stroke', 'white');
     iconSvg.classList.add('post-icon');
 
@@ -72,16 +72,18 @@ function addMdi(mdi,domObject) {
     iconPath.setAttribute('stroke-linejoin', 'round');
     iconPath.setAttribute('stroke-width', '1');
     iconSvg.appendChild(iconPath);
-    iconSvg.setAttribute('width', '24');
-    iconSvg.setAttribute('height', '24');
+    iconSvg.setAttribute('width', scale);
+    iconSvg.setAttribute('height', scale);
     domObject.appendChild(iconSvg);
 }
 
-addMdi(mdiContentSave,saveButton)
-addMdi(mdiSelection,selectButton)
-addMdi(mdiUndoVariant,undobutton)
-addMdi(mdiPlus,zoomInButton)
-addMdi(mdiMinus,zoomOutButton)
+addMdi(mdiContentSave,saveButton, 'white', 24, 24)
+addMdi(mdiSelection,selectButton, 'white', 24, 24)
+addMdi(mdiUndoVariant,undobutton, 'white', 24, 24)
+addMdi(mdiPlus,zoomInButton, 'white', 24, 24)
+addMdi(mdiMinus,zoomOutButton, 'white', 24, 24)
+addMdi(dltRotate,rotateLeft, '#222734', 100, 35)
+addMdi(dltRotate,rotateRight, '#222734', 100, 35)
 
 
 
@@ -134,9 +136,7 @@ export let origin = {
     x: canvasCenter.x,
     y: canvasCenter.y,
     click: { x:0, y:0 },
-    prev: { x:0, y:0 },
-    //location of selected element on screen
-    selected: { x: 0, y:0, id: undefined}                              
+    prev: { x:0, y:0 },                          
 };
 
 // location of cursor
@@ -152,15 +152,12 @@ let drawingLine = []         // line shown when drawing connection
 let drawingRect = []
 
 //load from localstorage
-loadSave()
+//loadSave()
 
 make.led(0,2,0)
 make.switch(-1,-2,0)
 make.switch(1,-2,0)
 make.and(0,0,0)
-
-console.log(objects[1])
-
 
 //let fps;
 let lastFrame = performance.now();
@@ -273,7 +270,7 @@ function draw() {
     }
 
     // show rotate buttons on selected component
-    if (selected) {
+    if (selected && highlightedComponents().length < 2 && objectUnderCursor.isComponent ) {
         locateRotateButtons();
     }
 
@@ -290,13 +287,11 @@ function draw() {
         drawWire(value)
     }
 
-    // draw component text
-
-
     drawNodes()
     drawNodeHighlight()
 
     // TODO: rotate text
+    // draw custom component
     for (let [key, value] of Object.entries(objects)) {
         if (value.constructor === CustomComponent) {
             for (let [key, off] of Object.entries(value.offset)) {
@@ -309,21 +304,33 @@ function draw() {
                 shape.pins (off.x + pinOffset + value.x, off.y - value.y, origin.x, origin.y, z, ctx)
 
                 //draw labels
+                let x = (-origin.x + .5 + off.x/2.2 + value.x) * z
+                let y = (origin.y + .5  + off.y - value.y) * z
+
+                ctx.fillStyle = 'black'
+                shape.roundRectangle(
+                    x, 
+                    y, 
+                    z/2, 
+                    z/6, 
+                    {upperLeft: .08*z, upperRight: .08*z, lowerLeft: .08*z, lowerRight: .08*z},
+                    true, 
+                    false, 
+                    ctx)
+
                 let fontSize = z/9
                 ctx.fillStyle = 'white'
-                ctx.lineWidth = z/250;
-                ctx.strokeStyle = 'grey';
                 ctx.font = `${fontSize}px sans-serif`;
+
                 if (off.x < 0) {
-                    ctx.textAlign = 'right'
-                } else {
                     ctx.textAlign = 'left'
+                    ctx.textBaseline = 'bottom'
+                } else {
+                    ctx.textAlign = 'right'
+                    ctx.textBaseline = 'top'
                 }
-                ctx.textBaseline = 'middle'
-                let x = (-origin.x + .5 + off.x/15 + value.x) * z
-                let y = (origin.y + .5  + off.y - value.y) * z
+
                 ctx.fillText(key, x, y);
-                ctx.strokeText(key, x, y)
             }
         }
     }
@@ -492,7 +499,6 @@ canvas.onmousedown = function(e) {
     } while (false)
 
     if (objectUnderCursor.isWire) {
-
         let node = make.node(Math.round(mouse.canvas.x*2)/2, Math.round(mouse.canvas.y*2)/2 ,objectUnderCursor.wire.id, 'output')
         //place new node between correct nodes
 
@@ -504,15 +510,7 @@ canvas.onmousedown = function(e) {
         }
     
         let wire = objectUnderCursor.wire
-        let orderedPoints = []
-        // add coordinates of node 'a' to queue
-        orderedPoints.push(wire.node.a)
-        //add coordinates of each node in node array
-        for (const ele of wire.nodes) {
-            orderedPoints.push(ele)
-        }
-        // add coordinates of node 'b' to queue
-        orderedPoints.push(wire.node.b)
+        let orderedPoints = [wire.node.a, ...wire.nodes, wire.node.b]
         
         while (orderedPoints.length > 1) {
             // remove first set of node coordinates and assign to variable
@@ -527,11 +525,10 @@ canvas.onmousedown = function(e) {
                 }
         }
 
+        //remove first node
         newNodesArray.shift()
         
         objectUnderCursor.wire.nodes = newNodesArray
-
-        console.log('objectUnderCursor.wire', objectUnderCursor.wire);
     }
 
     if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
@@ -616,6 +613,7 @@ function connectNodes(pNode) {
     }
 
     let wire = new Wire( { a: pNode, b: objectUnderCursor.node } );
+    //wire.id = generateId()
     wires[wire.id] = wire
 
     pNode.connected = true;
@@ -677,8 +675,7 @@ function getObject(x, y) {
     //detect wire under cursor
     for (let [key, wire] of Object.entries(wires)) {
         for (const segment of getWireSegments(wire)) {
-            //console.log(segment[0][0],segment[0][1],segment[1][0],segment[1][1])
-            if (pointOnLine (segment[0][0],segment[0][1],segment[1][0],segment[1][1], x, y, .09)) {
+            if (pointOnLine (segment[0],segment[1], x, y, .09)) {
                 objectUnderCursor.isWire = true;
                 objectUnderCursor.wire = wire;
                 return
@@ -698,9 +695,17 @@ function getObject(x, y) {
     return false
 }
 
-function pointOnLine (x1,y1,x2,y2,x,y,radius) {
-    let a = { x: x1, y: y1 }
-    let b = { x: x2, y: y2 }
+function pointOnLine (p1,p2,x,y,radius) {
+    let a,b;
+
+    if (Array.isArray(p1)) {
+        a = { x: p1[0], y: p1[1] }
+        b = { x: p2[0], y: p2[1] }
+    }  else {
+        a = p1;
+        b = p2;
+    }
+
     let m;
     let rectx;
     let recty;
@@ -783,11 +788,11 @@ const rotateButtons = (x) => {
 
 // TODO: REFACTOR
 function locateRotateButtons() {
-    rotateLeft.style.left = `${(origin.selected.x - 2/z) - 45}px`;
-    rotateLeft.style.top = `${(origin.selected.y - 2/z) - 45}px`;
+    rotateLeft.style.left = `${(objectUnderCursor.object.gridCoordinates.x + z/2 - 15) - z/2}px`;
+    rotateLeft.style.top = `${(objectUnderCursor.object.gridCoordinates.y ) - 20}px`;
 
-    rotateRight.style.left = `${(origin.selected.x + z) + 5}px`;
-    rotateRight.style.top = `${(origin.selected.y - 2/z) - 45}px`;
+    rotateRight.style.left = `${(objectUnderCursor.object.gridCoordinates.x + z/2 - 16) + z/2}px`;
+    rotateRight.style.top = `${(objectUnderCursor.object.gridCoordinates.y ) - 17}px`;
 }
 
 rotateRight.onclick = function() {
@@ -839,70 +844,144 @@ deleteButton.onclick = function() {
 saveButton.onclick = function() {
     window.localStorage.clear();
 
+    for (let [key, obj] of Object.entries(objects)) {
+        if (obj.constructor === CustomComponent) {
+            console.log('reject')
+            return
+        }
 
-    let obj = objects[1]
-    window.localStorage.setItem('1', JSON.stringify(obj));
+        let nodes = []
 
-    // for (let [key, value] of Object.entries(objects)) {
-    //     for (let nest of Object.getOwnPropertyNames(value)) {
-    //         if (typeof value[nest] === 'object') {
-    //             for (let nest1 of Object.getOwnPropertyNames(value[nest])) {
-    //                 console.log(value[nest], nest1)
-    //             }
-    //         }
-    //         //console.log(Object.getPrototypeOf(value[nest]))
-    //     }
-    //     //window.localStorage.setItem(key, value.serialize());
-    // }
+        for (const node of obj.nodes) {
+            nodes.push(obj[node])
+        }
 
-    //let json = foo.serialize();
+        window.localStorage.setItem(obj.id, JSON.stringify(
+            { 
+                'obj': obj,
+                'nodeList': obj.nodes,
+                'nodes': nodes 
+            }
+        ));
+    }
 
-    // function deserialize(json){
-    //     //o is [Object object], but it contains every state of the original object
-    //     let o = JSON.parse(json);
-    //     //Get original class instance
-    //     let original_class = eval(o.classname);
-    
-    //     //Create new object of the original class, then restore back property values
-    //     //NOTE: You may not need to pass any parameter to the constructor, since
-    //     //every state of the original object will be restored from o.
-    //     return Object.assign(new original_class(), o);
-    // }
-    
-    // let _foo = deserialize(json);
-    // console.log(_foo instanceof Foo); // returns true;
+    for (let [key, wire] of Object.entries(wires)) {
+
+        // let nodes = []
+
+        console.log(wire)
+        window.localStorage.setItem(wire.id, JSON.stringify(
+            { 
+                'wire': wire
+            }, replacer
+        ));
+    }
+
+    // if no objects set generator to 1
+    if (Object.keys(objects).length === 0) {
+        window.localStorage.setItem('gen', 1)
+        return
+    }
+
+    // get largest id
+    const keysObjects = Object.keys(objects);
+    const keysWires = Object.keys(wires);
+    const maxId = Math.max(...keysObjects, ...keysWires)
+    // store value for id generator
+    window.localStorage.setItem('gen', maxId + 1)
+
+    // replace 'connectionType' to prevent circular reference
+    function replacer(key, value) {
+        // Filtering out properties
+        if (key === 'connectionType' || key === 'node') {
+            console.log('match')
+          return undefined;
+        }
+        return value;
+      }
 }
 
 function loadSave() {
-    if (!window.localStorage.getItem("1")) return
+    // if (!window.localStorage.getItem("1")) return
+    for (const [id, string] of Object.entries(localStorage)) {
+        if (JSON.parse(string).wire !== undefined) {
+            let wire = JSON.parse(string)
 
-    var led = JSON.parse(window.localStorage.getItem("1"))
+            console.log(wire.wire)
 
-    let id = window[`make${led.classname}`](0,0,0)
+            wires[id] = Object.assign(new Wire, wire.wire)
 
-    Object.defineProperty(objects[id], id, {
-        value: led.id,
-        enumerable: true,
-        configurable: true
-      });
-
-    id = led.id
-
-    for (let [key, value] of Object.entries(led)) {
-        Object.defineProperty(objects[id], key, {
-            value: value,
-            enumerable: true,
-            configurable: true
-          });
+            Object.defineProperty(wires[id], 'connectionType', {
+                value: wires,
+                enumerable: true,
+                configurable: true
+              });
+        }
     }
 
+    for (const [id, string] of Object.entries(localStorage)) {
+        if (id === 'gen') {
+            modifyIterate(parseInt(string))
+        } else if(JSON.parse(string).wire === undefined) {
+            let container = JSON.parse(string)
 
+            let objClass = getClass(container.obj.classname)
 
+            objects[id] = Object.assign(new objClass, container.obj)
+    
+            defineNodes( id, container.nodeList, objects[id], objects )
 
+            // set wire.id node a and node b
 
-    // if (localStorage.getItem('wires')) {
-    //     //wires = JSON.parse(window.localStorage.getItem("wires"))
-    // }
+            for (let [key, node] of Object.entries(container.nodes)) {
+                let reNode = Object.assign(objects[id][node.name], node)
+
+                Object.defineProperty(reNode, 'connectionType', {
+                    value: objects,
+                    enumerable: true,
+                    configurable: true
+                  });
+
+                if (node.wireId) {
+                    if (wires[node.wireId].node === undefined) {
+                        wires[node.wireId].node = {a: undefined, b: undefined}
+                    }
+                    if (wires[node.wireId].node.a === undefined) {
+                        wires[node.wireId].node.a = reNode
+                        continue
+                    }
+                    if (wires[node.wireId].node.b === undefined) {
+                        wires[node.wireId].node.b = reNode
+                    }
+                }
+            }
+        }
+    }
+
+    console.log(objects, wires)
+
+    // const array = JSON.parse(window.localStorage.getItem("1"))
+
+    // console.log(array[0].classname)
+    // let id = make[array[0].classname.toLowerCase()](0,0,0)
+
+    function rebuildObject(obj) {
+        //let id = generateId()
+        //let nodes = ['input1', 'input2', 'output']
+        objects[node.id] = new Led(0, 0, 0, 0)
+        defineNodes( obj.id, obj.nodes, objects[node.id], objects )
+
+        for (let [key, value] of Object.entries(obj)) {
+            //Object.assign(new original_class(), o)
+
+            Object.defineProperty(objects[node.id], key, {
+                value: value,
+                enumerable: true,
+                configurable: true
+              });
+        }
+    }
+
 }
 
 customComponentButton.onclick = function() {
@@ -1101,8 +1180,8 @@ function detectWireIntersection() {
 
                     if ( isNaN(px) || isNaN(py) ) continue
 
-                    if (!pointOnLine (p1.x,p1.y,q1.x,q1.y,px,py, .1)) continue
-                    if (!pointOnLine (p2.x,p2.y,q2.x,q2.y,px,py, .1)) continue
+                    if (!pointOnLine (p1,q1,px,py, .1)) continue
+                    if (!pointOnLine (p2,q2,px,py, .1)) continue
 
                     points.push( {x: px, y: py, w1: wire1, w2: wire2} )
                 }
@@ -1114,7 +1193,6 @@ function detectWireIntersection() {
     let array = points.filter((v,i,a)=>a.findIndex(v2=>(v.label === v2.label && v.value===v2.value))===i)
     return array
 }
-
 
 // id of component, boolean for resetting component states/connections
 function deleteComponent(id,reset) {
@@ -1508,18 +1586,15 @@ buttons.forEach(function(currentBtn){
   currentBtn.addEventListener('mouseover', function() {
     let left = getOffset(currentBtn).left;
     let top = getOffset(currentBtn).top;
-    let width = getOffset(currentBtn).width;
-    let label = capitalize(currentBtn.id)
-    //adjust width by number of characters
-    let labelWidth = label.length * 10 + 20
-
-    tooltip.style.left = (left - labelWidth/2 + width/2)+"px";
-    tooltip.style.top = (top+50)+"px";
-
+    tooltip.style.width = "fit-content"
+    
     tooltip.style.display = "flex";
-    toolText.textContent = label
+    toolText.textContent = currentBtn.name
+    let width = getOffset(currentBtn).width;
+    let length = toolText.offsetWidth + 20
 
-    tooltip.style.width = (labelWidth)+"px";
+    tooltip.style.left = (left - length/2 + width/2 )+"px";
+    tooltip.style.top = (top+50)+"px";
     });
 })
 
@@ -1541,7 +1616,7 @@ currentBtn.addEventListener('mouseout', function() {
 })
 
 const welcomeClose = document.getElementById("welcome-close");
-addMdi(mdiCloseCircle,welcomeClose)
+addMdi(mdiCloseCircle,welcomeClose, 'white', 24, 24)
 const welcome = document.getElementById("welcome");
 welcomeClose.onclick = function() {
     welcome.style.display = "none";
@@ -1593,78 +1668,3 @@ export function defineNodes (id, nodes, object, objects) {
         writable: true
     });
 }
-
-
-
-
-
-// FIXME:
-// ✓- if screen is resized canvas does not resize
-// ✓- highlight isn't on top
-// - rotate buttons
-// ✓- can't connect to objects[0]
-// ✓- can add wire into the same node IMPORTANT
-// ✓- pathfinding obstacle detection does not work correctly
-//      - can't find path outside of bounds (if no path increase by 1 ?) ✓
-// - wires should not be able to intersect ?
-//      - or add C hump where lines intersect
-// ✓- look at currently drawn objects, get bounds +- 2, 
-//      generate grid from bounds and populate with components and wires 
-// ✓- detects node in empty cell (something to do with last component being clicked having nodes) 
-// ✓- connecting a gate output without wires at each input breaks the program 
-// ✓- wire can't be drawn backwards
-// - components can be moved into occupied cells
-// ✓- gates only work if both nodes have wires
-// ✓- can add multiple wires to input.. ?
-// ✓- making a latch breaks the program...
-// - dragging a component from the menu back to the menu should destroy it
-// ✓- component in drag and drop menu don't have nodes
-// - change drag and drop menu to use existing onClick function?
-// - grid
-// - nodes get added to end of wire node list, splice to correct location
-// - wire detection breaks when node is added
-// - make temporary objects container ( merge drawingline, drawingrect)
-// ✓- if a wire is connected to a high wire, its state is not updated
-// ✓- adding clock from drag and drop menu causes visual aberrations on added clock
-        // no default value for frequency
-// ✓- fixed no .name error
-
-// TODO:
-// ADD:
-// ✓- create IC function
-//     ✓- add name component function
-// - make wires selectable / add points
-
-// ✓- add clock
-// ✓- pathfinding for lines
-//      - store on creation so its not recalculated
-//      - enable / disable pathfinding (create straight line)
-// ✓- drag and drop menu
-// - comment code
-// ✓- first components: switch & LED
-// - open hand cursor when something draggable is under cursor
-// - if zoomed out (% ?) disable node selection
-// ✓- optimize draw function
-// - bespoke outline for component
-// - hide rotate buttons if zoom < XX%
-// - nodes should show state
-// - wire should show state
-// - basic undo
-// ✓- delete component
-// - select and rotate a group of components
-// - add transistor
-// - add 'power'
-// ✓- select and move wire nodes
-// - move gui functions to seperate file
-// - add component info menu to right side
-// ✓- make modules files
-// ✓- x to center of canvas
-// ✓- add right click menu
-// ✓- added delete function for components
-// ✓- added drag to select function
-// - add right click functions
-// ✓- add on hover text to buttons
-// - shift click to select multiple components
-// - delete nodes
-// - group move
-// - labels

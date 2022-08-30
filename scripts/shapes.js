@@ -144,7 +144,7 @@ export const shape = (function() {
     };
 
     const customPins = function (x,y,a,b, z, context) {
-        roundedRectangle(
+        roundRectangle(
         (-a + x + 0.465) * z,
         (b + y + .425) * z,
         .07*z,
@@ -154,7 +154,7 @@ export const shape = (function() {
         context.fill();
     };
 
-    const roundedRectangle = function (x, y, width, height, radius, fill, stroke, context) {
+    const roundRectangle = function (x, y, width, height, radius, fill, stroke, context) {
         var cornerRadius = { upperLeft: 0, upperRight: 0, lowerLeft: 0, lowerRight: 0 };
         if (typeof stroke == "undefined") {
             stroke = true;
@@ -191,7 +191,7 @@ export const shape = (function() {
         switch: onOffSwitchPath,
         custom: custom,
         pins: customPins,
-        roundRectangle: roundedRectangle,
+        roundRectangle: roundRectangle,
     }
 
 })();
@@ -204,3 +204,4 @@ export const mdiUndoVariant = "M13.5,7A6.5,6.5 0 0,1 20,13.5A6.5,6.5 0 0,1 13.5,
 export const mdiSelection = "M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z";
 export const mdiContentSave = "M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z";
 export const mdiCloseCircle = "M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z";
+export const dltRotate = "M49.99.17A49.83,49.83,0,1,0,99.81,50,49.83,49.83,0,0,0,49.99.17ZM82.92,69.34,70.76,83.96a.6212.6212,0,0,1-.87.1.4741.4741,0,0,1-.1-.1L57.63,69.34a.6429.6429,0,0,1,.08-.89.6773.6773,0,0,1,.41-.14h9.65V55.95A22.3866,22.3866,0,0,0,45.41,33.58l-12.59.01v9.65a.6274.6274,0,0,1-.63.63.6371.6371,0,0,1-.4-.15L17.16,31.57a.6356.6356,0,0,1-.07-.9.462.462,0,0,1,.07-.07L31.79,18.44a.6429.6429,0,0,1,.89.08.6773.6773,0,0,1,.14.41v9.65H45.41A27.3884,27.3884,0,0,1,72.77,55.95V68.31h9.66a.6253.6253,0,0,1,.63.62A.6018.6018,0,0,1,82.92,69.34Z";
