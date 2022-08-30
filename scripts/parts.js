@@ -8,11 +8,13 @@ class Wire {
     constructor(node) {
         this.node = node
 
-        this.id = generateId();
+
+        this.id;
         this.nodes = [];
 
         // connect directly or along grid
-        this.direct = true             
+        this.direct = true
+        this.classname = this.constructor.name;          
     }
 
     get loc() {
@@ -370,6 +372,7 @@ class CustomComponent {
         this.nodes = []
         this.offset =  {}
         this.image = document.getElementById('cc');
+        this.classname = this.constructor.name;
     }
 
     get gridCoordinates () {

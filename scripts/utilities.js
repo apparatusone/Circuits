@@ -72,11 +72,11 @@ export const drawShape = (function() {
 })();
 
 // function to generate unique id for components
-//export let iterate = 1
+export let iterate = 1
 export function modifyIterate( value ) { iterate = value; }
 export const idCreator = function* () {
-    let i = 1;
-    while (true) yield i++;
+    //let i = 1;
+    while (true) yield iterate++;
 };
 const idsGenerator = idCreator();
 export const generateId = () => idsGenerator.next().value;
