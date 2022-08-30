@@ -965,7 +965,8 @@ saveButton.onclick = function() {
 }
 
 function loadSave() {
-    // if (!window.localStorage.getItem("1")) return
+    if (window.localStorage.length < 1) return
+
     for (const [id, string] of Object.entries(localStorage)) {
         if (JSON.parse(string).wire !== undefined) {
             let wire = JSON.parse(string)
@@ -979,8 +980,6 @@ function loadSave() {
             modifyIterate(parseInt(string))
         } else if(JSON.parse(string).wire === undefined) {
             let container = JSON.parse(string)
-
-
 
             if (container.obj.classname === 'CustomComponent') {
                 continue
