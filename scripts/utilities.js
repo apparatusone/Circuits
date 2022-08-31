@@ -21,7 +21,7 @@ import {
 import { origin, z } from './main.js'
 
 // return true if string 'a' is anywhere in string 'b'
-export function stringInString (a,b) {
+export function stringIncludes (a,b) {
     const regex = new RegExp( a, 'gi' );
     return regex.test(b)
 }

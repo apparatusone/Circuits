@@ -5,7 +5,7 @@ import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent, Clock } 
 import { shape } from "./shapes.js"
 //import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, } from "../node_modules/@mdi/js/mdi.js";
 import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle, dltRotate } from './shapes.js';
-import { within, drawShape, generateId, stringInString, minMax, slope, capitalize, getClass, modifyIterate } from "./utilities.js";
+import { within, drawShape, generateId, stringIncludes, minMax, slope, capitalize, getClass, modifyIterate } from "./utilities.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
@@ -293,8 +293,45 @@ function draw() {
     // draw custom component
     for (let [key, value] of Object.entries(objects)) {
         if (value.constructor === CustomComponent) {
+            //const url = 'fonts/Anonymous_Pro/AnonymousPro-Regular.ttf';
+            //const font = new URL("/", url);  
+
+            //const AnonymousPro = new FontFace('myFont', 'url(fonts/Anonymous_Pro/AnonymousPro-Regular.ttf)');
+            async function loadFonts() {
+                const AnonymousPro = new FontFace('myfont', 'url(./fonts/Anonymous_Pro/AnonymousPro-Regular.ttf)');
+                // wait for font to be loaded
+                await AnonymousPro.load();
+                // add font to document
+                document.fonts.add(AnonymousPro);
+                // enable font with CSS class
+                document.body.classList.add('fonts-loaded');
+            }
+
+
+            let fontSize = z/10
+            ctx.fillStyle = '#DDDDDD'
+            loadFonts()
+            ctx.font = `${fontSize}px AnonymousPro`;
+            ctx.textAlign = 'left'
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = z/120;
+
+            let x = (-origin.x + .2 + value.x) * z
+            let y = (origin.y + .54 - value.y) * z
+            let degrees = value.r - 90
+
+            ctx.save();
+            ctx.translate((-origin.x + .5 + value.x) * z, (origin.y + .5 - value.y) * z)
+            ctx.rotate(degrees * -Math.PI / 180);
+            ctx.translate(-(-origin.x + .5 + value.x) * z, -(origin.y + .5 - value.y) * z)
+            ctx.strokeText(value.name, x, y);
+            ctx.fillText(value.name, x, y);
+            ctx.restore();
+
+
             if (!value.highlight) continue
             for (let [key, off] of Object.entries(value.offset)) {
+
                 //draw pins
                 let pinOffset = .21
                 if (off.x > 0) {
@@ -619,11 +656,11 @@ function connectNodes(pNode) {
     }
 
     // if inputs are both inputs or both outputs reject
-    if ( stringInString('output', pNode.name) && stringInString('output', objectUnderCursor.node.name) ) {
+    if ( stringIncludes('output', pNode.name) && stringIncludes('output', objectUnderCursor.node.name) ) {
         return
     }
 
-    if ( stringInString('input', pNode.name) && stringInString('input', objectUnderCursor.node.name) ) {
+    if ( stringIncludes('input', pNode.name) && stringIncludes('input', objectUnderCursor.node.name) ) {
         return
     }
 
@@ -947,7 +984,8 @@ saveButton.onclick = function() {
 
         window.localStorage.setItem(wire.id, JSON.stringify(
             { 
-                'wire': wire
+                'wire': wire,
+                nodes: 'node'
             }, replacer
         ));
     }
@@ -968,6 +1006,9 @@ function loadSave() {
     if (window.localStorage.length < 1) return
 
     for (const [id, string] of Object.entries(localStorage)) {
+        // adguard adds object to localstorage; ignore
+        if(stringIncludes('_',id)) continue
+
         if (JSON.parse(string).wire !== undefined) {
             let wire = JSON.parse(string)
 
@@ -976,6 +1017,8 @@ function loadSave() {
     }
 
     for (const [id, string] of Object.entries(localStorage)) {
+        if(stringIncludes('_',id)) continue
+
         if (id === 'gen') {
             modifyIterate(parseInt(string))
         } else if(JSON.parse(string).wire === undefined) {
@@ -990,6 +1033,8 @@ function loadSave() {
     }
 
     for (const [id, string] of Object.entries(localStorage)) {
+        if(stringIncludes('_',id)) continue
+        
         if (id === 'gen') {
             continue
         } else if(JSON.parse(string).wire === undefined) {
@@ -1008,6 +1053,7 @@ function loadSave() {
                 objects[id].x = container.obj.x
                 objects[id].y = container.obj.y
                 objects[id].r = container.obj.r
+                objects[id].name = container.obj.name
 
                 for (let [key, node] of Object.entries(container.nodes)) {
                     console.log(node)
@@ -1343,7 +1389,7 @@ function deleteWire(id,reset) {
         wires[id].node.b.wireId = undefined
         wires[id].node.b.connected = false;
 
-        if (stringInString('input', wires[id].node.a.name)) {
+        if (stringIncludes('input', wires[id].node.a.name)) {
             node.a.setter = 0;
         } else {
             node.b.setter = 0;
@@ -1601,7 +1647,7 @@ function makeCustomComponent(parts) {
             });
 
             // change node on wire
-            if (stringInString ('in', component.wires[targetObj.wireId].node.a.name)) {
+            if (stringIncludes ('in', component.wires[targetObj.wireId].node.a.name)) {
                 component.wires[targetObj.wireId].node.a = io['input']
             } else {
                 component.wires[targetObj.wireId].node.b = io['input']
@@ -1757,7 +1803,7 @@ export function defineNodes (id, nodes, object, objects) {
     let self = objects[id]
 
     for (const node of nodes) {
-        if (stringInString ('output',node)) {
+        if (stringIncludes ('output',node)) {
             Object.defineProperty(object, node, {
                 value: new Node(self.id, objects, node),
                 writable: true
@@ -1768,7 +1814,7 @@ export function defineNodes (id, nodes, object, objects) {
     for (const node of nodes) {
         let targetObj = new Node(self.id, objects, node)
         //if node is an input, add proxy
-        if (stringInString ('input',node)) {
+        if (stringIncludes ('input',node)) {
             Object.defineProperty(object, node, {
                 value: 
                     new Proxy(targetObj, {
