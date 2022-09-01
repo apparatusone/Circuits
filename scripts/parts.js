@@ -27,34 +27,33 @@ class Wire {
     //reduced(array) { return array.reduce((partialSum, a) => partialSum + a, 0); }
 
     nodeState = { a: 0, b: 0}
+    storeState = 0
 
     get state () {
-        let state = 0;
-
         //update nodes on state change
         if (this.node.a.state !== this.nodeState.a) {
             if (this.node.a.state === undefined) {
                 this.node.a.state = 0
             }
-            state = this.node.a.state
+            this.storeState = this.node.a.state
         }
 
         if(this.node.b.state !== this.nodeState.b) {
             if (this.node.b.state === undefined) {
                 this.node.b.state = 0
             }
-            state = this.node.b.state
+            this.storeState = this.node.b.state
         }
 
-        this.node.a.state = state;
-        this.node.b.state = state;
-        this.nodeState.a = state
-        this.nodeState.b = state
+        this.node.a.state = this.storeState;
+        this.node.b.state = this.storeState;
+        this.nodeState.a = this.storeState
+        this.nodeState.b = this.storeState
 
         for (let n of this.nodes) {
-            n.setter = state
+            n.setter = this.storeState
         }
-        return state;
+        return this.storeState;
     }
 }
 
@@ -490,6 +489,8 @@ const make = (function() {
             enumerable: true,
             configurable: true
         });
+
+        node.state = wires[id].state
         return node
     }
 

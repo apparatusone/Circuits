@@ -1035,7 +1035,6 @@ function loadSave() {
             }
 
             if (Object.keys(wires).includes(nodeId.a)) {
-                console.log(id, wires[object.a.id].nodes)
                 let wireNode;
                 for (const node of wires[object.a.id].nodes) {
                     if (parseInt(id) === parseInt(node.wireId)) {
@@ -1102,6 +1101,14 @@ function loadSave() {
     }
 
 
+    // propogate states by flipping switches
+    for (const [id, object] of Object.entries(objects)) {
+        if (object.constructor === OnOffSwitch) {
+            object.changeState
+            object.changeState
+        }
+    }
+    
     return
 
     // propogate state of all wires
