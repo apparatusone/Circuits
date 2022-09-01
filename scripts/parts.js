@@ -190,6 +190,7 @@ class OnOffSwitch extends Generic{
             output: { x: 0, y: 0.5 },
         }
 
+        this.classname = 'Switch'
     }
 
     type = 'interactive'
@@ -395,23 +396,23 @@ class CustomComponent {
 
 const make = (function() {
 
-    const makeSwitch = function (x,y,r) {
-        let id = generateId()
+    const makeSwitch = function (x,y,r,id) {
+        id = id || generateId()
         let nodes = ['output']
         objects[id] = new OnOffSwitch(x, y, r, id)
         defineNodes( id, nodes, objects[id], objects)
     }
 
-    const makeLed = function (x,y,r) {
-        let id = generateId()
+    const makeLed = function (x,y,r,id) {
+        id = id || generateId()
         let nodes = ['input']
         objects[id] = new Led(x, y, r, id)
         defineNodes( id, nodes, objects[id], objects )
         return id
     }
 
-    const makeClock = function  (x,y,r, frequency = 1000) {
-        let id = generateId()
+    const makeClock = function  (x,y,r, frequency = 1000,id) {
+        id = id || generateId()
         let nodes = ['output']
         objects[id] = new Clock(x, y, r, id, frequency)
         defineNodes( id, nodes, objects[id], objects  )
@@ -424,50 +425,50 @@ const make = (function() {
         clock();
     }
 
-    const makeAnd = function (x,y,r) {
-        let id = generateId()
+    const makeAnd = function (x,y,r,id) {
+        id = id || generateId()
         let nodes = ['input1', 'input2', 'output']
         objects[id] = new AndGate(x, y, r, id)
         defineNodes( id, nodes, objects[id], objects  )
     }
 
-    const makeOr = function (x,y,r) {
-        let id = generateId()
+    const makeOr = function (x,y,r,id) {
+        id = id || generateId()
         let nodes = ['input1', 'input2', 'output']
         objects[id] = new OrGate(x, y, r, id)
         defineNodes( id, nodes, objects[id], objects )
     }
 
-    const makeNor = function (x,y,r) {
-        let id = generateId()
+    const makeNor = function (x,y,r,id) {
+        id = id || generateId()
         let nodes = ['input1', 'input2', 'output']
         objects[id] = new NorGate(x, y, r, id)
         defineNodes( id, nodes, objects[id], objects )
     }
 
-    const makeNand = function (x,y,r) {
-        let id = generateId()
+    const makeNand = function (x,y,r,id) {
+        id = id || generateId()
         let nodes = ['input1', 'input2', 'output']
         objects[id] = new NandGate(x, y, r, id)
         defineNodes( id, nodes, objects[id], objects  )
     }
 
-    const makeNot = function (x,y,r) {
-        let id = generateId()
+    const makeNot = function (x,y,r,id) {
+        id = id || generateId()
         let nodes = ['input', 'output']
         objects[id] = new NotGate(x, y, r, id)
         defineNodes( id, nodes, objects[id], objects  )
     }
 
-    const makeXor = function (x,y,r) {
-        let id = generateId()
+    const makeXor = function (x,y,r,id) {
+        id = id || generateId()
         let nodes = ['input1', 'input2', 'output']
         objects[id] = new XorGate(x, y, r, id)
         defineNodes( id, nodes, objects[id], objects  )
     }
 
-    const makeXnor = function (x,y,r) {
-        let id = generateId()
+    const makeXnor = function (x,y,r,id) {
+        id = id || generateId()
         let nodes = ['input1', 'input2', 'output']
         objects[id] = new XnorGate(x, y, r, id)
         defineNodes( id, nodes, objects[id], objects  )
@@ -478,12 +479,16 @@ const make = (function() {
 
         Object.defineProperty(node, 'x', {
             value: x,
-            writable: true
+            writable: true,
+            enumerable: true,
+            configurable: true
         });
 
         Object.defineProperty(node, 'y', {
             value: y,
-            writable: true
+            writable: true,
+            enumerable: true,
+            configurable: true
         });
         return node
     }

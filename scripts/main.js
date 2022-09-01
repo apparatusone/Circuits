@@ -499,8 +499,6 @@ canvas.onmousewheel = function(e) {
 canvas.onmousedown = function(e) {
     e.preventDefault();
 
-    //console.log(objects)
-
     origin.click.x = e.x;
     origin.click.y = e.y;
     origin.prev.x = origin.x;
@@ -552,8 +550,8 @@ canvas.onmousedown = function(e) {
 
     if (objectUnderCursor.isWire) {
         let node = make.node(Math.round(mouse.canvas.x*2)/2, Math.round(mouse.canvas.y*2)/2 ,objectUnderCursor.wire.id, 'output')
-        //place new node between correct nodes
 
+        //place new node between correct nodes
         let newNodesArray = []
         if (objectUnderCursor.wire.nodes.length < 1) {
             newNodesArray.push(node);
@@ -562,6 +560,7 @@ canvas.onmousedown = function(e) {
         }
     
         let wire = objectUnderCursor.wire
+        // all nodes on wire
         let orderedPoints = [wire.node.a, ...wire.nodes, wire.node.b]
         
         while (orderedPoints.length > 1) {
@@ -572,7 +571,6 @@ canvas.onmousedown = function(e) {
 
             if (((current.x - node.x) * (orderedPoints[0].x - node.x) <= 0) &&
                 ((current.y - node.y) * (orderedPoints[0].y - node.y) <= 0)) {
-                    console.log('true')
                     newNodesArray.push(node)
                 }
         }
@@ -900,7 +898,6 @@ saveButton.onclick = function() {
 
         if (object.constructor === CustomComponent) {
             storeCustomComponent(object)
-            console.log('reject component')
             continue
         }
 
@@ -909,12 +906,11 @@ saveButton.onclick = function() {
             continue
         }
 
-        storeObject(object)
+        storeObject(object, false)
     }
 
     for (let [key, wire] of Object.entries(wires)) {
-
-        storeWire(wire)
+        storeWire(wire, false)
     }
 
     // if no objects set generator to 1
@@ -930,228 +926,192 @@ saveButton.onclick = function() {
     // store value for id generator
     window.localStorage.setItem('gen', maxId + 1)
 
-    function storeCustomComponent(component) {
-        for (let [key, object] of Object.entries(component.objects)) {
-            if (object.constructor === CustomComponent) {
-                storeCustomComponent(object)
-            }
-            storeObject(object)
-        }
-
-        for (let [key, wire] of Object.entries(component.wires)) {
-            storeWire(wire)
-        }
-
-        let nodes = []
-        for (const node of component.nodes) {
-            nodes.push(component[node])
-        }
-
-        let array = []
-        for (let [key, object] of Object.entries(component.objects)) {
-            array.push(object.id)
-        }
-
-        window.localStorage.setItem(component.id, JSON.stringify(
+    function storeWire(wire) {
+        window.localStorage.setItem(wire.id, JSON.stringify(
             { 
-                'obj': component,
-                'nodeList': component.nodes,
-                'nodes': nodes,
-                'objectIdArray': array
-            }, replacer
+                'type': 'wire',
+                'a': {id: wire.node.a.id, name: wire.node.a.name},
+                'b': {id: wire.node.b.id, name: wire.node.b.name},
+                'nodes': wire.nodes
+            }, replacerConnectionType
         ));
     }
 
     function storeObject(object) {
-        let nodes = []
-
-        for (const node of object.nodes) {
-            nodes.push(object[node])
-        }
-
         window.localStorage.setItem(object.id, JSON.stringify(
             { 
-                'obj': object,
-                'nodeList': object.nodes,
-                'nodes': nodes 
-            }, replacer
+                'type': 'object',
+                'component': object,
+            }, replacerImg
         ));
     }
 
-    function storeWire(wire) {
+    function storeCustomComponent(component) {
 
-        // nodes
-
-        window.localStorage.setItem(wire.id, JSON.stringify(
+        window.localStorage.setItem(component.id, JSON.stringify(
             { 
-                'wire': wire,
-                nodes: 'node'
+                'type': 'customcomponent',
+                'component': component,
+                'list': Object.keys(component.objects)
             }, replacer
         ));
+
+        for (const [id, object] of Object.entries(component.objects)) {
+            if (object.constructor === CustomComponent) {
+                storeCustomComponent(object)
+                continue
+            }
+            storeObject(object)
+        }
+
+        for (const [id, wire] of Object.entries(component.wires)) {
+            storeWire(wire)
+        }
     }
 
-
-    // replace 'connectionType' to prevent circular reference
-    function replacer(key, value) {
+    function replacerImg(key, value) {
         // Filtering out properties
-        if (key === 'connectionType' || key === 'node') {
-            console.log('match')
-          return undefined;
+        if (key === 'image' || key === 'img') {
+            return;
         }
         return value;
-      }
+    }
+    
+    function replacer(key, value) {
+        // Filtering out properties
+        if (key === 'objects' || key === 'connectionType') {
+            return;
+        }
+        return value;
+    }
+
+    function replacerConnectionType(key, value) {
+        // Filtering out properties
+        if (key === 'connectionType') {
+            for (const [key, wire] of Object.entries(value)) {
+                if (wire.constructor === Wire) return 'wires'
+            }
+            return;
+        }
+        return value;
+    }
 }
 
 function loadSave() {
     if (window.localStorage.length < 1) return
 
+    let parsed = {}
     for (const [id, string] of Object.entries(localStorage)) {
+        parsed[id] = JSON.parse(string)
+    }
+
+    for (const [id, object] of Object.entries(parsed)) {
         // adguard adds object to localstorage; ignore
         if(stringIncludes('_',id)) continue
 
-        if (JSON.parse(string).wire !== undefined) {
-            let wire = JSON.parse(string)
-
-            rebuildWire(wire)
+        if (id === 'gen') {
+            modifyIterate(object)
+            delete parsed[id]
         }
     }
 
-    for (const [id, string] of Object.entries(localStorage)) {
+    for (const [id, object] of Object.entries(parsed)) {
         if(stringIncludes('_',id)) continue
 
-        if (id === 'gen') {
-            modifyIterate(parseInt(string))
-        } else if(JSON.parse(string).wire === undefined) {
-            let container = JSON.parse(string)
+        if (object.type === 'wire') {
+            let node = {}
+            const nodeId = {
+                a: object.a.id.toString(),
+                b: object.b.id.toString()
+            } 
 
-            if (container.obj.classname === 'CustomComponent') {
-                continue
+            // check if node is on an object or wire
+            if (Object.keys(objects).includes(nodeId.a)) {
+                node.a = objects[nodeId.a][object.a.name]
             }
 
-            rebuildObject(container)
-        }
-    }
+            if (Object.keys(objects).includes(nodeId.b)) {
+                node.b = objects[nodeId.b][object.b.name]
+            }
 
-    for (const [id, string] of Object.entries(localStorage)) {
-        if(stringIncludes('_',id)) continue
-        
-        if (id === 'gen') {
-            continue
-        } else if(JSON.parse(string).wire === undefined) {
-            let container = JSON.parse(string)
-
-            if (container.obj.classname === 'CustomComponent') {
-                let list = []
-
-                for (const id of container.objectIdArray) {
-                    list.push(objects[id])
-                }
-
-                let id = makeCustomComponent(list)
-                //objects[id] = Object.assign(objects[id], container.obj)
-
-                objects[id].x = container.obj.x
-                objects[id].y = container.obj.y
-                objects[id].r = container.obj.r
-                objects[id].name = container.obj.name
-
-                for (let [key, node] of Object.entries(container.nodes)) {
-                    console.log(node)
-
-                    objects[id][node.name].connected = node.connected
-                    objects[id][node.name].state = node.state
-                    //objects[id][node.name].id = node.id
-
-                    if (node.wireId !== undefined) {
-                        objects[id][node.name].wireId = node.wireId
-                    }
-
-
-                    if (node.wireId) {
-                        if (wires[node.wireId].node === undefined) {
-                            wires[node.wireId].node = {a: undefined, b: undefined}
-                        }
-                        if (wires[node.wireId].node.a === undefined) {
-                            wires[node.wireId].node.a = objects[id][node.name]
-                            continue
-                        }
-                        if (wires[node.wireId].node.b === undefined) {
-                            wires[node.wireId].node.b = objects[id][node.name]
-                        }
+            if (Object.keys(wires).includes(nodeId.a)) {
+                console.log(id, wires[object.a.id].nodes)
+                let wireNode;
+                for (const node of wires[object.a.id].nodes) {
+                    if (parseInt(id) === parseInt(node.wireId)) {
+                        wireNode = node;
+                        break;
                     }
                 }
-
-                continue
+                node.a = wireNode
             }
-        }
-    }
 
+            if (Object.keys(wires).includes(nodeId.b)) {
+                let wireNode;
+                for (const node of wires[object.b.id].nodes) {
+                    if (parseInt(id) === parseInt(node.wireId)) {
+                        wireNode = node;
+                        break;
+                    }
+                }
+                node.b = wireNode
+            }
 
+            let wire = new Wire( { a: node.a, b: node.b } );
 
-    // const array = JSON.parse(window.localStorage.getItem("1"))
-
-    // console.log(array[0].classname)
-    // let id = make[array[0].classname.toLowerCase()](0,0,0)
-
-    function rebuildObject(container) {
-        const id = container.obj.id
-        let objClass = getClass(container.obj.classname)
-
-        objects[id] = Object.assign(new objClass, container.obj)
+            wires[id] = wire
+            wires[id].id = id
         
-        if (objects[id].img === 'svg') {
-            let temp = new objClass
-            objects[id].image = temp.image
-            //console.log('img',objects[id].image)
-        }
+            node.a.connected = true;
+            node.b.connected = true;
+            // set id for wire connected to node
+            node.a.wireId = id;
+            node.b.wireId = id;
+            wires[id].state
 
-        defineNodes( id, container.nodeList, objects[id], objects )
-
-        // set wire.id node a and node b
-
-        for (let [key, node] of Object.entries(container.nodes)) {
-            let reNode = Object.assign(objects[id][node.name], node)
-
-            Object.defineProperty(reNode, 'connectionType', {
-                value: objects,
-                enumerable: true,
-                configurable: true
-              });
-
-            if (node.wireId) {
-                if (wires[node.wireId].node === undefined) {
-                    wires[node.wireId].node = {a: undefined, b: undefined}
-                }
-                if (wires[node.wireId].node.a === undefined) {
-                    wires[node.wireId].node.a = reNode
-                    continue
-                }
-                if (wires[node.wireId].node.b === undefined) {
-                    wires[node.wireId].node.b = reNode
-                }
+            // add nodes on wire (between ends a and b)
+            let nodes = []
+            for (const node of object.nodes) {
+                let newNode = make.node( 0, 0, id, 'output' )
+                Object.assign(newNode, node)
+                nodes.push(newNode)
             }
+            wires[id].nodes = nodes
+        }
+
+        if (object.type === 'object') {
+            let type = object.component.classname.toLowerCase()
+            type = type.replace('gate', '');
+            make[type](0,0,0,id)
+            Object.assign(objects[id], object.component)
+        }
+
+        if (object.type === 'customcomponent') {
+            let list = []
+            for (const id of object.list) {
+                list.push(objects[id])
+            }
+
+            objects[id] = makeCustomComponent(list, id)
+
+            objects[id].x = object.component.x
+            objects[id].y = object.component.y
+            objects[id].r = object.component.r
+            objects[id].name = object.component.name
         }
     }
 
-    function rebuildWire(wire) {
-        const id = wire.wire.id
-        wires[id] = Object.assign(new Wire, wire.wire)
 
-        Object.defineProperty(wires[id], 'connectionType', {
-            value: wires,
-            enumerable: true,
-            configurable: true
-          });
-    }
+    return
 
-    function rebuildCustomComponent(component) {
-
-    }
+    // propogate state of all wires
 }
 
 customComponentButton.onclick = function() {
     let parts = highlightedComponents()
-    makeCustomComponent(parts)
+    const id = generateId()
+    let cc = makeCustomComponent(parts, id)
+    objects[id] = cc
 }
 
 function toggleRightClickMenu() {
@@ -1265,8 +1225,6 @@ function drawTempWire(wire) {
     ctx.lineTo((-origin.x + wire.x2 + 0.5)* z, (origin.y - wire.y2 + 0.5) * z, z, z);
     ctx.stroke();
 }
-
-
 
 function drawRotatedImg(x, y, shape, degrees, w = 1, h = 1) {
     ctx.save();
@@ -1418,7 +1376,7 @@ function highlightedComponents() {
     return selected
 }
 
-function makeCustomComponent(parts) {
+function makeCustomComponent(parts, id) {
     // check if switches and led's have names
     for (const part of parts) {
         if (part.constructor === Led || part.constructor === OnOffSwitch) {
@@ -1496,7 +1454,6 @@ function makeCustomComponent(parts) {
     }
 
     //create component
-    let id = generateId()
     let component = new CustomComponent(0, 0, 0, width, height, id) //temp 0,0 for x,y (x,y,r,id)
 
     //add offsets to component
@@ -1508,7 +1465,6 @@ function makeCustomComponent(parts) {
         for (let node of part.nodes) {
             if (part[node].wireId) {
                 component.wires[part[node].wireId] = wires[part[node].wireId]
-                //moveWire(part[node].wireId)
             }
         }
     }
@@ -1530,6 +1486,19 @@ function makeCustomComponent(parts) {
             if (value[node].connectionType === wires) {
                 value[node].connectionType = component.wires
             }
+            
+            // sets internal node locations to [0,0]
+            Object.defineProperty(value[node], 'x', {
+                value: 0,
+                enumerable: true,
+                configurable: true
+            });
+
+            Object.defineProperty(value[node], 'y', {
+                value: 0,
+                enumerable: true,
+                configurable: true
+            });
 
             Object.defineProperty(value[node], 'setter', {
                 set (state) {
@@ -1609,14 +1578,12 @@ function makeCustomComponent(parts) {
 
             Object.defineProperty(component[io.name], 'x', {
                 get() { return objects[this.id].x + objects[this.id].offset[this.name].x },
-                //get() { return 0 },
                 enumerable: true,
                 configurable: true
               });
 
               Object.defineProperty(component[io.name], 'y', {
                 get() { return objects[this.id].y + objects[this.id].offset[this.name].y },
-                //get() { return 0 },
                 enumerable: true,
                 configurable: true
               });
@@ -1629,7 +1596,6 @@ function makeCustomComponent(parts) {
 
             //modify led node to propogate change
             let self = io
-            console.log(io['input'].wireId)
             let targetObj = new Node(self.id, component.objects, 'input')
             targetObj.wireId = io['input'].wireId
 
@@ -1688,8 +1654,6 @@ function makeCustomComponent(parts) {
         
     }
 
-    objects[id] = component
-
     //get center of parts for cc x and y
 
     function moveWire(id) {
@@ -1698,7 +1662,7 @@ function makeCustomComponent(parts) {
         // }
         component.wires[id] = wires[id]
     }
-    return id
+    return component
 }
 
 

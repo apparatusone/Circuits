@@ -292,11 +292,10 @@ canvas {
 
 }
 
-
-
 #rotate-left, #rotate-right {
     position: fixed;
-    opacity: 75%;
+    opacity: 80%;
+    border-radius: 100%;
     z-index: 1;
 }
 
