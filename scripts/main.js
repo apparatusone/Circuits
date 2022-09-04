@@ -4,8 +4,8 @@ import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent, Clock } 
 
 import { shape } from "./shapes.js"
 //import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, } from "../node_modules/@mdi/js/mdi.js";
-import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle, dltRotate } from './shapes.js';
-import { within, drawShape, generateId, stringIncludes, minMax, slope, capitalize, getClass, modifyIterate } from "./utilities.js";
+import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle, mdiCog, dltRotate } from './shapes.js';
+import { within, drawShape, generateId, stringIncludes, minMax, slope, capitalize, getClass, modifyIterate, color, radians } from "./utilities.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
@@ -24,7 +24,6 @@ function resizeCanvas() {
     canvas.height = Math.floor(window.innerHeight * scale);
 }
 
-
 const zoomPercentage = document.getElementById("zoomlevel");
 const zoomInButton = document.getElementById("zoom-in");
 const zoomOutButton = document.getElementById("zoom-out");
@@ -34,6 +33,10 @@ const undobutton = document.getElementById("undo");
 const selectButton = document.getElementById("select");
 const saveButton = document.getElementById("save");
 const deleteButton = document.getElementById("delete");
+const settingsButton = document.getElementById("settings");
+const settingsMenu = document.getElementById("settings-menu");
+const darkModeBox = document.getElementById("menu-darkmode");
+const showLabelsBox = document.getElementById("menu-show-labels");
 const customComponentButton = document.getElementById("custom-component");
 const nameButton = document.getElementById("name-component");
 const rightClickMenu = document.getElementById("right-click");
@@ -41,33 +44,16 @@ const nameFormContainer = document.getElementById("name-form-container");
 const nameForm = document.getElementById("name-form");
 rightClickMenu.addEventListener("click", toggleRightClickMenu, false);
 
-const gridDot = document.getElementById('source');
-const onoff = document.getElementById('onoff');
-const andGate = document.getElementById('andgate');
-const nandGate = document.getElementById('nandgate');
-const orGate = document.getElementById('orgate');
-const norGate = document.getElementById('norgate');
-const xorGate = document.getElementById('xorgate');
-const xnorGate = document.getElementById('xnorgate');
-const notGate = document.getElementById('notgate');
-const cc = document.getElementById('cc');
-
-
-
-
-function addMdi(mdi, domObject, color, viewBox, scale) {
+function addMdi(mdi, domObject, color, viewBox, scale, cssClass) {
     let iconSvg = document.createElementNS("http://www.w3.org/2000/svg", 'svg'); //Create a path in SVG's namespace
     const iconPath = document.createElementNS('http://www.w3.org/2000/svg','path');
     
     iconSvg.setAttribute('fill', color);
     iconSvg.setAttribute('viewBox', `0 0 ${viewBox} ${viewBox}`);
     //iconSvg.setAttribute('stroke', 'white');
-    iconSvg.classList.add('post-icon');
+    iconSvg.classList.add(cssClass);
 
-    iconPath.setAttribute(
-    'd',
-    mdi
-    );
+    iconPath.setAttribute('d', mdi);
     iconPath.setAttribute('stroke-linecap', 'round');
     iconPath.setAttribute('stroke-linejoin', 'round');
     iconPath.setAttribute('stroke-width', '1');
@@ -77,21 +63,18 @@ function addMdi(mdi, domObject, color, viewBox, scale) {
     domObject.appendChild(iconSvg);
 }
 
-addMdi(mdiContentSave,saveButton, 'white', 24, 24)
-addMdi(mdiSelection,selectButton, 'white', 24, 24)
-addMdi(mdiUndoVariant,undobutton, 'white', 24, 24)
-addMdi(mdiPlus,zoomInButton, 'white', 24, 24)
-addMdi(mdiMinus,zoomOutButton, 'white', 24, 24)
-addMdi(dltRotate,rotateLeft, '#222734', 100, 35)
-addMdi(dltRotate,rotateRight, '#222734', 100, 35)
-
-
+addMdi(mdiContentSave,saveButton, color.icon, 24, 24, 'post-icon')
+addMdi(mdiSelection,selectButton, color.icon, 24, 24, 'post-icon')
+addMdi(mdiUndoVariant,undobutton, color.icon, 24, 24, 'post-icon')
+addMdi(mdiPlus,zoomInButton, color.icon, 24, 24, 'post-icon')
+addMdi(mdiMinus,zoomOutButton, color.icon, 24, 24, 'post-icon')
+addMdi(mdiCog,settingsButton, color.icon, 24, 24, 'post-icon')
+addMdi(dltRotate,rotateLeft, color.rotate, 100, 35, 'rotate')
+addMdi(dltRotate,rotateRight, color.rotate, 100, 35, 'rotate')
 
 // default zoom
-export let z = 300;                                            
-let objectIndex = 0;
+window.z = 500;
 let smoothZoom = z;
-
 
 //global conditions
 let dragging = false;
@@ -115,11 +98,14 @@ let objectUnderCursor = {
     wire: undefined,
 };
 
-let settings = {
-    // enable/disable smooth zoom
+window.settings = {
+    // is settings menu open
+    open: false,
     smoothZoom: true,      
-    // percentage that buttons change zoom level                             
-    zoomButtons: 5                                      
+    // increment that buttons change zoom level                             
+    zoomButtons: 5,
+    darkMode: false,      
+    showLabels: false,                           
 };
 
 // timer for mouse click duration
@@ -132,7 +118,7 @@ const canvasCenter = {
 }
 
 //set origin to center of screen
-export let origin = {                                         
+window.origin = {                                         
     x: canvasCenter.x,
     y: canvasCenter.y,
     click: { x:0, y:0 },
@@ -140,32 +126,31 @@ export let origin = {
 };
 
 // location of cursor
-export let mouse = {
+window.mouse = {
     screen: { x: 0, y: 0 },
     canvas: { x: 0, y: 0 },
     cell: {x: 0, y: 0}
 };
 
-export let objects = {};            // components
-export let wires = {};              // visual representation of links
+window.objects = {};            // components
+window.wires = {};              // visual representation of links
 let drawingLine = []         // line shown when drawing connection
 let drawingRect = []
 
 //load from localstorage
 loadSave()
-
-// make.led(0,2,0)
-// make.switch(-1,-2,0)
-// make.switch(1,-2,0)
-// make.and(0,0,0)
+//set gui colors
+color.update()
 
 //let fps;
 let lastFrame = performance.now();
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);   // clear the screen
-    ctx.fillStyle = "#fff";                             // background color
-    ctx.fillRect(0,0,canvas.width,canvas.height);       // background rectangle
+    // clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // background
+    ctx.fillStyle = color.background;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 
     // if( z > 40 ) {
     //     for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) { //
@@ -176,27 +161,42 @@ function draw() {
     // };
 
     // more effecient to render when zoomed out
+    ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
+
+    let i;
+    for (i = (-origin.x * z) % z; i < canvas.width; i+=z) {
+        //ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
+    };
+
+    for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
+        ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
+    };
+
     if ( z < 40 ) {
         ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
         for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) {
             for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
-                ctx.fillRect(i - z / 20, j - z / 20, z / 15, z / 15);
+                ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
             };
         };
     }
 
-    // main grid
+    // TODO: simplify grid generation
+    // FIXME: very slow on zoom out
+    //main grid
     if( z > 15 ) {
         for (let i = ((-origin.x - 50) * z) % z; i < canvas.width + 50; i+=z) {
             for (let j = ((origin.y - 50) * z) % z; j < canvas.height + 50; j+=z) {
-                ctx.strokeStyle = 'rgba(150,150,150,.3)';
+                ctx.strokeStyle = color.grid;
                 ctx.setLineDash([]);
-                drawLine( ((i - z / 20) + .05*z), (j - z / 20), ((i - z / 20) + .05*z), ((j - z / 20) + z), 35);
-                drawLine( (i - z / 20), ((j - z / 20) + .05*z), ((i - z / 20) + z), ((j - z / 20) + .05*z), 35);
+                // x1,y1, x2, y2, linewidth
+                drawLine( ((i - z / 20) + .05*z), (j - z / 500), ((i - z / 20) + .05*z), ((j - z / 500) + z), 55);
+                drawLine( (i - z / 500), ((j - z / 20) + .05*z), ((i - z / 500) + z), ((j - z / 20) + .05*z), 55);
             }
         }
     }
 
+    // DOESN'T cause slow down on zoom out
     // sub grid
     if( z > 40 ) {
         for (let i = ((-origin.x - 50) * z) % z; i < canvas.width + 50; i+=z) {
@@ -253,17 +253,18 @@ function draw() {
 
     // draw objects
     for (let [key, value] of Object.entries(objects)) {
-        ctx.fillStyle = "rgba(0,0,0,.4)";
-        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.strokeStyle = color.line;
         ctx.lineWidth = z/15;
+        //ctx.filter = "invert(100%)"
         if (value.img === 'svg') drawRotated(value.image, value.gridCoordinates.x, value.gridCoordinates.y, z, z, value.r)
+        //ctx.filter = "invert(0%)"
         if (value.img !== 'svg') {
             if (value.state) {
                 ctx.fillStyle = value.color;
                 drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
             }
             if (!value.state) {
-                ctx.fillStyle = '#FFFFFF';
+                ctx.fillStyle = color.object;
                 drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
             }
         }
@@ -275,6 +276,7 @@ function draw() {
     }
 
     if (drawingLine.length > 0) {
+        ctx.strokeStyle = color.line;
         drawTempWire(drawingLine[0])
     }
 
@@ -282,102 +284,167 @@ function draw() {
     for (let [key, value] of Object.entries(wires)) {
         ctx.setLineDash([]);
         ctx.lineJoin = 'round';
-        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.strokeStyle = color.line;
         ctx.lineWidth = z/20;
         drawWire(value)
     }
 
     drawNodeHighlight()
-
-    // TODO: rotate text
     // draw custom component
     for (let [key, value] of Object.entries(objects)) {
         if (value.constructor === CustomComponent) {
-            //const url = 'fonts/Anonymous_Pro/AnonymousPro-Regular.ttf';
-            //const font = new URL("/", url);  
-
-            //const AnonymousPro = new FontFace('myFont', 'url(fonts/Anonymous_Pro/AnonymousPro-Regular.ttf)');
-            async function loadFonts() {
-                const AnonymousPro = new FontFace('myfont', 'url(./fonts/Anonymous_Pro/AnonymousPro-Regular.ttf)');
-                // wait for font to be loaded
-                await AnonymousPro.load();
-                // add font to document
-                document.fonts.add(AnonymousPro);
-                // enable font with CSS class
-                document.body.classList.add('fonts-loaded');
-            }
-
 
             let fontSize = z/10
-            ctx.fillStyle = '#DDDDDD'
-            loadFonts()
-            ctx.font = `${fontSize}px AnonymousPro`;
-            ctx.textAlign = 'left'
+            ctx.fillStyle = 'white'
+            ctx.font = `${fontSize}px sans-serif`;
+            ctx.textAlign = 'center'
+            ctx.baseline = 'middle'
             ctx.strokeStyle = 'black';
             ctx.lineWidth = z/120;
 
-            let x = (-origin.x + .2 + value.x) * z
-            let y = (origin.y + .54 - value.y) * z
+            let x = (-origin.x + .5 + value.x) * z
+            let y = (origin.y + .53 - value.y) * z
             let degrees = value.r - 90
+            //prevent text from being upside down
+            if (value.r === 270) degrees = 0
 
             ctx.save();
             ctx.translate((-origin.x + .5 + value.x) * z, (origin.y + .5 - value.y) * z)
             ctx.rotate(degrees * -Math.PI / 180);
             ctx.translate(-(-origin.x + .5 + value.x) * z, -(origin.y + .5 - value.y) * z)
-            ctx.strokeText(value.name, x, y);
             ctx.fillText(value.name, x, y);
             ctx.restore();
 
-
-            if (!value.highlight) continue
+            //draw pins
             for (let [key, off] of Object.entries(value.offset)) {
-
-                //draw pins
-                let pinOffset = .21
-                if (off.x > 0) {
-                    pinOffset*=-1
+                // location of pins
+                let side = ['left', 'right']
+                let s = Math.min(1, radians(value.r) % Math.PI)
+                let pinOffset = { x: .205, y: 0 }
+                if (value.r === 0 || value.r === 180) {
+                    if (value.r === 180) s ^= 1;
+                    if (off.x > 0) pinOffset.x*= -1;
+                    if (off.x > 0) s ^= 1;
+                } else {
+                    pinOffset = { x: 0, y: .205 }
+                    if (value.r === 90) s ^= 1;
+                    if (off.y > 0) pinOffset.y*= -1;
+                    if (off.y < 0) s ^= 1;
                 }
-                ctx.fillStyle = '#969696'
-                shape.pins (off.x + pinOffset + value.x, off.y - value.y, origin.x, origin.y, z, ctx)
 
-                //draw labels
-                let x = (-origin.x + .5 + off.x/2.2 + value.x) * z
-                let y = (origin.y + .5  + off.y - value.y) * z
-                let offsetX = .19
-                let offsetY = .084
+                let x = (-origin.x + (off.x + pinOffset.x + value.x) + 0.465) * z;
+                let y = ( origin.y + (off.y + pinOffset.y - value.y) + .425 ) * z;
+                let w = .07*z
+                let h = .15*z
+
+                ctx.save();
+                ctx.translate(x + w/2, y + h/2)
+                ctx.rotate(value.r * -Math.PI / 180);
+                ctx.translate(-(x + w/2), -(y + h/2))
+                
+                ctx.fillStyle = '#969696'
+                shape.pins (x, y, w, h, z, side[s], ctx)
+
+                ctx.restore();
+            }
+
+            if (!value.highlight && !settings.showLabels) continue
+            for (let [key, off] of Object.entries(value.offset)) {
                 let invert = 1
                 if (off.x < 0) {
-                    invert = -1;
-                    offsetX = -.19
-                    offsetY = -.084
+                    if  (value.r === 0 || value.r === 180) {
+                        invert = -1;
+                    }
                 }
-                let width = invert * (ctx.measureText(key).width + z/4)
+
+                if (off.y < 0) {
+                    if  (value.r === 90 || value.r === 270) {
+                        invert = -1;
+                    }
+                }
+                
+                let textWidth = ctx.measureText(key).width;
+                let width = invert * (textWidth*1.2 + z/4)
                 let height = invert * (z/6)
                 let radius =  invert * .09
+
+                let offset = { x: .085, y: - height/2/z}
+                if (value.r === 0 || value.r === 180) {
+                    if (off.x < 0) offset.x *= -1;
+                } 
+
+                if (value.r === 90 || value.r === 270) {
+                    offset = { x: width/2/z, y: -width/2/z}
+                }
+
+                let x = (-origin.x + .5 + off.x - offset.x + value.x ) * z
+                let y = ( origin.y + .5 - off.y + offset.y - value.y ) * z
+
+                ctx.save();
+                ctx.translate(x + width/2, y + height/2)
+                ctx.rotate(value.r * -Math.PI / 180);
+                ctx.translate(-(x + width/2), -(y + height/2))
 
                 ctx.fillStyle = 'black'
                 ctx.strokeStyle = 'white';
                 ctx.lineWidth = z/50;
-                shape.roundRectangle(
-                    x + z*offsetX, 
-                    y - z*offsetY, 
-                    width, 
-                    height, 
+
+                shape.roundRectangle( x, y, width, height, 
                     {upperLeft: radius*z, upperRight: radius*z, lowerLeft: radius*z, lowerRight: radius*z},
-                    true, 
-                    true, 
-                    ctx)
+                    true, true, ctx)
 
                 let fontSize = z/9
                 ctx.fillStyle = 'white'
                 ctx.font = `${fontSize}px sans-serif`;
 
-                if (off.x < 0) {
-                    ctx.textAlign = 'right'
-                    ctx.fillText(key, x-z/2.7, y + z/30);
-                } else {
-                    ctx.textAlign = 'left'
-                    ctx.fillText(key, x+z/2.7, y + z/30);
+               // draw label text
+                if (value.r === 0) {
+                    ctx.baseline = 'alphabetic'
+                    if (off.x > 0) {
+                        ctx.textAlign = 'left'
+                        ctx.fillText( key, x + .17*z , y + height/2 + .04*z);
+                    } else {
+                        ctx.textAlign = 'right'
+                        ctx.fillText( key, x - .17*z , y + height/2 + .04*z);
+                    }
+                } 
+
+                if (value.r === 90) {
+                    ctx.baseline = 'alphabetic'
+                    if (off.y > 0) {
+                        ctx.textAlign = 'left'
+                        ctx.fillText( key, x + .17*z , y + height/2 + .04*z);
+                    } else {
+                        ctx.textAlign = 'right'
+                        ctx.fillText( key, x - .17*z , y + height/2 + .04*z);
+                    }
+                } 
+
+                if (value.r === 270) {
+                    ctx.baseline = 'alphabetic'
+                    if (off.y > 0) {
+                        ctx.textAlign = 'left'
+                        ctx.fillText( key, x + .05*z , y + height/2 + .04*z);
+                    } else {
+                        ctx.textAlign = 'right'
+                        ctx.fillText( key, x - .05*z , y + height/2 + .04*z);
+                    }
+                } 
+                ctx.restore();
+
+                if (value.r === 180) {
+                    let fontSize = z/9
+                    ctx.fillStyle = 'white'
+                    ctx.font = `${fontSize}px sans-serif`;
+                    
+                    ctx.baseline = 'alphabetic'
+                    if (off.x > 0) {
+                        ctx.textAlign = 'left'
+                        ctx.fillText( key, x + .17*z , y + height/2 + .04*z);
+                    } else {
+                        ctx.textAlign = 'right'
+                        ctx.fillText( key, x - .17*z , y + height/2 + .04*z);
+                    }
                 }
             }
         }
@@ -387,10 +454,10 @@ function draw() {
 
     // draw selection rectangle
     if (select && drawingRect.length) {
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#006eff';
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color.line;
         ctx.lineCap = 'square';
-        ctx.setLineDash([4,15]);
+        ctx.setLineDash([5,15]);
         ctx.beginPath();
         ctx.moveTo(drawingRect[0].x, drawingRect[0].y);
         ctx.lineTo(drawingRect[0].x + drawingRect[0].w, drawingRect[0].y);
@@ -637,6 +704,7 @@ canvas.onmouseup = function(e) {
     rightClick = false;
     dragging = false;
     drawing = false;
+    resetSettingsMenu()
     if (mouseClickDuration(.2) && selected) {
         rotateButtons('unhide')
     }
@@ -811,7 +879,8 @@ zoomPercentage.onclick = function() {
     zoomPercentage.innerHTML = Math.round(z) + '%';
 };
 
-zoomInButton.onclick = function() {
+zoomInButton.onmousedown = function() {
+    zoomInButton.classList.add("action-menu-item-highlight");
     mouse.screen.x = canvas.width / 2;
     mouse.screen.y = canvas.height /2;
     smoothZoom = Math.min(500, Math.round(smoothZoom + settings.zoomButtons));
@@ -891,6 +960,99 @@ deleteButton.onclick = function() {
     deleteComponent(objectUnderCursor.object.id, true)
 }
 
+
+// auto generate "settings-menu-container"
+
+const settings1 = document.getElementById("settings-1");
+const settings2 = document.getElementById("settings-2");
+const settings3 = document.getElementById("settings-3");
+const settings4 = document.getElementById("settings-4");
+const settingsMenuArrow = document.getElementById("settings-menu-arrow");
+
+const settingsMenuObserver = new ResizeObserver(entries => {
+    // this will get called whenever div dimension changes
+     entries.forEach(entry => {
+       if (entry.contentRect.height > 5) settings1.style.visibility = "visible";
+       if (entry.contentRect.height > 5) settings1.style.opacity = "1";
+       if (entry.contentRect.height > 25) settings2.style.visibility = "visible";
+       if (entry.contentRect.height > 25) settings2.style.opacity = "1";
+       if (entry.contentRect.height > 45) settings3.style.visibility = "visible";
+       if (entry.contentRect.height > 45) settings3.style.opacity = "1";
+       if (entry.contentRect.height > 65) settings4.style.visibility = "visible";
+       if (entry.contentRect.height > 65) settings4.style.opacity = "1";
+     });
+   });
+
+let disableToolTip
+settingsButton.onclick = function() {
+    disableToolTip = true
+    tooltip.style.display = "none";
+    settingsButton.classList.add("action-menu-item-highlight-edge");
+
+    let top = getOffset(settingsButton).top;
+    settingsMenuObserver.observe(settingsMenu);
+    settingsMenu.style.visibility = "visible";
+    settingsMenuArrow.style.visibility = "visible";
+
+    settingsMenu.style.width = '200px'
+    settingsMenu.style.height = '75px'
+
+    settingsMenu.style.top = (top+44)+"px";
+
+    setTimeout(() => {
+        settings.open = true
+        settingsMenuObserver.disconnect()
+      }, "500")
+}
+
+darkModeBox.addEventListener('change', function() {
+  if (this.checked) {
+    settings.darkMode = true;
+    color.update()
+  } else {
+    settings.darkMode = false;
+    color.update()
+  }
+});
+
+showLabelsBox.addEventListener('change', function() {
+    if (this.checked) {
+      settings.showLabels = true;
+    } else {
+      settings.showLabels = false;
+    }
+  });
+
+const smoothZoomBox = document.getElementById("menu-smooth-zoom");
+smoothZoomBox.addEventListener('change', function() {
+  if (this.checked) {
+    settings.smoothZoom = true;
+  } else {
+    settings.smoothZoom = false;
+  }
+});
+
+function resetSettingsMenu() {
+    if (!settings.open) return
+
+    settingsMenu.style.visibility = "hidden";
+    settingsMenuArrow.style.visibility = "hidden";
+    settings1.style.visibility = "hidden";
+    settings2.style.visibility = "hidden";
+    settings3.style.visibility = "hidden";
+    settings4.style.visibility = "hidden";
+
+    settingsMenu.style.width = '41px'
+    settingsMenu.style.height = '0px'
+
+    settings1.style.opacity = "0";
+    settings2.style.opacity = "0";
+    settings3.style.opacity = "0";
+    settings4.style.opacity = "0";
+    disableToolTip = false
+    settings.open = false
+}
+
 saveButton.onclick = function() {
     window.localStorage.clear();
 
@@ -925,6 +1087,10 @@ saveButton.onclick = function() {
     const maxId = Math.max(...keysObjects, ...keysWires)
     // store value for id generator
     window.localStorage.setItem('gen', maxId + 1)
+
+    // store settings
+    window.localStorage.setItem('darkMode', settings.darkMode)
+    window.localStorage.setItem('showLabels', settings.showLabels)
 
     function storeWire(wire) {
         window.localStorage.setItem(wire.id, JSON.stringify(
@@ -1012,6 +1178,16 @@ function loadSave() {
         if (id === 'gen') {
             modifyIterate(object)
             delete parsed[id]
+        }
+
+        if (id === 'darkMode') {
+            settings.darkMode = object
+            darkModeBox.checked = object
+        }
+
+        if (id === 'showLabels') {
+            settings.showLabels = object
+            showLabelsBox.checked = object
         }
     }
 
@@ -1223,7 +1399,6 @@ function drawWire(wire) {
 }
 
 function drawTempWire(wire) {
-    ctx.strokeStyle = 'rgba(0,0,0,1)';
     ctx.lineWidth = z/20;
     ctx.lineCap = 'round';
     ctx.setLineDash([]);
@@ -1694,7 +1869,7 @@ function nameComponent() {
     document.getElementById('name-form-type').textContent = objectUnderCursor.object.classname
     
     if (objectUnderCursor.object.name !== "undefined") {
-        document.getElementById('name-form-label').textContent = objectUnderCursor.object.name
+        document.getElementById('name-form-label').textContent = `Name: ${objectUnderCursor.object.name}`
     } else {
         document.getElementById('name-form-label').textContent = ''
     }
@@ -1702,7 +1877,7 @@ function nameComponent() {
 
 function handleForm(event) { event.preventDefault(); 
     let input = document.getElementById("fname").value;
-    const myRe = new RegExp('[<>\\\/?@#\$\^&*()+=!:;.,\'\"\~\`]', 'gmi');
+    const myRe = new RegExp('[\\\/?@#\$\^&*()+=!:;.,\'\"\~\`]', 'gmi');
     const invalid = input.match(myRe);
     if (invalid !== null) {
         alert(`Invalid Character ${invalid}`)
@@ -1722,16 +1897,19 @@ const buttons = document.querySelectorAll('.btn')
 
 buttons.forEach(function(currentBtn){
   currentBtn.addEventListener('mouseover', function() {
+    if (disableToolTip) return
     let left = getOffset(currentBtn).left;
     let top = getOffset(currentBtn).top;
     tooltip.style.width = "fit-content"
     
     tooltip.style.display = "flex";
+    //tooltip.ontransitionend = () => { toolText.textContent = currentBtn.name };
     toolText.textContent = currentBtn.name
     let width = getOffset(currentBtn).width;
     let length = toolText.offsetWidth + 20
 
     tooltip.style.left = (left - length/2 + width/2 )+"px";
+    //settingsMenu.style.left = (left - length/2 + width/2 )+"px";
     tooltip.style.top = (top+50)+"px";
     });
 })
@@ -1750,8 +1928,35 @@ function getOffset(el) {
 buttons.forEach(function(currentBtn){
 currentBtn.addEventListener('mouseout', function() {
         tooltip.style.display = "none";
+        if (currentBtn.name === 'Select') return
+        currentBtn.classList.remove("action-menu-item-highlight");
+        currentBtn.classList.remove("action-menu-item-highlight-right");
+        currentBtn.classList.remove("action-menu-item-highlight-left");
     });
 })
+
+buttons.forEach(function(currentBtn){
+    currentBtn.addEventListener('mousedown', function() {
+            if (currentBtn.name === 'Settings') {
+                currentBtn.classList.add("action-menu-item-highlight-right");
+                return
+            }
+            if (currentBtn.name === 'Undo') {
+                currentBtn.classList.add("action-menu-item-highlight-left");
+                return
+            }
+            currentBtn.classList.add("action-menu-item-highlight");
+        });
+    })
+
+buttons.forEach(function(currentBtn){
+    currentBtn.addEventListener('mouseup', function() {
+            if (currentBtn.name === 'Select') return
+            currentBtn.classList.remove("action-menu-item-highlight");
+            currentBtn.classList.remove("action-menu-item-highlight-right");
+            currentBtn.classList.remove("action-menu-item-highlight-left");
+        });
+    })
 
 const welcomeClose = document.getElementById("welcome-close");
 addMdi(mdiCloseCircle,welcomeClose, 'white', 24, 24)

@@ -16,8 +16,7 @@ import {
     make,
 } from "./parts.js"
 
-import { within, drawShape, idCreator } from './utilities.js'
-import { mouse, objects, origin, wires, z } from './main.js'
+import { within, drawShape, color } from './utilities.js'
 
 const menuCanvas = document.getElementById("menu-canvas");
 const menu = menuCanvas.getContext("2d", { alpha: true });
@@ -33,13 +32,13 @@ const menuHide = document.getElementById("menu-hide");
 const menuObjects = {
     led: {x:35, y: 100, obj: new Led, name: 'Led', type: 'shape'},
     switch: {x: 165, y:100, obj: new OnOffSwitch, name: 'Switch', type: 'shape'},
-    and: {x: 35, y: 235, obj: new AndGate, name: 'And', type: 'svg'},
-    nand: {x: 165, y: 235, obj: new NandGate, name: 'Nand', type: 'svg'},
-    or: {x: 35, y: 370, obj: new OrGate, name: 'Or', type: 'svg'},
-    nor: {x: 165, y: 370, obj: new NorGate, name: 'Nor', type: 'svg'},
-    xor: {x: 35, y: 505, obj: new XorGate, name: 'Xor', type: 'svg'},
-    xnor: {x: 165, y: 505, obj: new XnorGate, name: 'Xnor', type: 'svg'},
-    not: {x: 35, y: 640, obj: new NotGate, name: 'Not', type: 'svg'},
+    and: {x: 35, y: 235, obj: new AndGate, name: 'And', type: 'shape'},
+    nand: {x: 165, y: 235, obj: new NandGate, name: 'Nand', type: 'shape'},
+    or: {x: 35, y: 370, obj: new OrGate, name: 'Or', type: 'shape'},
+    nor: {x: 165, y: 370, obj: new NorGate, name: 'Nor', type: 'shape'},
+    xor: {x: 35, y: 505, obj: new XorGate, name: 'Xor', type: 'shape'},
+    xnor: {x: 165, y: 505, obj: new XnorGate, name: 'Xnor', type: 'shape'},
+    not: {x: 35, y: 640, obj: new NotGate, name: 'Not', type: 'shape'},
     clock: {x: 165, y: 640, obj: new Clock, name: 'Clock', type: 'shape'},
     cc: {x: 35, y: 775, obj: new CustomComponent, name: 'CustomComponent', type: 'svg'},
 }
@@ -111,8 +110,8 @@ function menuDraw(newtime) {
             menu.drawImage(value.obj.image,value.x,value.y,100,100)
         }
         if (value.type === 'shape') {
-            menu.fillStyle = "#fff";
-            menu.strokeStyle = 'rgba(0,0,0,1)';
+            menu.fillStyle = color.object;
+            menu.strokeStyle = color.line;
             menu.lineWidth = 7;
             value.obj.shape(value.x/100, value.y/100, 0, 0, 100, value.w, value.h, menu)
         }
@@ -137,8 +136,8 @@ function menuDraw(newtime) {
             menu.drawImage(ghostObject[0].obj.image, ghostObject[0].x, ghostObject[0].y, z, z);
         }
         if (ghostObject[0].type === 'shape') {
-            menu.fillStyle = "#fff";
-            menu.strokeStyle = 'rgba(0,0,0,1)';
+            menu.fillStyle = color.object;
+            menu.strokeStyle = color.line;
             menu.lineWidth = z/15;
             ghostObject[0].obj.shape(ghostObject[0].x/z, ghostObject[0].y/z, 0,0, z, ghostObject[0].w, ghostObject[0].h, menu)
         }

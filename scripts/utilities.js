@@ -1,25 +1,5 @@
 "use strict";
 
-import {
-    Wire,
-    TempLine,
-    Node,
-    Led,
-    OnOffSwitch,
-    Clock,
-    AndGate,
-    NandGate,
-    OrGate,
-    NorGate,
-    XorGate,
-    XnorGate,
-    NotGate,
-    CustomComponent,
-    make,
-} from "./parts.js"
-
-import { origin, z } from './main.js'
-
 // return true if string 'a' is anywhere in string 'b'
 export function stringIncludes (a,b) {
     const regex = new RegExp( a, 'gi' );
@@ -119,3 +99,60 @@ export function getClass(name){
   }
   return _cls_[name];
 }
+
+//colors
+export const color = (function() {
+    const root = document.documentElement;
+
+    let background, line, object, grid, menu, icon, tooltip, rotate, windowBox;
+
+    function update() {
+        this.background = (settings.darkMode) ? "rgba(15,15,15,1)":"white";
+        this.line = (settings.darkMode) ? "white":"black";
+        this.object = (settings.darkMode) ? "#222222":"white";
+        this.grid = (settings.darkMode) ? "rgba(255,255,255,.5)":"rgba(150,150,150,.3)";
+        this.menu = (settings.darkMode) ? "rgba(255, 255, 255, 0.5)":"rgba(0, 7, 21, 0.738)";
+        this.sideMenu = (settings.darkMode) ? "rgba(170, 170, 170, 0.6)":"rgba(0, 7, 21, 0.5)";
+        this.icon = (settings.darkMode) ? "black":"white";
+        this.tooltip = (settings.darkMode) ? "white":"black";
+        this.rotate = (settings.darkMode) ? "white":"rgba(0, 7, 21, 0.7)";
+        this.windowBox = (settings.darkMode) ? "rgba(170, 170, 170, 0.6)":"#000000ba";
+    
+        root.style.setProperty('--menu-color', this.menu);
+        root.style.setProperty('--side-menu-color', this.sideMenu);
+        root.style.setProperty('--text-color', this.icon);
+        root.style.setProperty('--tooltip-color', this.tooltip);
+        root.style.setProperty('--window-color', this.windowBox);
+    
+        const self = this
+        // update color of top menu icons
+        const icons = document.querySelectorAll('.post-icon')
+        icons.forEach(function(icon){
+        icon.setAttribute('fill', self.icon);
+        })
+
+        // update color of rotate buttons
+        const rotate = document.querySelectorAll('.rotate')
+        rotate.forEach(function(icon){
+            icon.setAttribute('fill', self.rotate);
+            })
+    }
+
+    return {
+        update: update,
+
+        background: background,
+        line: line,
+        object: object,
+        grid: grid,
+        menu: menu,
+        icon: icon,
+        tooltip: tooltip,
+        rotate: rotate
+    }
+})();
+
+export const radians = function (degree) {
+    return degree * (Math.PI / 180)
+}
+

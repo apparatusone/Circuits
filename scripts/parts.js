@@ -2,7 +2,7 @@
 
 import { generateId } from './utilities.js'
 import { shape } from './shapes.js'
-import { defineNodes, objects, wires, z, origin } from './main.js'
+import { defineNodes } from './main.js'
 
 class Wire {
     constructor(node) {
@@ -117,7 +117,7 @@ class Generic {
     }
 
     //type = 'non-interactive'
-    img = 'svg'
+    img = 'canvasPath'
 
     temp = 0;
 
@@ -241,8 +241,6 @@ class Clock extends Generic{
 class AndGate extends Generic {
     constructor(x,y,r,id) {
         super(x,y,r,id);
-
-        this.image = document.getElementById('andgate');
     }
 
     logic() {
@@ -252,13 +250,13 @@ class AndGate extends Generic {
             return 0;
         }
     }
+
+    shape = shape.and
 }
 
 class NandGate extends Generic {
     constructor(x,y,r,id) {
         super(x,y,r,id);
-
-        this.image = document.getElementById('nandgate');
     }
 
     logic() {
@@ -268,13 +266,13 @@ class NandGate extends Generic {
             return 0;
         }
     }
+
+    shape = shape.nand
 }
 
 class OrGate extends Generic {
     constructor(x,y,r,id) {
         super(x,y,r,id);
-
-        this.image = document.getElementById('orgate');
     }
 
     logic() {
@@ -284,14 +282,15 @@ class OrGate extends Generic {
             return 0;
         }
     }
+
+    shape = shape.or
 }
 
 class NorGate extends Generic {
     constructor(x,y,r,id) {
         super(x,y,r,id);
-
-        this.image = document.getElementById('norgate');
     }
+
 
     logic() {
         if (!this.input1.state && !this.input2.state) {
@@ -300,13 +299,13 @@ class NorGate extends Generic {
             return 0;
         }
     }
+
+    shape = shape.nor
 }
 
 class XorGate extends Generic {
     constructor(x,y,r,id) {
         super(x,y,r,id);
-
-        this.image = document.getElementById('xorgate');
     }
 
     logic() {
@@ -316,13 +315,13 @@ class XorGate extends Generic {
             return 0;
         }
     }
+
+    shape = shape.xor
 }
 
 class XnorGate extends Generic {
     constructor(x,y,r,id) {
         super(x,y,r,id);
-
-        this.image = document.getElementById('xnorgate');
     }
 
     logic() {
@@ -332,13 +331,13 @@ class XnorGate extends Generic {
             return 0;
         }
     }
+
+    shape = shape.xnor
 }
 
 class NotGate extends Generic {
     constructor(x,y,r,id) {
         super(x,y,r,id);
-
-        this.image = document.getElementById('notgate');
     }
 
     offset = {
@@ -353,6 +352,8 @@ class NotGate extends Generic {
             return 0;
         }
     }
+
+    shape = shape.not
 }
 
 class CustomComponent {

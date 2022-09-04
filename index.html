@@ -9,10 +9,7 @@
     <script defer type="module" src="scripts/main.js"></script>
     <script defer type="module" src="scripts/menu.js"></script>
     <script defer type="module" src="scripts/parts.js"></script>
-    <!-- <script defer src="scripts/sketch.js"></script> -->
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;500&display=swap');
-        </style>
+    <style> @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;500&display=swap');</style>
         
     <title>computer</title>
 </head>
@@ -32,7 +29,6 @@
         <p>Components can be named using the right click menu.</p>
         <p>Circuits can be made into Integrated Circuits by using the selection button at the top to select your circuit, then using the right click menu to "Create Component"
         </p>
-        <p>Hai Friends</p>
         <button id="welcome-close"></button>
     </div>
 
@@ -48,7 +44,34 @@
         <button name="Decrease Zoom" id="zoom-out" class="btn"></button>
         <button name="Select" id="select" class="btn"></button>
         <button name="Save" id="save" class="btn"></button>
+        <button name="Settings" id="settings" class="btn">
+            <div id="settings-menu-arrow"></div>
+            <div id="settings-menu">
+                <div id="settings-1" class="settings-menu-container">
+                    <input type="checkbox" id="menu-darkmode">
+                    <label for="menu-darkmode">Dark Mode</label>
+                </div>
+                <div id="settings-2" class="settings-menu-container">
+                    <input type="checkbox" id="menu-welcome">
+                    <label for="menu-welcome">Disable Welcome Message</label>
+                </div>
+                <div id="settings-3" class="settings-menu-container">
+                    <input type="checkbox" id="menu-show-labels">
+                    <label for="menu-show-labels">Show Labels</label>
+                </div>
+                <div id="settings-4" class="settings-menu-container">
+                    <input type="checkbox" id="menu-smooth-zoom" checked>
+                    <label for="menu-smooth-zoom">Smooth Zoom</label>
+                </div>
+                <!-- <div id="settings-5" class="settings-menu-container">
+                    <input type="checkbox" id="menu-hide-grid">
+                    <label for="menu-hide-grid">Hide Grid</label>
+                </div> -->
+            </div>
+        </button>
     </div>
+
+
 
     <div id="name-form-container">
         <div id="name-form-type">Led</div>
