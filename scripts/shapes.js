@@ -27,7 +27,7 @@ export const shape = (function() {
         context.setLineDash([]);
 
         // set linewidth when not highlight
-        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/25;
         }
 
@@ -63,7 +63,7 @@ export const shape = (function() {
         context.setLineDash([]);
 
         // set linewidth when not highlight
-        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/25;
         }
 
@@ -116,7 +116,7 @@ export const shape = (function() {
         context.setLineDash([]);
 
         // set linewidth when not highlight
-        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/25;
         }
 
@@ -172,7 +172,7 @@ export const shape = (function() {
         context.setLineDash([]);
 
         // set linewidth when not highlight
-        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/25;
         }
 
@@ -221,7 +221,7 @@ export const shape = (function() {
         context.setLineDash([]);
 
         // set linewidth when not highlight
-        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/25;
         }
 
@@ -277,7 +277,7 @@ export const shape = (function() {
         context.setLineDash([]);
 
         // set linewidth when not highlight
-        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/25;
         }
 
@@ -335,7 +335,7 @@ export const shape = (function() {
         context.setLineDash([]);
 
         // set linewidth when not highlight
-        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/25;
         }
 
@@ -402,7 +402,7 @@ export const shape = (function() {
         context.setLineDash([]);
 
         // set linewidth when not highlight
-        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/25;
         }
 
@@ -485,15 +485,12 @@ export const shape = (function() {
 
     const custom  = function (x1, y1, a, b, z, w, h, context) {
 
-        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/55;
             context.fillStyle = "#3E3F41";
             context.strokeStyle = color.line;
         }
 
-        //context.strokeStyle = 'rgba(0,0,0,1)';
-        //context.fillStyle = "#3E3F41";
-        //context.lineWidth = z/55;
         context.setLineDash([]);
         context.beginPath();
 

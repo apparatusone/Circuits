@@ -104,6 +104,7 @@ class Generic {
 
         this.w = 0.5;
         this.h = 0.6;
+        this.hitbox = { w: .5, h: .6 }
         this.name = 'undefined'
         this.highlight = false;
         //location of the nodes relative to the center of the cell
@@ -140,9 +141,10 @@ class Generic {
             let b = this.offset[ele].y
             if (dir === 'right') [a, b] = [-b, a];
             if (dir === 'left') [a, b] = [b, -a];
-            this.offset[ele].x = a
-            this.offset[ele].y = b
+            this.offset[ele].x = a;
+            this.offset[ele].y = b;
         }
+        [this.hitbox.w, this.hitbox.h] = [this.hitbox.h, this.hitbox.w];
     }
 }
 
@@ -152,6 +154,7 @@ class Led extends Generic{
 
         this.w = 0.4
         this.h = 0.6
+        this.hitbox = { w: .4, h: .6 }
     }
 
     type = 'non-interactive'
@@ -185,6 +188,7 @@ class OnOffSwitch extends Generic{
 
         this.w = 0.5;
         this.h = 0.65;
+        this.hitbox = { w: .5, h: .65 }
         this.offset = {
             output: { x: 0, y: 0.5 },
         }
@@ -217,6 +221,7 @@ class Clock extends Generic{
 
         this.w = 0.6;
         this.h = 0.6;
+        this.hitbox = { w: .6, h: .6 }
         this.frequency = frequency
         this.offset = {
             output: { x: 0.5, y: 0.0 },
@@ -368,6 +373,7 @@ class CustomComponent {
 
         this.w = w
         this.h = h
+        this.hitbox = { w: w, h: h }
         this.name = 'undefined'
         this.highlight = false;
         this.nodes = []
@@ -389,6 +395,11 @@ class CustomComponent {
             this.offset[ele].x = a
             this.offset[ele].y = b
         }
+        [this.hitbox.w, this.hitbox.h] = [this.hitbox.h, this.hitbox.w];
+        // let w = this.w;
+        // let h = this.h;
+        // this.w = h;
+        // this.h = w;
     }
 
     shape = shape.custom

@@ -255,10 +255,9 @@ function draw() {
     for (let [key, value] of Object.entries(objects)) {
         ctx.strokeStyle = color.line;
         ctx.lineWidth = z/15;
-        //ctx.filter = "invert(100%)"
         if (value.img === 'svg') drawRotated(value.image, value.gridCoordinates.x, value.gridCoordinates.y, z, z, value.r)
-        //ctx.filter = "invert(0%)"
         if (value.img !== 'svg') {
+            //if (value.constructor === CustomComponent) continue
             if (value.state) {
                 ctx.fillStyle = value.color;
                 drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
@@ -272,7 +271,7 @@ function draw() {
 
     // show rotate buttons on selected component
     if (selected && highlightedComponents().length < 2 && objectUnderCursor.isComponent ) {
-        locateRotateButtons();
+        locateRotateButtons(objectUnderCursor.object);
     }
 
     if (drawingLine.length > 0) {
@@ -290,10 +289,10 @@ function draw() {
     }
 
     drawNodeHighlight()
+
     // draw custom component
     for (let [key, value] of Object.entries(objects)) {
         if (value.constructor === CustomComponent) {
-
             let fontSize = z/10
             ctx.fillStyle = 'white'
             ctx.font = `${fontSize}px sans-serif`;
@@ -327,13 +326,13 @@ function draw() {
                     if (off.x > 0) s ^= 1;
                 } else {
                     pinOffset = { x: 0, y: .205 }
-                    if (value.r === 90) s ^= 1;
+                    if (value.r === 270) s ^= 1;
                     if (off.y > 0) pinOffset.y*= -1;
                     if (off.y < 0) s ^= 1;
                 }
 
                 let x = (-origin.x + (off.x + pinOffset.x + value.x) + 0.465) * z;
-                let y = ( origin.y + (off.y + pinOffset.y - value.y) + .425 ) * z;
+                let y = ( origin.y + (-off.y - pinOffset.y - value.y) + .425 ) * z;
                 let w = .07*z
                 let h = .15*z
 
@@ -349,6 +348,7 @@ function draw() {
             }
 
             if (!value.highlight && !settings.showLabels) continue
+            // draw labels
             for (let [key, off] of Object.entries(value.offset)) {
                 let invert = 1
                 if (off.x < 0) {
@@ -783,7 +783,7 @@ function getObject(x, y) {
     }
     //detect component under cursor
     for (let [key, obj] of Object.entries(objects)) {
-        if (within.rectangle(obj.x - (obj.w/2), obj.y - (obj.h/2), obj.w, obj.h, x, y)) {
+        if (within.rectangle(obj.x - (obj.hitbox.w/2), obj.y - (obj.hitbox.h/2), obj.hitbox.w, obj.hitbox.h, x, y)) {
             objectUnderCursor.isComponent = true;
             objectUnderCursor.object = obj;
             return;
@@ -905,13 +905,19 @@ const rotateButtons = (x) => {
     }
 }
 
-// TODO: REFACTOR
-function locateRotateButtons() {
-    rotateLeft.style.left = `${(objectUnderCursor.object.gridCoordinates.x + z/2 - 15) - z/2}px`;
-    rotateLeft.style.top = `${(objectUnderCursor.object.gridCoordinates.y ) - 20}px`;
+function locateRotateButtons(object) {
+    let h = Math.max(0, object.hitbox.h - 1)
+    let w = Math.max(0, object.hitbox.w - 1)
 
-    rotateRight.style.left = `${(objectUnderCursor.object.gridCoordinates.x + z/2 - 16) + z/2}px`;
-    rotateRight.style.top = `${(objectUnderCursor.object.gridCoordinates.y ) - 17}px`;
+    const y = ( (origin.y - object.y - h) * z )
+    const xL = ( (-origin.x + object.x - w) * z )
+    const xR = ( (-origin.x + object.x + w) * z )
+
+    rotateLeft.style.left = `${(xL + z/2 - 15) - z/2}px`;
+    rotateLeft.style.top = `${y - 20}px`;
+
+    rotateRight.style.left = `${(xR + z/2 - 16) + z/2}px`;
+    rotateRight.style.top = `${y - 17}px`;
 }
 
 rotateRight.onclick = function() {
@@ -1273,6 +1279,8 @@ function loadSave() {
             objects[id].y = object.component.y
             objects[id].r = object.component.r
             objects[id].name = object.component.name
+            objects[id].offset = object.component.offset
+            objects[id].hitbox = object.component.hitbox
         }
     }
 
