@@ -5,7 +5,7 @@ import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent, Clock } 
 import { shape } from "./shapes.js"
 //import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, } from "../node_modules/@mdi/js/mdi.js";
 import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle, mdiCog, dltRotate } from './shapes.js';
-import { within, drawShape, generateId, stringIncludes, minMax, slope, capitalize, getClass, modifyIterate, color, radians } from "./utilities.js";
+import { within, drawShape, generateId, stringIncludes, minMax, slope, capitalize, getClass, color, radians } from "./utilities.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
@@ -39,6 +39,7 @@ const darkModeBox = document.getElementById("menu-darkmode");
 const showLabelsBox = document.getElementById("menu-show-labels");
 const customComponentButton = document.getElementById("custom-component");
 const nameButton = document.getElementById("name-component");
+const saveComponentButton = document.getElementById("save-component");
 const rightClickMenu = document.getElementById("right-click");
 const nameFormContainer = document.getElementById("name-form-container");
 const nameForm = document.getElementById("name-form");
@@ -50,7 +51,6 @@ function addMdi(mdi, domObject, color, viewBox, scale, cssClass) {
     
     iconSvg.setAttribute('fill', color);
     iconSvg.setAttribute('viewBox', `0 0 ${viewBox} ${viewBox}`);
-    //iconSvg.setAttribute('stroke', 'white');
     iconSvg.classList.add(cssClass);
 
     iconPath.setAttribute('d', mdi);
@@ -134,6 +134,7 @@ window.mouse = {
 
 window.objects = {};            // components
 window.wires = {};              // visual representation of links
+window.savedComponents = {}
 let drawingLine = []         // line shown when drawing connection
 let drawingRect = []
 
@@ -272,11 +273,6 @@ function draw() {
     // show rotate buttons on selected component
     if (selected && highlightedComponents().length < 2 && objectUnderCursor.isComponent ) {
         locateRotateButtons(objectUnderCursor.object);
-    }
-
-    if (drawingLine.length > 0) {
-        ctx.strokeStyle = color.line;
-        drawTempWire(drawingLine[0])
     }
 
     // draw wires
@@ -468,6 +464,12 @@ function draw() {
         ctx.lineTo(drawingRect[0].x + drawingRect[0].w, drawingRect[0].y + drawingRect[0].h);
 
         ctx.stroke();
+    }
+
+    // new wire line
+    if (drawingLine.length > 0) {
+        ctx.strokeStyle = color.line;
+        drawTempWire(drawingLine[0])
     }
 
     //Smooth Zoom transistion
@@ -906,9 +908,13 @@ const rotateButtons = (x) => {
 }
 
 function locateRotateButtons(object) {
+
+    // get width and height offset
     let h = Math.max(0, object.hitbox.h - 1)
     let w = Math.max(0, object.hitbox.w - 1)
 
+
+    //get grid location for buttons
     const y = ( (origin.y - object.y - h) * z )
     const xL = ( (-origin.x + object.x - w) * z )
     const xR = ( (-origin.x + object.x + w) * z )
@@ -1059,6 +1065,217 @@ function resetSettingsMenu() {
     settings.open = false
 }
 
+saveComponentButton.onclick = function() {
+    let custom = {}
+    const object = objectUnderCursor.object
+
+    if (highlightedComponents().length > 1) {
+        alert("can only save 1 component")
+        return
+    }
+
+    if (object.constructor !== CustomComponent) {
+        alert("object is not a Custom Component")
+        return
+    }
+
+    storeCustomComponent(objectUnderCursor.object)
+
+    function storeCustomComponent(component) {
+
+        custom[component.id] = JSON.stringify(
+            { 
+                'type': 'customcomponent',
+                'component': component,
+                'list': Object.keys(component.objects)
+            }, replacer
+        );
+
+        for (const [id, object] of Object.entries(component.objects)) {
+            if (object.constructor === CustomComponent) {
+                storeCustomComponent(object)
+                continue
+            }
+            storeObject(object)
+        }
+
+        for (const [id, wire] of Object.entries(component.wires)) {
+            storeWire(wire)
+        }
+    }
+
+    function storeWire(wire) {
+        custom[wire.id] = JSON.stringify(
+            { 
+                'type': 'wire',
+                'a': {id: wire.node.a.id, name: wire.node.a.name},
+                'b': {id: wire.node.b.id, name: wire.node.b.name},
+                'nodes': wire.nodes
+            }, replacerConnectionType
+        );
+    }
+
+    function storeObject(object) {
+        custom[object.id] = JSON.stringify(
+            { 
+                'type': 'object',
+                'component': object,
+            }, replacerImg
+        );
+    }
+    
+
+    function replacer(key, value) {
+        // Filtering out properties
+        if (key === 'objects' || key === 'connectionType') {
+            return;
+        }
+        if (key === 'connected') {
+            return false
+        }
+        return value;
+    }
+
+    function replacerImg(key, value) {
+        // Filtering out properties
+        if (key === 'image' || key === 'img') {
+            return;
+        }
+        return value;
+    }
+
+    function replacerConnectionType(key, value) {
+        // Filtering out properties
+        if (key === 'connectionType') {
+            for (const [key, wire] of Object.entries(value)) {
+                if (wire.constructor === Wire) return 'wires'
+            }
+            return;
+        }
+        return value;
+    }
+
+    buildComponent(custom)
+}
+
+function buildComponent(custom) {
+    let parsed = {}
+
+    const regexId = /(?<="id":|"id":"|"wireId":|"wireId":")\d+/gm
+    const regexList = /(?<=list.*)\d+(?<!\]}.*)/gm
+    //const wireKey = /(?<=wires":{"|},")\d+(?<!":{nodeState".*)/gm
+    const wireKey = /(?<=wires":{"|},")\d+(?=":{"nodeState")/mg
+
+    // increment all id's and key's by current iterate
+    for (let [key, json] of Object.entries(custom)) {
+        let id = parseInt(key) + parseInt(iterate) - 1
+        custom[id] = json.replace(regexId, replacer)
+        custom[id] = custom[id].replace(regexList, replacer)
+        custom[id] = custom[id].replace(wireKey, replacer)
+
+        delete custom[key];
+    }
+
+    function replacer(match, p1, p2, p3, offset, string) {
+        return (parseInt(match) + parseInt(iterate) - 1) 
+      }
+
+    for (const [key, string] of Object.entries(custom)) {
+        parsed[key] = JSON.parse(string)
+    }
+
+
+    for (const [id, object] of Object.entries(parsed)) {
+        if(stringIncludes('_',id)) continue
+
+        if (object.type === 'wire') {
+            let node = {}
+            const nodeId = {
+                a: object.a.id.toString(),
+                b: object.b.id.toString()
+            } 
+
+            // check if node is on an object or wire
+            if (Object.keys(objects).includes(nodeId.a)) {
+                node.a = objects[nodeId.a][object.a.name]
+            }
+
+            if (Object.keys(objects).includes(nodeId.b)) {
+                node.b = objects[nodeId.b][object.b.name]
+            }
+
+            if (Object.keys(wires).includes(nodeId.a)) {
+                let wireNode;
+                for (const node of wires[object.a.id].nodes) {
+                    if (parseInt(id) === parseInt(node.wireId)) {
+                        wireNode = node;
+                        break;
+                    }
+                }
+                node.a = wireNode
+            }
+
+            if (Object.keys(wires).includes(nodeId.b)) {
+                let wireNode;
+                for (const node of wires[object.b.id].nodes) {
+                    if (parseInt(id) === parseInt(node.wireId)) {
+                        wireNode = node;
+                        break;
+                    }
+                }
+                node.b = wireNode
+            }
+
+            let wire = new Wire( { a: node.a, b: node.b } );
+
+            wires[id] = wire
+            wires[id].id = id
+        
+            node.a.connected = true;
+            node.b.connected = true;
+            // set id for wire connected to node
+            node.a.wireId = id;
+            node.b.wireId = id;
+            wires[id].state
+
+            // add nodes on wire (between ends a and b)
+            let nodes = []
+            for (const node of object.nodes) {
+                let newNode = make.node( 0, 0, id, 'output' )
+                Object.assign(newNode, node)
+                nodes.push(newNode)
+            }
+            wires[id].nodes = nodes
+        }
+
+        if (object.type === 'object') {
+            let type = object.component.classname.toLowerCase()
+            type = type.replace('gate', '');
+            make[type](0,0,0,id)
+            Object.assign(objects[id], object.component)
+        }
+
+        if (object.type === 'customcomponent') {
+            let list = []
+            for (const id of object.list) {
+                list.push(objects[id])
+            }
+
+            objects[id] = makeCustomComponent(list, id)
+
+            objects[id].x = object.component.x
+            objects[id].y = object.component.y
+            objects[id].r = object.component.r
+            objects[id].name = object.component.name
+            objects[id].offset = object.component.offset
+            objects[id].hitbox = object.component.hitbox
+        }
+    }
+
+    const id = Object.keys(parsed).reduce((a, b) => parsed[a] > parsed[b] ? a : b)
+    iterate = parseInt(id) + 1
+}
+
 saveButton.onclick = function() {
     window.localStorage.clear();
 
@@ -1182,7 +1399,7 @@ function loadSave() {
         if(stringIncludes('_',id)) continue
 
         if (id === 'gen') {
-            modifyIterate(object)
+            iterate = object
             delete parsed[id]
         }
 
@@ -1570,7 +1787,7 @@ function makeCustomComponent(parts, id) {
     // check if switches and led's have names
     for (const part of parts) {
         if (part.constructor === Led || part.constructor === OnOffSwitch) {
-            if(part.name === 'undefined') {
+            if (part.name === 'undefined') {
                 alert('Not all i/o has been named')
                 return
             }
