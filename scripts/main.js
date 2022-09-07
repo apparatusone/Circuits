@@ -149,6 +149,7 @@ make.switch(-1,-2,0)
 make.switch(1,-2,0)
 make.label(1,0,0)
 make.label(-1.5,-1,0)
+//objects[5].state = 1
 objects[5].name = 'And Gate'
 objects[6].name = 'Connect remaining nodes'
 temp(objects[4], 'output', objects[2], 'input2')
