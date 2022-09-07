@@ -73,7 +73,7 @@ addMdi(dltRotate,rotateLeft, color.rotate, 100, 35, 'rotate')
 addMdi(dltRotate,rotateRight, color.rotate, 100, 35, 'rotate')
 
 // default zoom
-window.z = 500;
+window.z = 100;
 let smoothZoom = z;
 
 //global conditions
@@ -143,8 +143,33 @@ loadSave()
 //set gui colors
 color.update()
 
-//make.and(0,0,0)
-//make.label(0,0,0)
+make.led(0,2,0)
+make.and(0,0,0)
+make.switch(-1,-2,0)
+make.switch(1,-2,0)
+make.label(1,0,0)
+make.label(-1.5,-1,0)
+objects[5].name = 'And Gate'
+objects[6].name = 'Connect remaining nodes'
+temp(objects[4], 'output', objects[2], 'input2')
+temp(objects[2], 'output', objects[1], 'input')
+
+function temp(obj1, node1, obj2, node2) {
+    let node = {a: obj1[node1], b:obj2[node2]}
+
+    let id = generateId()
+    let wire = new Wire( { a: node.a, b: node.b } );
+
+    wires[id] = wire
+    wires[id].id = id
+
+    node.a.connected = true;
+    node.b.connected = true;
+    // set id for wire connected to node
+    node.a.wireId = id;
+    node.b.wireId = id;
+    wires[id].state
+}
 
 //let fps;
 let lastFrame = performance.now();

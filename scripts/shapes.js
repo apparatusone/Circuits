@@ -491,8 +491,8 @@ export const shape = (function() {
         }
 
         const textWidth = context.measureText(value.name).width;
-        w = Math.max(.7, (Math.round(((textWidth*1.3)/z) * 2) / 2).toFixed(1) )
-        value.hitbox.w =w
+        w = Math.max(.7, (Math.round(((textWidth/60)) * 2) / 2).toFixed(1) )
+        value.hitbox.w = w
 
         const top = (b + y - h/2 + .5) * z;
         const left = (-a + x - w/2 + .5) * z;
