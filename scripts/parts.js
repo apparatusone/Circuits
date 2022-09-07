@@ -1,6 +1,6 @@
 'use strict';
 
-import { generateId } from './utilities.js'
+import { generateId, color } from './utilities.js'
 import { shape } from './shapes.js'
 import { defineNodes } from './main.js'
 
@@ -180,6 +180,27 @@ class Led extends Generic{
 
 
     shape = shape.led
+}
+
+class Label extends Generic{
+    constructor(x,y,r,id) {
+        super(x,y,r,id);
+
+        this.w = 0.7
+        this.h = 0.3
+        this.name = 'undefined'
+        this.nodes = []
+        this.hitbox = { w: this.w, h: this.h }
+        this.offset =  {}
+    }
+
+    type = 'non-interactive'
+    //img = 'led'
+    color = color.background
+
+    state = undefined
+
+    shape = shape.label
 }
 
 class OnOffSwitch extends Generic{
@@ -422,6 +443,14 @@ const make = (function() {
         return id
     }
 
+    const makeLabel = function (x,y,r,id) {
+        id = id || generateId()
+        let nodes = []
+        objects[id] = new Label(x, y, r, id)
+        defineNodes( id, nodes, objects[id], objects )
+        return id
+    }
+
     const makeClock = function  (x,y,r, frequency = 1000,id) {
         id = id || generateId()
         let nodes = ['output']
@@ -517,7 +546,8 @@ const make = (function() {
         not: makeNot,
         xor: makeXor,
         xnor: makeXnor,
-        node: makeNode
+        node: makeNode,
+        label: makeLabel
     }
 
 })();
@@ -527,6 +557,7 @@ export {
     TempLine,
     Node,
     Led,
+    Label,
     OnOffSwitch,
     Clock,
     AndGate,

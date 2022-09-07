@@ -483,6 +483,58 @@ export const shape = (function() {
         context.stroke();
     };
 
+    const labelPath = function (x, y, a, b, z, w, h, context, value) {
+        context.setLineDash([]);
+
+        if (value.name === 'undefined') {
+            value.name = '...';
+        }
+
+        const textWidth = context.measureText(value.name).width;
+        w = Math.max(.7, (Math.round(((textWidth*1.3)/z) * 2) / 2).toFixed(1) )
+        value.hitbox.w =w
+
+        const top = (b + y - h/2 + .5) * z;
+        const left = (-a + x - w/2 + .5) * z;
+        const width = w*z;
+        const height = h*z;
+        const radius = .04*z;
+        
+        context.beginPath();
+        context.moveTo(left + radius, top);
+        context.lineTo(left + width - radius, top);
+        context.arcTo(left + width, top, left + width, top + radius, radius);
+        context.lineTo(left + width, top + height - radius);
+        context.arcTo(left + width, top + height, left + width - radius, top + height, radius);
+        context.lineTo(left + radius, top + height);
+        context.arcTo(left, top + height, left, top + height - radius, radius);
+        context.lineTo(left, top + radius);
+        context.arcTo(left, top, left + radius, top, radius);
+        context.stroke();
+        context.fill()
+
+        let fontSize = z/8
+        context.fillStyle = color.line
+        context.font = `bold ${fontSize}px sans-serif`;
+        context.textAlign = 'center'
+        context.baseline = 'middle'
+        context.strokeStyle = 'black';
+        context.lineWidth = z/120;
+
+        // let x = (-origin.x + .5 + value.x) * z
+        // let y = (origin.y + .53 - value.y) * z
+        // let degrees = value.r - 90
+        // //prevent text from being upside down
+        // if (value.r === 270) degrees = 0
+
+        //context.save();
+        //context.translate((-origin.x + .5 + value.x) * z, (origin.y + .5 - value.y) * z)
+        //context.rotate(degrees * -Math.PI / 180);
+        //context.translate(-(-origin.x + .5 + value.x) * z, -(origin.y + .5 - value.y) * z)
+        context.fillText(value.name, (-a + x + .5) * z, (b + y + .55) * z);
+        //context.restore();
+    };
+
     const custom  = function (x1, y1, a, b, z, w, h, context) {
 
         if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
@@ -578,6 +630,7 @@ export const shape = (function() {
         not: notPath,
         clock: clockPath,
         switch: onOffSwitchPath,
+        label: labelPath,
         custom: custom,
         pins: customPins,
         roundRectangle: roundRectangle,

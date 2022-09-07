@@ -143,6 +143,9 @@ loadSave()
 //set gui colors
 color.update()
 
+//make.and(0,0,0)
+//make.label(0,0,0)
+
 //let fps;
 let lastFrame = performance.now();
 
@@ -233,7 +236,7 @@ function draw() {
                 ctx.lineJoin = 'round';
                 ctx.setLineDash([]);
                 ctx.fillStyle = '#00B6FF';
-                drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
+                drawRotatedImg(value, value.shape, value.w, value.h)
 
             }
             ctx.stroke();
@@ -261,11 +264,11 @@ function draw() {
             //if (value.constructor === CustomComponent) continue
             if (value.state) {
                 ctx.fillStyle = value.color;
-                drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
+                drawRotatedImg(value, value.shape, value.w, value.h)
             }
             if (!value.state) {
                 ctx.fillStyle = color.object;
-                drawRotatedImg(value.x, -value.y, value.shape, value.r, value.w, value.h)
+                drawRotatedImg(value, value.shape, value.w, value.h)
             }
         }
     }
@@ -289,6 +292,8 @@ function draw() {
     // draw custom component
     for (let [key, value] of Object.entries(objects)) {
         if (value.constructor === CustomComponent) {
+
+            // Name of Component
             let fontSize = z/10
             ctx.fillStyle = 'white'
             ctx.font = `${fontSize}px sans-serif`;
@@ -554,8 +559,7 @@ canvas.onmousewheel = function(e) {
     mouse.screen.x = e.x;
     mouse.screen.y = e.y;
 
-    smoothZoom = Math.min( Math.max(
-        smoothZoom - z / 8 * ((e.deltaY) > 0 ? .3 : -.5),           // TODO: MAKE READABLE
+    smoothZoom = Math.min( Math.max(smoothZoom - (z/8) * ((e.deltaY) > 0 ? .3 : -.5),           // TODO: MAKE READABLE
         //minimum ), maximum zoom      
             15), 300
     );
@@ -1161,9 +1165,11 @@ saveComponentButton.onclick = function() {
 function buildComponent(custom) {
     let parsed = {}
 
+
+    // FIXME:
+    // safari does not support lookbehind in JS regular expressions
     const regexId = /(?<="id":|"id":"|"wireId":|"wireId":")\d+/gm
     const regexList = /(?<=list.*)\d+(?<!\]}.*)/gm
-    //const wireKey = /(?<=wires":{"|},")\d+(?<!":{nodeState".*)/gm
     const wireKey = /(?<=wires":{"|},")\d+(?=":{"nodeState")/mg
 
     // increment all id's and key's by current iterate
@@ -1633,38 +1639,38 @@ function drawTempWire(wire) {
     ctx.stroke();
 }
 
-function drawRotatedImg(x, y, shape, degrees, w = 1, h = 1) {
+function drawRotatedImg(value, shape, w = 1, h = 1) {
     ctx.save();
 
-    let a = z/2 + x*z
-    let b = z/2 + y*z
+    let a = z/2 + value.x*z
+    let b = z/2 + -value.y*z
     let xOrigin;
     let yOrigin;
 
 
     // TODO: REFACTOR
-    if (degrees === 0) {
+    if (value.r === 0) {
         xOrigin = origin.x;
         yOrigin = origin.y;
     }
-    if (degrees === 90) {
+    if (value.r === 90) {
         xOrigin = origin.y;
         yOrigin = -origin.x;
     }
-    if (degrees === 180) {
+    if (value.r === 180) {
         xOrigin = -origin.x;
         yOrigin = -origin.y;
     }
-    if (degrees === 270) {
+    if (value.r === 270) {
         xOrigin = -origin.y;
         yOrigin = origin.x;
     }
 
     ctx.translate(a, b)
-    ctx.rotate(degrees * -Math.PI / 180);
+    ctx.rotate(value.r * -Math.PI / 180);
     ctx.translate(-a, -b)
 
-    shape(x, y, xOrigin, yOrigin, z, w, h, ctx)
+    shape(value.x, -value.y, xOrigin, yOrigin, z, w, h, ctx, value)
 
     ctx.restore();
 }

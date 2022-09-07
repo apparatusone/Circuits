@@ -154,3 +154,7 @@ export const radians = function (degree) {
     return degree * (Math.PI / 180)
 }
 
+export function average(array) {
+    const sum = array.reduce((a, b) => a + b, 0);
+    return (sum / array.length) || 0;
+}

@@ -46,7 +46,7 @@ canvas {
 #welcome {
     position: relative;
     /*  */
-    display: none;
+    display: flex;
     flex-direction: column;
     justify-content: center;
     /* align-items: center; */
@@ -415,9 +415,10 @@ canvas {
     fill:#fff;
 }
 
+/* animation for menu hide */
 .animated {
     transition-property: left;
-    transition-duration: .7s;
+    transition-duration: .4s;
   }
 
 

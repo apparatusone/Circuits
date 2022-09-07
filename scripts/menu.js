@@ -2,6 +2,7 @@ import {
     Wire,
     TempLine,
     Node,
+    Label,
     Led,
     OnOffSwitch,
     Clock,
@@ -16,10 +17,11 @@ import {
     make,
 } from "./parts.js"
 
-import { within, drawShape, color } from './utilities.js'
+import { within, drawShape, color, average } from './utilities.js'
 
 const menuCanvas = document.getElementById("menu-canvas");
 const menu = menuCanvas.getContext("2d", { alpha: true });
+menuCanvas.style.pointerEvents = 'none';
 menu.imageSmoothingEnabled = true;
 menu.imageSmoothingQuality = 'high';
 
@@ -29,8 +31,14 @@ menuCanvas.width = window.innerWidth;
 const menuBackground = document.getElementById("menu-background");
 const menuHide = document.getElementById("menu-hide");
 
+scroll = {
+    enable: false,
+    y: 0
+}
+
 const menuObjects = {
-    led: {x:35, y: 100, obj: new Led, name: 'Led', type: 'shape'},
+    label: {obj: new Label, name: 'Label', type: 'shape'},
+    led: {obj: new Led, name: 'Led', type: 'shape'},
     switch: {x: 165, y:100, obj: new OnOffSwitch, name: 'Switch', type: 'shape'},
     and: {x: 35, y: 235, obj: new AndGate, name: 'And', type: 'shape'},
     nand: {x: 165, y: 235, obj: new NandGate, name: 'Nand', type: 'shape'},
@@ -40,12 +48,29 @@ const menuObjects = {
     xnor: {x: 165, y: 505, obj: new XnorGate, name: 'Xnor', type: 'shape'},
     not: {x: 35, y: 640, obj: new NotGate, name: 'Not', type: 'shape'},
     clock: {x: 165, y: 640, obj: new Clock, name: 'Clock', type: 'shape'},
-    cc: {x: 35, y: 775, obj: new CustomComponent, name: 'CustomComponent', type: 'svg'},
+    cc: {x: 35, y: 775, obj: new CustomComponent, name: 'Plcehldr1', type: 'svg'},
+    cc2: {x: 35, y: 910, obj: new CustomComponent, name: 'Plcehldr2', type: 'svg'},
+    cc3: {x: 35, y: 1045, obj: new CustomComponent, name: 'Plcehldr3', type: 'svg'},
+}
+
+const x = [35, 165];
+const y = [135, 0];
+let i = 1;
+let location = { x: 35, y: 100}
+for (let [key, value] of Object.entries(menuObjects)) {
+    value.x = location.x
+    value.y = location.y
+
+    location.x = x[i];
+    location.y = location.y + y[i]
+
+    i ^= 1
 }
 
 for (const [key, value] of Object.entries(menuObjects)) {
     //draw menu item name under item
     let p = document.createElement("p")
+    p.setAttribute('id', `${value.name.toLowerCase()}-text`);
     p.textContent = `${value.name.toUpperCase()}`
     p.style.fontFamily = "Arial, Helvetica, sans-serif"
     p.style.position = "fixed"
@@ -54,6 +79,7 @@ for (const [key, value] of Object.entries(menuObjects)) {
     p.style.textAlign = "center"
     p.style.marginLeft = `${value.x}px`
     p.style.marginTop = `${value.y + 105}px`
+    p.style.pointerEvents = "none";
     menuBackground.append(p)
 
     // draw box around menu item
@@ -65,6 +91,7 @@ for (const [key, value] of Object.entries(menuObjects)) {
     box.classList.add("menu-item-unhighlight")
     box.style.marginLeft = `${value.x - 2}px`
     box.style.marginTop = `${value.y - 2}px`
+    box.style.pointerEvents = "none";
     menuBackground.append(box)
 }
 
@@ -107,18 +134,18 @@ function menuDraw(newtime) {
     // draw components
     for (const [key, value] of Object.entries(menuObjects)) {
         if (value.type === 'svg') {
-            menu.drawImage(value.obj.image,value.x,value.y,100,100)
+            menu.drawImage(value.obj.image,value.x, scroll.y + value.y,100,100)   
         }
         if (value.type === 'shape') {
             menu.fillStyle = color.object;
             menu.strokeStyle = color.line;
             menu.lineWidth = 7;
-            value.obj.shape(value.x/100, value.y/100, 0, 0, 100, value.w, value.h, menu)
+            value.obj.shape(value.x/100, (scroll.y + value.y)/100, 0, 0, 100, value.obj.w, value.obj.h, menu, value.obj)
         }
         //draw nodes
         for (const [key, node] of Object.entries(value.obj.offset)) {
             let a = value.x + node.x*100 + 50
-            let b = value.y - node.y*100 + 50
+            let b = scroll.y + value.y - node.y*100 + 50
             
             menu.strokeStyle = 'rgba(0,0,0,1)';
             menu.fillStyle = '#FFFFFF';
@@ -130,16 +157,24 @@ function menuDraw(newtime) {
         }
     }
 
+    // update positions of text and boxes
+    for (const [key, value] of Object.entries(menuObjects)) {
+        const menuItemBox = document.querySelector(`#${value.name.toLowerCase()}-box`)
+        const menuItemText = document.querySelector(`#${value.name.toLowerCase()}-text`)
+        menuItemBox.style.marginTop = `${scroll.y + value.y - 2}px`
+        menuItemText.style.marginTop = `${scroll.y + value.y + 105}px`
+    }
+
     //draw object being dragged
     if (ghostObject.length === 1) {
         if (ghostObject[0].type === 'svg') {
-            menu.drawImage(ghostObject[0].obj.image, ghostObject[0].x, ghostObject[0].y, z, z);
+            menu.drawImage(ghostObject[0].obj.image, ghostObject[0].x, scroll.y + ghostObject[0].y, z, z);
         }
         if (ghostObject[0].type === 'shape') {
             menu.fillStyle = color.object;
             menu.strokeStyle = color.line;
             menu.lineWidth = z/15;
-            ghostObject[0].obj.shape(ghostObject[0].x/z, ghostObject[0].y/z, 0,0, z, ghostObject[0].w, ghostObject[0].h, menu)
+            ghostObject[0].obj.shape(ghostObject[0].x/z, ghostObject[0].y/z, 0,0, z, ghostObject[0].obj.w, ghostObject[0].obj.h, menu, ghostObject[0].obj)
         }
         for (const [key, node] of Object.entries(ghostObject[0].obj.offset)) {
             let a = ghostObject[0].x/z + origin.x + node.x
@@ -178,21 +213,33 @@ window.onmousemove = function(e) {
     };
 }
 
-// window.onmousewheel = function(e) {
-//     e.preventDefault();
+let deltaYArray = [0]
+window.onmousewheel = function(e) {
+    if(!scroll.enable) return
 
-//     if (create) {
-//         ghostObject[0].x = e.x - (.5 * z)
-//         ghostObject[0].y = e.y - (.5 * z)
-//     };
-// }
+    fpsInterval = 1000 / 60;
+
+    let bottomComponent = 1045
+    let min = -1*bottomComponent + 900
+
+    // get average of last 5 e.deltaY values
+    scroll.y =  Math.max(Math.min(scroll.y,0),min) + Math.round(average(deltaYArray))
+    //scroll.y =  Math.max(Math.min(scroll.y,0),min) + e.delta
+
+    if (deltaYArray.length > 8) {
+        deltaYArray.pop()
+        deltaYArray.unshift(-1*e.deltaY)
+    } else {
+        deltaYArray.unshift(-1*e.deltaY)
+    }
+}
 
 window.onmousedown = function(e) {
     fpsInterval = 1000 / 60;
     if (create) {
 
         for (let [key, value] of Object.entries(menuObjects)) {
-            if (within.rectangle(value.x, value.y, 100, 100, e.x, e.y)) {
+            if (within.rectangle(value.x, scroll.y + value.y, 100, 100, e.x, e.y)) {
                 clickedObject = value;
             }
         }
@@ -231,13 +278,19 @@ window.onmouseup = function(e) {
       }, "500")
 }
 
+
 menuBackground.onmouseover = function() {
     menuCanvas.classList.remove("unselectable");
     create = true;
+    scroll.enable = true;
 };
 
-menuBackground.onmouseout = function() {
+menuBackground.onmouseleave = function() {
     menuCanvas.classList.add("unselectable");
+
+    setTimeout(() => {
+        scroll.enable = false;
+      }, "200")
 };
 
 // button to hide menu
