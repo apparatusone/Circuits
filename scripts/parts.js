@@ -264,6 +264,32 @@ class Clock extends Generic{
     shape = shape.clock
 }
 
+class ConstantHigh extends Generic{
+    constructor(x,y,r,id,frequency) {
+        super(x,y,r,id);
+
+        this.w = 0.6;
+        this.h = 0.6;
+        this.hitbox = { w: .6, h: .6 }
+        this.frequency = frequency
+        this.offset = {
+            output: { x: 0.5, y: 0.0 },
+        }
+    }
+
+    type = 'interactive'
+    img = 'button'
+    color = '#27CF00'
+
+    state = 1
+
+    get changeState () {
+        this.output.setter = this.state
+    }
+
+    shape = shape.constant
+}
+
 class AndGate extends Generic {
     constructor(x,y,r,id) {
         super(x,y,r,id);
@@ -465,6 +491,19 @@ const make = (function() {
         clock();
     }
 
+    const makeConstantHigh = function  (x,y,r,id) {
+        id = id || generateId()
+        let nodes = ['output']
+        objects[id] = new ConstantHigh(x, y, r, id)
+        defineNodes( id, nodes, objects[id], objects  )
+
+        function setState() {
+            objects[id].changeState
+        };
+
+        setState()
+    }
+
     const makeAnd = function (x,y,r,id) {
         id = id || generateId()
         let nodes = ['input1', 'input2', 'output']
@@ -540,6 +579,7 @@ const make = (function() {
         led: makeLed,
         clock: makeClock,
         and: makeAnd,
+        ConstantHigh: makeConstantHigh,
         or: makeOr,
         nor: makeNor,
         nand: makeNand,
@@ -559,6 +599,7 @@ export {
     Led,
     Label,
     OnOffSwitch,
+    ConstantHigh,
     Clock,
     AndGate,
     NandGate,

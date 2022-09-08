@@ -5,6 +5,7 @@ import {
     Label,
     Led,
     OnOffSwitch,
+    ConstantHigh,
     Clock,
     AndGate,
     NandGate,
@@ -17,7 +18,7 @@ import {
     make,
 } from "./parts.js"
 
-import { within, drawShape, color, average } from './utilities.js'
+import { within, drawShape, color, average, stringIncludes } from './utilities.js'
 
 const menuCanvas = document.getElementById("menu-canvas");
 const menu = menuCanvas.getContext("2d", { alpha: true });
@@ -37,42 +38,79 @@ scroll = {
 }
 
 const menuObjects = {
-    label: {obj: new Label, name: 'Label', type: 'shape'},
-    led: {obj: new Led, name: 'Led', type: 'shape'},
-    switch: {x: 165, y:100, obj: new OnOffSwitch, name: 'Switch', type: 'shape'},
-    and: {x: 35, y: 235, obj: new AndGate, name: 'And', type: 'shape'},
-    nand: {x: 165, y: 235, obj: new NandGate, name: 'Nand', type: 'shape'},
-    or: {x: 35, y: 370, obj: new OrGate, name: 'Or', type: 'shape'},
-    nor: {x: 165, y: 370, obj: new NorGate, name: 'Nor', type: 'shape'},
-    xor: {x: 35, y: 505, obj: new XorGate, name: 'Xor', type: 'shape'},
-    xnor: {x: 165, y: 505, obj: new XnorGate, name: 'Xnor', type: 'shape'},
-    not: {x: 35, y: 640, obj: new NotGate, name: 'Not', type: 'shape'},
-    clock: {x: 165, y: 640, obj: new Clock, name: 'Clock', type: 'shape'},
-    cc: {x: 35, y: 775, obj: new CustomComponent, name: 'Plcehldr1', type: 'svg'},
-    cc2: {x: 35, y: 910, obj: new CustomComponent, name: 'Plcehldr2', type: 'svg'},
-    cc3: {x: 35, y: 1045, obj: new CustomComponent, name: 'Plcehldr3', type: 'svg'},
+    heading1: {y: 10, text: 'input / output'},
+
+    switch: {obj: new OnOffSwitch, name: 'switch', type: 'shape'},
+    led: {obj: new Led, name: 'led', type: 'shape'},
+    clock: {obj: new Clock, name: 'clock', type: 'shape'},
+    constant: {obj: new ConstantHigh, name: 'Constant-High', type: 'shape'},
+
+    heading2: {y: 70, text: 'Miscellaneous'},
+
+    label: {obj: new Label, name: 'label', type: 'shape'},
+
+    heading3: {y: 70, text: 'Gates'},
+
+    and: {obj: new AndGate, name: 'and', type: 'shape'},
+    nand: {obj: new NandGate, name: 'nand', type: 'shape'},
+    or: {obj: new OrGate, name: 'or', type: 'shape'},
+    nor: {obj: new NorGate, name: 'nor', type: 'shape'},
+    xor: {obj: new XorGate, name: 'xor', type: 'shape'},
+    xnor: {obj: new XnorGate, name: 'xnor', type: 'shape'},
+    not: {obj: new NotGate, name: 'not', type: 'shape'},
+
+    heading4: {y: 70, text: 'Custom Components'},
+
+    cc: {obj: new CustomComponent, name: 'Plcehldr1', type: 'svg'},
+    cc2: {obj: new CustomComponent, name: 'PlaceHolder', type: 'svg'},
+    cc3: {obj: new CustomComponent, name: 'Plcehldr3', type: 'svg'},
+    cc4: {obj: new CustomComponent, name: 'Plcdr3', type: 'svg'},
+    cc5: {obj: new CustomComponent, name: 'Plcdr4', type: 'svg'},
+    cc6: {obj: new CustomComponent, name: 'Plcdr5', type: 'svg'},
+    cc7: {obj: new CustomComponent, name: 'Plcdr6', type: 'svg'},
 }
 
 const x = [35, 165];
 const y = [135, 0];
 let i = 1;
-let location = { x: 35, y: 100}
+let location = { x: 35, y: 20}
+let bottomComponent;
 for (let [key, value] of Object.entries(menuObjects)) {
+    if (stringIncludes ('heading',key)) {
+        let offset = 0
+        if (i === 0) offset = 130
+        menuHeading(location.y + offset, value.text)
+        location.y = location.y + offset + 40
+        location.x = 35
+        i = 1
+        continue
+    }
+
     value.x = location.x
     value.y = location.y
 
     location.x = x[i];
     location.y = location.y + y[i]
+    bottomComponent = location.y
 
     i ^= 1
 }
 
 for (const [key, value] of Object.entries(menuObjects)) {
+
+    //remove headings and dividers from object
+    if (stringIncludes ('heading',key)) {
+        delete menuObjects[key]
+        continue
+    }
+
+
     //draw menu item name under item
     let p = document.createElement("p")
     p.setAttribute('id', `${value.name.toLowerCase()}-text`);
     p.textContent = `${value.name.toUpperCase()}`
     p.style.fontFamily = "Arial, Helvetica, sans-serif"
+    p.style.fontSize = `${Math.min(15,150/value.name.length)}px`
     p.style.position = "fixed"
     p.style.color = "white"
     p.style.width = "100px";
@@ -93,6 +131,35 @@ for (const [key, value] of Object.entries(menuObjects)) {
     box.style.marginTop = `${value.y - 2}px`
     box.style.pointerEvents = "none";
     menuBackground.append(box)
+}
+
+function menuHeading(y,text) {
+    const heading = document.createElement("h2")
+    heading.classList.add('menu-heading')
+    heading.textContent = text;
+    heading.style.fontFamily = "Arial, Helvetica, sans-serif"
+    heading.style.fontSize = "20px"
+    heading.style.position = "fixed"
+    heading.style.color = "white"
+    heading.style.width = "250px";
+    heading.style.textAlign = "left"
+    heading.style.marginLeft = '35px'
+    heading.style.setProperty('--offset', y);
+    heading.style.marginTop = `${y}px`
+    heading.style.pointerEvents = "none";
+    menuBackground.append(heading)
+
+    const divider = document.createElement("div")
+    divider.classList.add('menu-heading')
+    divider.style.position = "fixed"
+    divider.style.backgroundColor = "rgba(255, 255, 255, 0.276)"
+    divider.style.width = "280px";
+    divider.style.height = "1px"
+    divider.style.marginLeft = '10px'
+    divider.style.setProperty('--offset', y+24);
+    divider.style.marginTop = `${y+24}px`
+    divider.style.pointerEvents = "none";
+    menuBackground.append(divider)
 }
 
 const ghostObject = []
@@ -218,13 +285,13 @@ window.onmousewheel = function(e) {
     if(!scroll.enable) return
 
     fpsInterval = 1000 / 60;
-
-    let bottomComponent = 1045
-    let min = -1*bottomComponent + 900
+    //set bounds of scroll
+    let topBound = 0
+    let botttomBound = -1*bottomComponent + 900
 
     // get average of last 5 e.deltaY values
-    scroll.y =  Math.max(Math.min(scroll.y,0),min) + Math.round(average(deltaYArray))
-    //scroll.y =  Math.max(Math.min(scroll.y,0),min) + e.delta
+    scroll.y =  Math.max(Math.min(scroll.y,topBound),botttomBound) + Math.round(average(deltaYArray))
+    //scroll.y+=e.deltaY
 
     if (deltaYArray.length > 8) {
         deltaYArray.pop()
@@ -232,6 +299,12 @@ window.onmousewheel = function(e) {
     } else {
         deltaYArray.unshift(-1*e.deltaY)
     }
+
+    const headings = document.querySelectorAll('.menu-heading')
+    headings.forEach(function(heading){
+        const offset = getComputedStyle(heading).getPropertyValue('--offset');
+        heading.style.marginTop = `${scroll.y + parseInt(offset)}px`
+      })
 }
 
 window.onmousedown = function(e) {
@@ -260,7 +333,7 @@ window.onmousedown = function(e) {
 
 window.onmouseup = function(e) {
     if (create && clickedObject) {
-        make[clickedObject.name.toLowerCase()](Math.round(mouse.canvas.x*2)/2,Math.round(mouse.canvas.y*2)/2,0)
+        make[clickedObject.name.replace('-','')](Math.round(mouse.canvas.x*2)/2,Math.round(mouse.canvas.y*2)/2,0)
 
         // remove menu highlight
         const element = document.getElementById(`${clickedObject.name.toLowerCase()}-box`);

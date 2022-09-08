@@ -1,6 +1,6 @@
 'use strict';
 
-import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent, Clock } from "./parts.js"
+import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent, Clock, ConstantHigh } from "./parts.js"
 
 import { shape } from "./shapes.js"
 //import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, } from "../node_modules/@mdi/js/mdi.js";
@@ -143,36 +143,40 @@ loadSave()
 //set gui colors
 color.update()
 
-make.led(0,2,0)
-make.and(0,0,0)
-make.switch(-1,-2,0)
-make.switch(1,-2,0)
-make.label(1,0,0)
-make.label(-1.5,-1,0)
-make.label(2,-3,0)
-objects[3].changeState
-//objects[4].changeState
-objects[5].name = 'And Gate'
-objects[6].name = 'Connect remaining nodes'
-objects[7].name = 'Click on switch to change state from 0 to 1'
-temp(objects[4], 'output', objects[2], 'input2')
-temp(objects[2], 'output', objects[1], 'input')
+//if (localStorage.length < 2) tutorial()
 
-function temp(obj1, node1, obj2, node2) {
-    let node = {a: obj1[node1], b:obj2[node2]}
+function tutorial() {
+    make.led(0,2,0)
+    make.and(0,0,0)
+    make.switch(-1,-2,0)
+    make.switch(1,-2,0)
+    make.label(1,0,0)
+    make.label(-1.5,-1,0)
+    make.label(2,-3,0)
+    objects[3].changeState
+    //objects[4].changeState
+    objects[5].name = 'And Gate'
+    objects[6].name = 'Connect remaining nodes'
+    objects[7].name = 'Click on switch to change state from 0 to 1'
+    temp(objects[4], 'output', objects[2], 'input2')
+    temp(objects[2], 'output', objects[1], 'input')
 
-    let id = generateId()
-    let wire = new Wire( { a: node.a, b: node.b } );
+    function temp(obj1, node1, obj2, node2) {
+        let node = {a: obj1[node1], b:obj2[node2]}
 
-    wires[id] = wire
-    wires[id].id = id
+        let id = generateId()
+        let wire = new Wire( { a: node.a, b: node.b } );
 
-    node.a.connected = true;
-    node.b.connected = true;
-    // set id for wire connected to node
-    node.a.wireId = id;
-    node.b.wireId = id;
-    wires[id].state
+        wires[id] = wire
+        wires[id].id = id
+
+        node.a.connected = true;
+        node.b.connected = true;
+        // set id for wire connected to node
+        node.a.wireId = id;
+        node.b.wireId = id;
+        wires[id].state
+    }
 }
 
 //let fps;
@@ -288,16 +292,16 @@ function draw() {
     for (let [key, value] of Object.entries(objects)) {
         ctx.strokeStyle = color.line;
         ctx.lineWidth = z/15;
-        if (value.img === 'svg') drawRotated(value.image, value.gridCoordinates.x, value.gridCoordinates.y, z, z, value.r)
+        //if (value.img === 'svg') drawRotated(value.image, value.gridCoordinates.x, value.gridCoordinates.y, z, z, value.r)
         if (value.img !== 'svg') {
             //if (value.constructor === CustomComponent) continue
             if (value.state) {
                 ctx.fillStyle = value.color;
-                drawRotatedImg(value, value.shape, value.w, value.h)
+                drawRotatedImg(value)
             }
             if (!value.state) {
                 ctx.fillStyle = color.object;
-                drawRotatedImg(value, value.shape, value.w, value.h)
+                drawRotatedImg(value)
             }
         }
     }
@@ -346,7 +350,7 @@ function draw() {
 
             //draw pins
             for (let [key, off] of Object.entries(value.offset)) {
-                // location of pins
+                //location of pins
                 let side = ['left', 'right']
                 let s = Math.min(1, radians(value.r) % Math.PI)
                 let pinOffset = { x: .205, y: 0 }
@@ -378,7 +382,7 @@ function draw() {
             }
 
             if (!value.highlight && !settings.showLabels) continue
-            // draw labels
+            //draw labels
             for (let [key, off] of Object.entries(value.offset)) {
                 let invert = 1
                 if (off.x < 0) {
@@ -1326,6 +1330,11 @@ saveButton.onclick = function() {
             continue
         }
 
+        if (object.constructor === ConstantHigh) {
+            console.log('reject constant')
+            continue
+        }
+
         storeObject(object, false)
     }
 
@@ -1668,14 +1677,13 @@ function drawTempWire(wire) {
     ctx.stroke();
 }
 
-function drawRotatedImg(value, shape, w = 1, h = 1) {
+function drawRotatedImg(value) {
     ctx.save();
 
     let a = z/2 + value.x*z
     let b = z/2 + -value.y*z
     let xOrigin;
     let yOrigin;
-
 
     // TODO: REFACTOR
     if (value.r === 0) {
@@ -1699,7 +1707,7 @@ function drawRotatedImg(value, shape, w = 1, h = 1) {
     ctx.rotate(value.r * -Math.PI / 180);
     ctx.translate(-a, -b)
 
-    shape(value.x, -value.y, xOrigin, yOrigin, z, w, h, ctx, value)
+    value.shape(value.x, -value.y, xOrigin, yOrigin, z, value.w, value.h, ctx, value)
 
     ctx.restore();
 }

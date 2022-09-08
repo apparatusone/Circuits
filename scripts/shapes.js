@@ -41,8 +41,9 @@ export const shape = (function() {
             context.lineWidth = z/15;
         }
         
+        let radius = .23
         context.beginPath();
-        context.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .25 * z, 0, 2 * Math.PI, true);
+        context.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, radius * z, 0, 2 * Math.PI, true);
         context.stroke();
         context.fill();
 
@@ -57,6 +58,42 @@ export const shape = (function() {
         context.lineTo((-a + x1 + 0.62) * z, (b + y1 + 0.41) * z);
         context.lineTo((-a + x1 + 0.62) * z, (b + y1 + 0.6) * z);
         context.stroke();
+    };
+
+    const constantPath = function (x1, y1, a, b, z, w, h, context) {
+        context.setLineDash([]);
+
+        // set linewidth when not highlight
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
+            context.lineWidth = z/25;
+        }
+
+        context.beginPath();
+        context.lineTo((-a + x1 + 0.75) * z, (b + y1 + 0.5) * z);
+        context.lineTo((-a + x1 + 1.0) * z, (b + y1 + 0.5) * z);
+        context.stroke();
+
+        
+        if (Math.trunc(context.lineWidth * 10) / 10 !== Math.trunc(z/4 * 10) / 10) {
+            context.lineWidth = z/15;
+        }
+        
+        let radius = .23
+        context.beginPath();
+        context.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, radius * z, 0, 2 * Math.PI, true);
+        context.stroke();
+        context.fill();
+
+        context.fillStyle = color.line;
+        context.beginPath();
+        context.moveTo((-a + x1 + 0.54) * z, (b + y1 + 0.35) * z);
+        context.lineTo((-a + x1 + 0.41) * z, (b + y1 + 0.51) * z);
+        context.lineTo((-a + x1 + 0.48) * z, (b + y1 + 0.51) * z);
+        context.lineTo((-a + x1 + 0.44) * z, (b + y1 + 0.65) * z);
+        context.lineTo((-a + x1 + 0.59) * z, (b + y1 + 0.47) * z);
+        context.lineTo((-a + x1 + 0.51) * z, (b + y1 + 0.47) * z);
+        context.closePath();
+        context.fill();
     };
 
     const andPath = function (x1, y1, a, b, z, w, h, context) {
@@ -490,13 +527,16 @@ export const shape = (function() {
             value.name = '...';
         }
 
+        let fontSize = z/8
+        context.font = `bold ${fontSize}px sans-serif`;
         const textWidth = context.measureText(value.name).width;
-        w = Math.max(.7, (Math.round(((textWidth/60)) * 2) / 2).toFixed(1) )
-        value.hitbox.w = w
+
+        value.w = Math.max(.7, (Math.round(((textWidth*1.2/z)) * 2) / 2).toFixed(1))
+        value.hitbox.w = value.w
 
         const top = (b + y - h/2 + .5) * z;
         const left = (-a + x - w/2 + .5) * z;
-        const width = w*z;
+        const width = value.w * z;
         const height = h*z;
         const radius = .04*z;
         
@@ -513,9 +553,7 @@ export const shape = (function() {
         context.stroke();
         context.fill()
 
-        let fontSize = z/8
         context.fillStyle = color.line
-        context.font = `bold ${fontSize}px sans-serif`;
         context.textAlign = 'center'
         context.baseline = 'middle'
         context.strokeStyle = 'black';
@@ -629,6 +667,7 @@ export const shape = (function() {
         xnor: xnorPath,
         not: notPath,
         clock: clockPath,
+        constant: constantPath,
         switch: onOffSwitchPath,
         label: labelPath,
         custom: custom,
