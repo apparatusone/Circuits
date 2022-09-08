@@ -18,7 +18,7 @@ import {
     make,
 } from "./parts.js"
 
-import { within, drawShape, color, average, stringIncludes } from './utilities.js'
+import { within, drawShape, color, average, stringIncludes, buildComponent } from './utilities.js'
 
 const menuCanvas = document.getElementById("menu-canvas");
 const menu = menuCanvas.getContext("2d", { alpha: true });
@@ -59,15 +59,15 @@ const menuObjects = {
     xnor: {obj: new XnorGate, name: 'xnor', type: 'shape'},
     not: {obj: new NotGate, name: 'not', type: 'shape'},
 
-    heading4: {y: 70, text: 'Custom Components'},
+    heading4: {text: 'Custom Components'},
 
-    cc: {obj: new CustomComponent, name: 'Plcehldr1', type: 'svg'},
-    cc2: {obj: new CustomComponent, name: 'PlaceHolder', type: 'svg'},
-    cc3: {obj: new CustomComponent, name: 'Plcehldr3', type: 'svg'},
-    cc4: {obj: new CustomComponent, name: 'Plcdr3', type: 'svg'},
-    cc5: {obj: new CustomComponent, name: 'Plcdr4', type: 'svg'},
-    cc6: {obj: new CustomComponent, name: 'Plcdr5', type: 'svg'},
-    cc7: {obj: new CustomComponent, name: 'Plcdr6', type: 'svg'},
+    cc: {obj: new CustomComponent, name: 'Half-Adder', type: 'svg'},
+    //cc2: {obj: new CustomComponent, name: 'PlaceHolder', type: 'svg'},
+    //cc3: {obj: new CustomComponent, name: 'Plcehldr3', type: 'svg'},
+    //cc4: {obj: new CustomComponent, name: 'Plcdr3', type: 'svg'},
+    //cc5: {obj: new CustomComponent, name: 'Plcdr4', type: 'svg'},
+    //cc6: {obj: new CustomComponent, name: 'Plcdr5', type: 'svg'},
+    //cc7: {obj: new CustomComponent, name: 'Plcdr6', type: 'svg'},
 }
 
 const x = [35, 165];
@@ -104,11 +104,10 @@ for (const [key, value] of Object.entries(menuObjects)) {
         continue
     }
 
-
     //draw menu item name under item
     let p = document.createElement("p")
     p.setAttribute('id', `${value.name.toLowerCase()}-text`);
-    p.textContent = `${value.name.toUpperCase()}`
+    p.textContent = `${value.name.toUpperCase().replace('-',' ')}`
     p.style.fontFamily = "Arial, Helvetica, sans-serif"
     p.style.fontSize = `${Math.min(15,150/value.name.length)}px`
     p.style.position = "fixed"
@@ -134,6 +133,7 @@ for (const [key, value] of Object.entries(menuObjects)) {
 }
 
 function menuHeading(y,text) {
+    // menu headings
     const heading = document.createElement("h2")
     heading.classList.add('menu-heading')
     heading.textContent = text;
@@ -149,6 +149,7 @@ function menuHeading(y,text) {
     heading.style.pointerEvents = "none";
     menuBackground.append(heading)
 
+    //menu dividers
     const divider = document.createElement("div")
     divider.classList.add('menu-heading')
     divider.style.position = "fixed"
@@ -235,7 +236,7 @@ function menuDraw(newtime) {
     //draw object being dragged
     if (ghostObject.length === 1) {
         if (ghostObject[0].type === 'svg') {
-            menu.drawImage(ghostObject[0].obj.image, ghostObject[0].x, scroll.y + ghostObject[0].y, z, z);
+            menu.drawImage(ghostObject[0].obj.image, ghostObject[0].x, ghostObject[0].y, z, z);
         }
         if (ghostObject[0].type === 'shape') {
             menu.fillStyle = color.object;
@@ -285,9 +286,10 @@ window.onmousewheel = function(e) {
     if(!scroll.enable) return
 
     fpsInterval = 1000 / 60;
+
     //set bounds of scroll
     let topBound = 0
-    let botttomBound = -1*bottomComponent + 900
+    let botttomBound = -1*bottomComponent + window.innerHeight - 150
 
     // get average of last 5 e.deltaY values
     scroll.y =  Math.max(Math.min(scroll.y,topBound),botttomBound) + Math.round(average(deltaYArray))
@@ -333,7 +335,19 @@ window.onmousedown = function(e) {
 
 window.onmouseup = function(e) {
     if (create && clickedObject) {
-        make[clickedObject.name.replace('-','')](Math.round(mouse.canvas.x*2)/2,Math.round(mouse.canvas.y*2)/2,0)
+        let start = performance.now()
+        let end;
+        if (clickedObject.obj.constructor === CustomComponent) {
+            let string = (clickedObject.name.replace('-',''))
+            let name = string.charAt(0).toLowerCase() + string.slice(1)
+            let id = buildComponent(make[name])
+            end = performance.now()
+            //objects[id].x = Math.round(mouse.canvas.x*2)/2;
+            //objects[id].y = Math.round(mouse.canvas.y*2)/2;
+        } else {
+            make[clickedObject.name.replace('-','')](Math.round(mouse.canvas.x*2)/2,Math.round(mouse.canvas.y*2)/2,0)
+        }
+
 
         // remove menu highlight
         const element = document.getElementById(`${clickedObject.name.toLowerCase()}-box`);
@@ -342,6 +356,9 @@ window.onmouseup = function(e) {
         ghostObject.pop()
 
         create = false
+
+        console.log(end - start);
+        
     }
 
     clickedObject = undefined
