@@ -142,7 +142,7 @@ loadSave()
 //set gui colors
 color.update()
 
-//if (localStorage.length < 2) tutorial()
+if (localStorage.length < 2) tutorial()
 
 function tutorial() {
     make.led(0,2,0)
@@ -1117,12 +1117,6 @@ saveComponentButton.onclick = function() {
 
     storeCustomComponent(object)
 
-    // FIXME:
-    // REGEX IS SLOW!
-    // safari does not have positive lookbehind ((?<= )) in JS regular expressions
-    // const regexId = /(?<="id":|"id":"|"wireId":|"wireId":")\d+/gm
-    // const regexList = /(?<=list.*)\d+(?<!\]}.*)/gm
-    // const wireKey = /(?<=wires":{"|},")\d+(?=":{"nodeState")/mg
     const regex1 = `("id":|"id":"|"wireId":"|"wireId":)\d+`
     const regexId = new RegExp(regex1,"gm");
 
@@ -1519,6 +1513,9 @@ customComponentButton.onclick = function() {
     let parts = highlightedComponents()
     const id = generateId()
     let cc = makeCustomComponent(parts, id)
+    
+    if (cc === undefined) return
+    
     objects[id] = cc
 }
 
