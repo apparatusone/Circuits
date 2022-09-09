@@ -164,31 +164,37 @@ export function average(array) {
 export function buildComponent(custom) {
     let parsed = {}
 
+    const regex1 = /(id":"|id":|wireId":"|wireId":)(\d+)/
+    const regexId = new RegExp(regex1,"gm");
 
-    // FIXME:
-    // safari does not support lookbehind in JS regular expressions
-    const regexId = /(?<="id":|"id":"|"wireId":|"wireId":")\d+/gm
-    const regexList = /(?<=list.*)\d+(?<!\]}.*)/gm
-    const wireKey = /(?<=wires":{"|},")\d+(?=":{"nodeState")/mg
+    const regex2 = /(?!.*list)(\d+)(?=")(?=.*\],"wires")/
+    const regexList = new RegExp(regex2,"gm");
+
+    const regex3 = `(},"|},)\d+(":{"nodeState"|:{"nodeState")`
+    const wireKey = new RegExp(regex3,"gm");
 
     // increment all id's and key's by current iterate
+    let incrementedCustom = {}
     for (let [key, json] of Object.entries(custom)) {
         let id = parseInt(key) + parseInt(iterate) - 1
-        custom[id] = json.replace(regexId, replacer)
-        custom[id] = custom[id].replace(regexList, replacer)
-        custom[id] = custom[id].replace(wireKey, replacer)
-
-        delete custom[key];
+        incrementedCustom[id] = json.replace(regexId, idReplacer)
+        incrementedCustom[id] = incrementedCustom[id].replace(regexList, replacer)
+        incrementedCustom[id] = incrementedCustom[id].replace(wireKey, replacer)
     }
 
     function replacer(match, p1, p2, p3, offset, string) {
-        return (parseInt(match) + parseInt(iterate) - 1) 
-      }
 
-    for (const [key, string] of Object.entries(custom)) {
-        parsed[key] = JSON.parse(string)
+        if (match === 'd') return 'd'
+        return (parseInt(match) + parseInt(iterate) - 1) 
     }
 
+    function idReplacer(match, p1, p2, p3, offset, string) {
+        return p1+(parseInt(p2) + parseInt(iterate) - 1) 
+    }
+
+    for (const [key, string] of Object.entries(incrementedCustom)) {
+        parsed[key] = JSON.parse(string)
+    }
 
     for (const [id, object] of Object.entries(parsed)) {
         if(stringIncludes('_',id)) continue
@@ -277,6 +283,7 @@ export function buildComponent(custom) {
         }
     }
 
+    if (Object.keys(parsed).length < 1 ) return
     const id = Object.keys(parsed).reduce((a, b) => parsed[a] > parsed[b] ? a : b);
     iterate = parseInt(id) + 1;
     return id;
@@ -560,14 +567,9 @@ export function makeCustomComponent(parts, id) {
         
     }
 
+    //TODO:
     //get center of parts for cc x and y
 
-    function moveWire(id) {
-        // for (let node of wires[id].nodes) {
-        //     moveWire(node.wireId)
-        // }
-        component.wires[id] = wires[id]
-    }
     return component
 }
 

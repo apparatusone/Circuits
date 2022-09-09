@@ -1,5 +1,4 @@
 'use strict';
-
 import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent, Clock, ConstantHigh } from "./parts.js"
 
 import { shape } from "./shapes.js"
@@ -143,7 +142,7 @@ loadSave()
 //set gui colors
 color.update()
 
-if (localStorage.length < 2) tutorial()
+//if (localStorage.length < 2) tutorial()
 
 function tutorial() {
     make.led(0,2,0)
@@ -1116,17 +1115,75 @@ saveComponentButton.onclick = function() {
         return
     }
 
-    storeCustomComponent(objectUnderCursor.object)
+    storeCustomComponent(object)
+
+    // FIXME:
+    // REGEX IS SLOW!
+    // safari does not have positive lookbehind ((?<= )) in JS regular expressions
+    // const regexId = /(?<="id":|"id":"|"wireId":|"wireId":")\d+/gm
+    // const regexList = /(?<=list.*)\d+(?<!\]}.*)/gm
+    // const wireKey = /(?<=wires":{"|},")\d+(?=":{"nodeState")/mg
+    const regex1 = `("id":|"id":"|"wireId":"|"wireId":)\d+`
+    const regexId = new RegExp(regex1,"gm");
+
+    const regex2 = `(list.*)\d+(.*)(?=\]})`
+    const regexList = new RegExp(regex2,"gm");
+
+    const regex3 = `(},"|},)\d+(":{"nodeState"|:{"nodeState")`
+    const wireKey = new RegExp(regex3,"gm");
+
+    // decrement all id's 
+    let idS = []
+    for (let [key, json] of Object.entries(custom)) {
+        let a = json.match(regexId);
+        let b = json.match(regexList)
+        let c = json.match(wireKey)
+
+        if (a === null) a = []
+        if (b === null) b = []
+        if (c === null) c = []
+
+        
+        idS = [...idS, ...a]
+        idS = [...idS, ...b]
+        idS = [...idS, ...c]
+    }
+    let removeDuplicates = [...new Set(idS)].sort(function(a, b){return a - b});
+    let stack = removeDuplicates.map(x => parseInt(x))
+    
+    let i = 1 
+    while (stack.length > 0) {
+        const id = stack.shift()
+
+        const regex1 = `("id":|"id":"|"wireId":"|"wireId":)${id}`
+        const regexId = new RegExp(regex1,"gm");
+
+        const regex2 = `(list.*)${id}(.*)(?=\]})`
+        const regexList = new RegExp(regex2,"gm");
+
+        const regex3 = `(},"|},)${id}(":{"nodeState"|:{"nodeState")`
+        const wireKey = new RegExp(regex3,"gm");
+
+        for (let [key, json] of Object.entries(custom)) {
+            custom[key] = json.replace(regexId, `$1${i}`)
+            custom[key] = custom[key].replace(regexList, `$1${i}$2`)
+            custom[key] = custom[key].replace(wireKey, `$1${i}$2`)
+        }
+    
+        i++
+    }
+
+    i = 1
+    for (let [key, json] of Object.entries(custom)) {
+        if (parseInt(key) !== i) {
+            Object.defineProperty(custom, i,
+                Object.getOwnPropertyDescriptor(custom, key));
+            delete custom[key];
+        }
+        i++
+    }
 
     function storeCustomComponent(component) {
-
-        custom[component.id] = JSON.stringify(
-            { 
-                'type': 'customcomponent',
-                'component': component,
-                'list': Object.keys(component.objects)
-            }, replacer
-        );
 
         for (const [id, object] of Object.entries(component.objects)) {
             if (object.constructor === CustomComponent) {
@@ -1139,6 +1196,23 @@ saveComponentButton.onclick = function() {
         for (const [id, wire] of Object.entries(component.wires)) {
             storeWire(wire)
         }
+
+        // remove wires
+        let wires = []
+        for (const [id, wire] of Object.entries(component.wires)) {
+            wires.push(id)
+        }
+        delete component.wires
+
+        custom[component.id] = JSON.stringify(
+            { 
+                'type': 'customcomponent',
+                'component': component,
+                'list': Object.keys(component.objects),
+                'wires': wires
+            }, replacer
+        );
+
     }
 
     function storeWire(wire) {
@@ -1161,9 +1235,9 @@ saveComponentButton.onclick = function() {
         );
     }
     
-
     function replacer(key, value) {
         // Filtering out properties
+        //if (key === 'wires' || key === 'objects' || key === 'connectionType') {
         if (key === 'objects' || key === 'connectionType') {
             return;
         }
@@ -1193,6 +1267,7 @@ saveComponentButton.onclick = function() {
     }
 
     console.log(custom)
+
     //buildComponent(custom)
 }
 

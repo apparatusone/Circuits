@@ -61,8 +61,9 @@ const menuObjects = {
 
     heading4: {text: 'Custom Components'},
 
-    cc: {obj: new CustomComponent, name: 'Half-Adder', type: 'svg'},
-    //cc2: {obj: new CustomComponent, name: 'PlaceHolder', type: 'svg'},
+    cc: {obj: new CustomComponent, name: 'Full-Adder', type: 'svg'},
+    cc2: {obj: new CustomComponent, name: 'sr-Flip-Flop', type: 'svg'},
+    cc3: {obj: new CustomComponent, name: 'Multiplexer', type: 'svg'},
     //cc3: {obj: new CustomComponent, name: 'Plcehldr3', type: 'svg'},
     //cc4: {obj: new CustomComponent, name: 'Plcdr3', type: 'svg'},
     //cc5: {obj: new CustomComponent, name: 'Plcdr4', type: 'svg'},
@@ -338,12 +339,12 @@ window.onmouseup = function(e) {
         let start = performance.now()
         let end;
         if (clickedObject.obj.constructor === CustomComponent) {
-            let string = (clickedObject.name.replace('-',''))
+            let string = (clickedObject.name.replace(/(-)/g,''))
             let name = string.charAt(0).toLowerCase() + string.slice(1)
             let id = buildComponent(make[name])
             end = performance.now()
-            //objects[id].x = Math.round(mouse.canvas.x*2)/2;
-            //objects[id].y = Math.round(mouse.canvas.y*2)/2;
+            objects[id].x = Math.round(mouse.canvas.x*2)/2;
+            objects[id].y = Math.round(mouse.canvas.y*2)/2;
         } else {
             make[clickedObject.name.replace('-','')](Math.round(mouse.canvas.x*2)/2,Math.round(mouse.canvas.y*2)/2,0)
         }
