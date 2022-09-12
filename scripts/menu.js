@@ -29,8 +29,11 @@ menu.imageSmoothingQuality = 'high';
 menuCanvas.height = window.innerHeight;
 menuCanvas.width = window.innerWidth;
 
-const menuBackground = document.getElementById("menu-background");
-const menuHide = document.getElementById("menu-hide");
+const menuBackgroundLeft = document.getElementById("menu-background-left");
+const menuHideLeft = document.getElementById("menu-hide-left");
+const menuBackgroundRight = document.getElementById("menu-background-right");
+const menuHideRight = document.getElementById("menu-hide-right");
+
 
 scroll = {
     enable: false,
@@ -64,11 +67,11 @@ const menuObjects = {
     cc: {obj: new CustomComponent, name: 'Full-Adder', type: 'svg'},
     cc2: {obj: new CustomComponent, name: 'sr-Flip-Flop', type: 'svg'},
     cc3: {obj: new CustomComponent, name: 'Multiplexer', type: 'svg'},
-    //cc3: {obj: new CustomComponent, name: 'Plcehldr3', type: 'svg'},
-    //cc4: {obj: new CustomComponent, name: 'Plcdr3', type: 'svg'},
-    //cc5: {obj: new CustomComponent, name: 'Plcdr4', type: 'svg'},
-    //cc6: {obj: new CustomComponent, name: 'Plcdr5', type: 'svg'},
-    //cc7: {obj: new CustomComponent, name: 'Plcdr6', type: 'svg'},
+    // cc4: {obj: new CustomComponent, name: 'Plce-hldr3Pl-text-longtexttst', type: 'svg'},
+    // cc5: {obj: new CustomComponent, name: 'Plcehldr3Pltext-longtexttst', type: 'svg'},
+    // cc6: {obj: new CustomComponent, name: 'Plcdr4', type: 'svg'},
+    // cc7: {obj: new CustomComponent, name: 'Plcdr5', type: 'svg'},
+    // cc8: {obj: new CustomComponent, name: 'Plcdr6', type: 'svg'},
 }
 
 const x = [35, 165];
@@ -107,18 +110,30 @@ for (const [key, value] of Object.entries(menuObjects)) {
 
     //draw menu item name under item
     let p = document.createElement("p")
+    let name;
+
+    // modify name if too long
+    if (value.name.length > 25) {
+        name = value.name.slice(0,25) + '...';
+        
+        console.log(name);
+        
+    } else {
+        name = value.name
+    }
+
     p.setAttribute('id', `${value.name.toLowerCase()}-text`);
-    p.textContent = `${value.name.toUpperCase().replace('-',' ')}`
+    p.textContent = `${name.toUpperCase().replace(/(-)/g,' ')}`
     p.style.fontFamily = "Arial, Helvetica, sans-serif"
-    p.style.fontSize = `${Math.min(15,150/value.name.length)}px`
+    p.style.fontSize = `${Math.max(12,Math.min(15,150/name.length))}px`
     p.style.position = "fixed"
     p.style.color = "white"
-    p.style.width = "100px";
+    p.style.width = "110px";
     p.style.textAlign = "center"
-    p.style.marginLeft = `${value.x}px`
+    p.style.marginLeft = `${value.x-5}px`
     p.style.marginTop = `${value.y + 105}px`
     p.style.pointerEvents = "none";
-    menuBackground.append(p)
+    menuBackgroundLeft.append(p)
 
     // draw box around menu item
     let box = document.createElement("div")
@@ -130,7 +145,7 @@ for (const [key, value] of Object.entries(menuObjects)) {
     box.style.marginLeft = `${value.x - 2}px`
     box.style.marginTop = `${value.y - 2}px`
     box.style.pointerEvents = "none";
-    menuBackground.append(box)
+    menuBackgroundLeft.append(box)
 }
 
 function menuHeading(y,text) {
@@ -148,7 +163,7 @@ function menuHeading(y,text) {
     heading.style.setProperty('--offset', y);
     heading.style.marginTop = `${y}px`
     heading.style.pointerEvents = "none";
-    menuBackground.append(heading)
+    menuBackgroundLeft.append(heading)
 
     //menu dividers
     const divider = document.createElement("div")
@@ -161,7 +176,7 @@ function menuHeading(y,text) {
     divider.style.setProperty('--offset', y+24);
     divider.style.marginTop = `${y+24}px`
     divider.style.pointerEvents = "none";
-    menuBackground.append(divider)
+    menuBackgroundLeft.append(divider)
 }
 
 const ghostObject = []
@@ -248,10 +263,8 @@ function menuDraw(newtime) {
         for (const [key, node] of Object.entries(ghostObject[0].obj.offset)) {
             let a = ghostObject[0].x/z + origin.x + node.x
             let b = -ghostObject[0].y/z + origin.y + node.y
-            menu.strokeStyle = 'rgba(0,0,0,1)';
             menu.lineWidth = z/30;
-            drawShape.circle(a , b, .055, menu)
-            menu.fill();
+            drawShape.circle(a , b, 5.5, '#black', true, 'white', true, menu)
         }
     }
 
@@ -282,6 +295,7 @@ window.onmousemove = function(e) {
     };
 }
 
+// list of delta values to average for smooth scrolling
 let deltaYArray = [0]
 window.onmousewheel = function(e) {
     if(!scroll.enable) return
@@ -370,13 +384,13 @@ window.onmouseup = function(e) {
 }
 
 
-menuBackground.onmouseover = function() {
+menuBackgroundLeft.onmouseover = function() {
     menuCanvas.classList.remove("unselectable");
     create = true;
     scroll.enable = true;
 };
 
-menuBackground.onmouseleave = function() {
+menuBackgroundLeft.onmouseleave = function() {
     menuCanvas.classList.add("unselectable");
 
     setTimeout(() => {
@@ -385,22 +399,38 @@ menuBackground.onmouseleave = function() {
 };
 
 // button to hide menu
-menuHide.onclick = function() {
-    if (getComputedStyle(menuHide).getPropertyValue('left') === "300px") {
-        menuBackground.style.left = "-300px";
+menuHideLeft.onclick = function() {
+    if (getComputedStyle(menuHideLeft).getPropertyValue('left') === "300px") {
+        menuBackgroundLeft.style.left = "-300px";
         menuCanvas.style.left = "-300px";
-        menuHide.style.left = "0";
-        menuHide.textContent = ">";
+        menuHideLeft.style.left = "0";
+        menuHideLeft.textContent = ">";
         setTimeout(() => {
             stop = true
           }, "500")
     }
 
-    if (getComputedStyle(menuHide).getPropertyValue('left') === "0px") {
+    if (getComputedStyle(menuHideLeft).getPropertyValue('left') === "0px") {
         stop = false
-        menuBackground.style.left = "0px";
+        menuBackgroundLeft.style.left = "0px";
         menuCanvas.style.left = "0px";
-        menuHide.style.left = "300px";
-        menuHide.textContent = "<";
+        menuHideLeft.style.left = "300px";
+        menuHideLeft.textContent = "<";
     }
 };
+
+// menuHideRight.onclick = function() {
+//     if (getComputedStyle(menuHideRight).getPropertyValue('right') === "300px") {
+//         menuBackgroundRight.style.right = "-300px";
+//         menuCanvas.style.right = "-300px";
+//         menuHideRight.style.right = "0";
+//         menuHideRight.textContent = "<";
+//     }
+
+//     if (getComputedStyle(menuHideRight).getPropertyValue('right') === "0px") {
+//         menuBackgroundRight.style.right = "0px";
+//         menuCanvas.style.right = "0px";
+//         menuHideRight.style.right = "300px";
+//         menuHideRight.textContent = ">";
+//     }
+// };

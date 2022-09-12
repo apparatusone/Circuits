@@ -277,12 +277,20 @@ function draw() {
             if (highlightedComponents().length < 2) continue
             for (const node of value.nodes) {
                 if (value[node].wireId !== undefined) {
-                    ctx.strokeStyle = '#00B6FF';
-                    ctx.lineWidth = z/5;
-                    drawWire(wires[value[node].wireId])
-                }
-                
+                    wires[value[node].wireId].highlight = true
+
+                    // ctx.strokeStyle = '#00B6FF';
+                    // ctx.lineWidth = z/5;
+                    // drawWire(wires[value[node].wireId])
+                } 
             }
+        }
+    }
+    for (let [key, value] of Object.entries(wires)) {
+        if (value.highlight === true) {
+            ctx.strokeStyle = '#00B6FF';
+            ctx.lineWidth = z/5;
+            drawWire(value)
         }
     }
     
@@ -319,6 +327,7 @@ function draw() {
         drawWire(value)
     }
 
+    //FIXME:
     drawNodeHighlight()
 
     // draw custom component
@@ -546,8 +555,8 @@ canvas.onmousemove = function(e) {
 
     // move node
     if (objectUnderCursor.node && mouseDown && dragging && !drawing ) {
-        objectUnderCursor.node.x = Math.round(mouse.canvas.x*2)/2;
-        objectUnderCursor.node.y = Math.round(mouse.canvas.y*2)/2;
+        objectUnderCursor.node.x = Math.round(mouse.canvas.x*4)/4;
+        objectUnderCursor.node.y = Math.round(mouse.canvas.y*4)/4;
         return
     }
 
@@ -619,8 +628,13 @@ canvas.onmousedown = function(e) {
         }
 
         if (objectUnderCursor.isComponent) {
-            removeHighlight();
+            clearHighlight( 'objects' )
             objectUnderCursor.object.highlight = true;
+            return
+        }
+
+        if (objectUnderCursor.isWire) {
+            objectUnderCursor.wire.highlight = true
         }
         return
     }
@@ -631,18 +645,22 @@ canvas.onmousedown = function(e) {
     }
 
     if (objectUnderCursor.isComponent) {
-        removeHighlight();
+        clearHighlight( 'objects' )
         objectUnderCursor.object.highlight = true;
         dragging = true;
         selected = true;
     }
 
     if (objectUnderCursor.isNode) do {
+        clearHighlight( 'objects' )
+        rotateButtons('hide')
         if (objectUnderCursor.node.highlight) {
+            objectUnderCursor.node.highlight = true;
             dragging = true;
             selected = true;
             break
         }
+        clearHighlight( 'nodes' )
         drawing = true;
 
         //create temporary line with one ends location set to clicked node
@@ -682,19 +700,21 @@ canvas.onmousedown = function(e) {
 
         //remove first node
         newNodesArray.shift()
-        
+        clearHighlight( 'nodes' )
         objectUnderCursor.wire.nodes = newNodesArray
     }
 
     if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
         nameFormContainer.style.display = "none";
         document.getElementById("fname").value = ''
-
         rightClickMenu.style.display = "none";
-        clearHighlightOnNodes()
-        removeHighlight();
+        clearHighlight( 'objects' )
         selected = false;
         rotateButtons('hide')
+    }
+
+    if (!objectUnderCursor.isNode) {
+        clearHighlight( 'nodes' )
     }
 
     mouseDown = true;
@@ -781,13 +801,31 @@ function connectNodes(pNode) {
 
 }
 
-function clearHighlightOnNodes() {
-    for (let [key, wire] of Object.entries(wires)) {
-        for (const node of wire.nodes) {
-            node.highlight = false;
+
+function clearHighlight( type ) {
+
+    if (type === 'wires' || type === 'all') {
+        for (let [key, value] of Object.entries(wires)) {
+            value.highlight = false
+        }
+        if (type === 'wires') return
+    }
+
+    if (type === 'objects' || type === 'all') {
+        for (let [key, value] of Object.entries(objects)) {
+            value.highlight = false
+        }
+    }
+
+    if (type === 'nodes') {
+        for (let [key, wire] of Object.entries(wires)) {
+            for (const node of wire.nodes) {
+                node.highlight = false;
+            }
         }
     }
 }
+
 
 //returns component and node 
 function getObject(x, y) {
@@ -909,7 +947,7 @@ function pointOnLine (p1,p2,x,y,radius) {
 zoomPercentage.innerHTML = Math.round(z) + '%';
 
 // reset canvas to origin
-zoomPercentage.onclick = function() {                   
+zoomPercentage.onclick = function() {
     z = 100;
     smoothZoom = z;
     origin.x = canvasCenter.x;
@@ -1004,10 +1042,67 @@ selectButton.onclick = function() {
 }
 
 deleteButton.onclick = function() {
-    if (!objectUnderCursor.object) return
+    if (objectUnderCursor.wire) {
+        deleteWire(objectUnderCursor.wire.id, true)
+        return
+    }
+
+    if (objectUnderCursor.isNode) {
+        console.log(objectUnderCursor.node.id)
+        if (objectUnderCursor.node.wireId) {
+            deleteWire(objectUnderCursor.node.wireId, true)
+        }
+        for (let index in wires[objectUnderCursor.node.id].nodes) {
+            let x = wires[objectUnderCursor.node.id].nodes[index].x
+            let y = wires[objectUnderCursor.node.id].nodes[index].y
+
+            if (x === objectUnderCursor.node.x && y === objectUnderCursor.node.y) {
+                wires[objectUnderCursor.node.id].nodes.splice(index, 1)
+           }
+        }
+        return
+    }
+
+    let parts = highlightedComponents()
+    if (parts.length > 1) {
+        for (let part of parts) {
+            deleteComponent(part.id, true)
+        }
+        // reset id iterator
+        if (Object.keys(objects).length === 0 && Object.keys(wires).length === 0) iterate = 0
+        return
+    }
+
     deleteComponent(objectUnderCursor.object.id, true)
+    rotateButtons('hide')
 }
 
+//delete key
+document.addEventListener('keydown', (event) => {
+    const keyName = event.key;
+
+    rightClickMenu.style.display = "none";
+
+    if (objectUnderCursor.wire) {
+        deleteWire(objectUnderCursor.wire.id, true)
+        return
+    }
+
+    if (keyName === "Backspace") {
+
+        let parts = highlightedComponents()
+        if (parts.length > 1) {
+            for (let part of parts) {
+                deleteComponent(part.id, true)
+            }
+            // reset id iterator
+            if (Object.keys(objects).length === 0 && Object.keys(wires).length === 0) iterate = 0
+            return
+        }
+        deleteComponent(objectUnderCursor.object.id, true)
+        rotateButtons('hide')
+    }
+})
 
 // auto generate "settings-menu-container"
 
@@ -1383,6 +1478,7 @@ saveButton.onclick = function() {
 function loadSave() {
     if (window.localStorage.length < 1) return
 
+    // parse json
     let parsed = {}
     for (const [id, string] of Object.entries(localStorage)) {
         parsed[id] = JSON.parse(string)
@@ -1392,6 +1488,7 @@ function loadSave() {
         // adguard adds object to localstorage; ignore
         if(stringIncludes('_',id)) continue
 
+        //set iterator to saved iteration
         if (id === 'gen') {
             iterate = object
             delete parsed[id]
@@ -1408,14 +1505,18 @@ function loadSave() {
         }
     }
 
+    // build component from save
     for (const [id, object] of Object.entries(parsed)) {
         if(stringIncludes('_',id)) continue
+
 
         if (object.type === 'wire') {
             let node = {}
             const nodeId = {
                 a: object.a.id.toString(),
                 b: object.b.id.toString()
+                // a: parseInt(object.a.id),
+                // b: parseInt(object.b.id)
             } 
 
             // check if node is on an object or wire
@@ -1466,6 +1567,9 @@ function loadSave() {
             for (const node of object.nodes) {
                 let newNode = make.node( 0, 0, id, 'output' )
                 Object.assign(newNode, node)
+                //fix properties that may not assign properly
+                newNode.connectionType = wires
+                newNode.id = parseInt(newNode.id)
                 nodes.push(newNode)
             }
             wires[id].nodes = nodes
@@ -1519,6 +1623,7 @@ customComponentButton.onclick = function() {
     objects[id] = cc
 }
 
+// TODO: remove
 function toggleRightClickMenu() {
     rightClickMenu.style.display = 'none';
 }
@@ -1565,11 +1670,14 @@ function drawNodes() {
         for (const e of objects[ele].nodes) {
             let a = objects[ele][e].x
             let b = objects[ele][e].y
-            ctx.strokeStyle = 'rgba(0,0,0,1)';
             ctx.lineWidth = z/30;
-
-            drawShape.circle(a , b, .055, ctx)
-            ctx.fill();
+            drawShape.circle(a , b, 5.5, 'black', true, 'white', true, ctx)
+            if (objects[ele][e].connected === true) {
+                let color = 'black'
+                if (objects[ele][e].state === 1) color = '#27CF00'
+                drawShape.circle(a , b, 3, 'black', false, color, true, ctx)
+            }
+            
         }
     }
 
@@ -1578,10 +1686,14 @@ function drawNodes() {
         for (const node of wire.nodes) {
             let a = node.x
             let b = node.y
-            ctx.strokeStyle = 'rgba(0,0,0,1)';
             ctx.lineWidth = z/30;
-            drawShape.circle(a , b, .055, ctx)
-            ctx.fill();
+            drawShape.circle(a , b, 5.5, 'black', true, 'white', true, ctx)
+
+            if (node.connected === true) {
+                let color = 'black'
+                if (node.state === 1) color = '#27CF00'
+                drawShape.circle(a , b, 3, 'black', false, color, true, ctx)
+            }
             }
         }
 }
@@ -1593,18 +1705,10 @@ function drawNodeHighlight() {
             if (node.highlight) {
                 let a = node.x
                 let b = node.y
-                ctx.lineWidth = z/20;
-                ctx.strokeStyle = '#26CE00';
-                drawShape.circle(a , b, .155, ctx)
+                ctx.lineWidth = z/10;
+                drawShape.circle(a , b, 8.5, '#00B6FF', true, 'white', false, ctx)
             }
         }
-    }
-}
-
-// remove 'highlight' from all objects
-function removeHighlight () {
-    for (let [key, value] of Object.entries(objects)) {
-        value.highlight = false;
     }
 }
 
@@ -1743,7 +1847,7 @@ function nameComponent() {
     }
 
     if (highlightedComponents().length === 1) {
-        removeHighlight();
+        clearHighlight( 'objects' )
         objectUnderCursor.object.highlight = true;
     }
 
@@ -1852,8 +1956,8 @@ welcomeClose.onclick = function() {
 //right click
 document.addEventListener('contextmenu', function(e) {
     rightClickMenu.style.display = "flex";
-    rightClickMenu.style.left = (event.pageX - 10)+"px";
-    rightClickMenu.style.top = (event.pageY - 10)+"px";
+    rightClickMenu.style.left = (e.pageX)+"px";
+    rightClickMenu.style.top = (e.pageY - 5)+"px";
     e.preventDefault();
 }, false);
 

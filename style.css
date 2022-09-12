@@ -46,7 +46,7 @@ canvas {
 #welcome {
     position: relative;
     /*  */
-    display: flex;
+    display: none;
     flex-direction: column;
     justify-content: center;
     /* align-items: center; */
@@ -127,10 +127,9 @@ canvas {
     z-index: 4;
 }
 
-#menu-background {
+#menu-background-left,  #menu-background-right{
     position: fixed;
     top: 0;
-    left: 0;
     --menu-width: 300px;
     width: var(--menu-width);
     height: 100vh;
@@ -141,20 +140,37 @@ canvas {
     z-index: 2;
 }
 
-#menu-hide {
+#menu-background-left {
+    left: 0;
+}
+
+#menu-background-right {
+    color: white;
+    right: 0;
+}
+
+#menu-hide-left, #menu-hide-right {
     position: absolute;
     top: calc(50% - var(--menu-close-height)/2);
-    /* left: var(--menu-width); */
     color :white;
-    left: 300px;
     width: 17px;
     text-align: left;
-    padding-left: 3px;
     --menu-close-height: 45px;
     height: var(--menu-close-height);
     background-color: #2d2d2d;
-    border-radius: 0 10px 10px 0;
     z-index: 5;
+}
+
+#menu-hide-left {
+    left: 300px;
+    padding-left: 3px;
+    border-radius: 0 10px 10px 0;
+}
+
+#menu-hide-right {
+    right: 300px;
+    padding-left: 5px;
+    border-radius: 10px 0 0 10px;
 }
 
 #action-menu {
@@ -417,9 +433,10 @@ canvas {
 
 /* animation for menu hide */
 .animated {
-    transition-property: left;
+    transition-property: left, right;
     transition-duration: .4s;
   }
+
 
 
 

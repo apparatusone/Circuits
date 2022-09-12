@@ -14,6 +14,7 @@ class Wire {
 
         // connect directly or along grid
         this.direct = true
+        this.highlight = false;
         this.classname = this.constructor.name;          
     }
 

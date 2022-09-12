@@ -38,13 +38,15 @@ export const within = (function() {
 //TODO: move to shapes.js
 export const drawShape = (function() {
 
-    const circle = function (x,y,r,context) {
-        context.fillStyle = '#FFFFFF';
+    const circle = function (x,y,r,colorStroke,stroke,colorFill,fill,context) {
         context.setLineDash([]);
+        context.strokeStyle = colorStroke;
+        context.fillStyle = colorFill;
     
         context.beginPath();
-        context.arc((-origin.x + x + 0.5) * z, (origin.y - y + 0.5) * z, r*z, 0, 2 * Math.PI);
-        context.stroke();
+        context.arc((-origin.x + x + 0.5) * z, (origin.y - y + 0.5) * z, r/100*z, 0, 2 * Math.PI);
+        if ( stroke ) context.stroke();
+        if ( fill ) context.fill();
     }
 
     return {
@@ -603,7 +605,7 @@ export function deleteWire(id,reset) {
     if (!wires[id]) return
 
     for (let node of wires[id].nodes) {
-        deleteWire(node.wireId)
+        deleteWire(node.wireId,reset)
     }
 
     let node = {
@@ -611,8 +613,10 @@ export function deleteWire(id,reset) {
         b: wires[id].node.b,
     }
 
-    if(reset) {
+    if (reset) {
 
+        console.log('reset');
+        
         wires[id].node.a.wireId = undefined
         wires[id].node.a.connected = false;
 
