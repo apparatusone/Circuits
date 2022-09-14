@@ -198,6 +198,7 @@ export function buildComponent(custom) {
         parsed[key] = JSON.parse(string)
     }
 
+    let range = {x:[],y:[],id:[]}
     for (const [id, object] of Object.entries(parsed)) {
         if(stringIncludes('_',id)) continue
 
@@ -256,6 +257,8 @@ export function buildComponent(custom) {
             for (const node of object.nodes) {
                 let newNode = make.node( 0, 0, id, 'output' )
                 Object.assign(newNode, node)
+                newNode.connectionType = wires
+                newNode.id = parseInt(newNode.id)
                 nodes.push(newNode)
             }
             wires[id].nodes = nodes
@@ -283,6 +286,18 @@ export function buildComponent(custom) {
             objects[id].offset = object.component.offset
             objects[id].hitbox = object.component.hitbox
         }
+
+        if (object.type !== 'wire') { 
+            range.x.push(objects[id].x)
+            range.y.push(objects[id].y)
+            range.id.push(id)
+        }
+    }
+
+    for (const id of range.id) {
+        if (objects[id] === undefined) continue
+        objects[id].x = objects[id].x - average(minMax(range.x)) + Math.round(mouse.canvas.x*2)/2;
+        objects[id].y = objects[id].y - average(minMax(range.y)) + Math.round(mouse.canvas.y*2)/2;
     }
 
     if (Object.keys(parsed).length < 1 ) return
@@ -306,10 +321,7 @@ export function makeCustomComponent(parts, id) {
     for (const part of parts) {
         if (part.constructor === Led || part.constructor === OnOffSwitch) {
             for (const part2 of parts) {
-                if (part.constructor === Led || part.constructor === OnOffSwitch) {
-
-                    console.log(part.id,part.name ,part2.id,part2.name);
-                    
+                if (part.constructor === Led || part.constructor === OnOffSwitch) {                
                     if (part.id === part2.id) continue
                         
                     if (part.name === part2.name) {
@@ -614,9 +626,6 @@ export function deleteWire(id,reset) {
     }
 
     if (reset) {
-
-        console.log('reset');
-        
         wires[id].node.a.wireId = undefined
         wires[id].node.a.connected = false;
 

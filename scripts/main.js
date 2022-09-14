@@ -134,6 +134,7 @@ window.mouse = {
 window.objects = {};            // components
 window.wires = {};              // visual representation of links
 window.savedComponents = {}
+window.copy = {}
 let drawingLine = []         // line shown when drawing connection
 let drawingRect = []
 
@@ -293,6 +294,15 @@ function draw() {
             drawWire(value)
         }
     }
+
+    // draw wires
+    for (let [key, value] of Object.entries(wires)) {
+        ctx.setLineDash([]);
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = color.line;
+        ctx.lineWidth = z/20;
+        drawWire(value)
+    }
     
 
     // draw objects
@@ -318,14 +328,6 @@ function draw() {
         locateRotateButtons(objectUnderCursor.object);
     }
 
-    // draw wires
-    for (let [key, value] of Object.entries(wires)) {
-        ctx.setLineDash([]);
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = color.line;
-        ctx.lineWidth = z/20;
-        drawWire(value)
-    }
 
     //FIXME:
     drawNodeHighlight()
@@ -646,6 +648,7 @@ canvas.onmousedown = function(e) {
 
     if (objectUnderCursor.isComponent) {
         clearHighlight( 'objects' )
+        clearHighlight( 'wires' )
         objectUnderCursor.object.highlight = true;
         dragging = true;
         selected = true;
@@ -653,6 +656,7 @@ canvas.onmousedown = function(e) {
 
     if (objectUnderCursor.isNode) do {
         clearHighlight( 'objects' )
+        clearHighlight( 'wires' )
         rotateButtons('hide')
         if (objectUnderCursor.node.highlight) {
             objectUnderCursor.node.highlight = true;
@@ -707,8 +711,7 @@ canvas.onmousedown = function(e) {
     if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
         nameFormContainer.style.display = "none";
         document.getElementById("fname").value = ''
-        rightClickMenu.style.display = "none";
-        clearHighlight( 'objects' )
+        clearHighlight( 'all' )
         selected = false;
         rotateButtons('hide')
     }
@@ -717,6 +720,7 @@ canvas.onmousedown = function(e) {
         clearHighlight( 'nodes' )
     }
 
+    rightClickMenu.style.display = "none";
     mouseDown = true;
     //start timer for mouse click duration
     timerStart = new Date().getTime() / 1000                        
@@ -801,7 +805,6 @@ function connectNodes(pNode) {
 
 }
 
-
 function clearHighlight( type ) {
 
     if (type === 'wires' || type === 'all') {
@@ -825,7 +828,6 @@ function clearHighlight( type ) {
         }
     }
 }
-
 
 //returns component and node 
 function getObject(x, y) {
@@ -1048,7 +1050,6 @@ deleteButton.onclick = function() {
     }
 
     if (objectUnderCursor.isNode) {
-        console.log(objectUnderCursor.node.id)
         if (objectUnderCursor.node.wireId) {
             deleteWire(objectUnderCursor.node.wireId, true)
         }
@@ -1069,7 +1070,7 @@ deleteButton.onclick = function() {
             deleteComponent(part.id, true)
         }
         // reset id iterator
-        if (Object.keys(objects).length === 0 && Object.keys(wires).length === 0) iterate = 0
+        //if (Object.keys(objects).length === 0 && Object.keys(wires).length === 0) iterate = 0
         return
     }
 
@@ -1196,80 +1197,90 @@ function resetSettingsMenu() {
     settings.open = false
 }
 
-saveComponentButton.onclick = function() {
+function convertSelectiontoJson(reset) {
     let custom = {}
-    const object = objectUnderCursor.object
+    let parts = highlightedComponents()
 
-    if (highlightedComponents().length > 1) {
-        alert("can only save 1 component")
-        return
+    for (const part of parts) {
+        if (part.constructor === CustomComponent) {
+            storeCustomComponent(part)
+            continue
+        }
+        storeObject(part)
     }
 
-    if (object.constructor !== CustomComponent) {
-        alert("object is not a Custom Component")
-        return
+    for (let [id, wire] of Object.entries(wires)) {
+        if (wire.highlight) {
+            storeWire(wire)
+        }
     }
 
-    storeCustomComponent(object)
+    //FIXME:
+    //does not work in safari
+    const regexId = /(?<="id":|"id":"|"wireId":|"wireId":")\d+/gm
+    const regexList = /(?<=list.*)\d+(?<!\]}.*)/gm
+    const wireKey = /(?<=wires":{"|},")\d+(?=":{"nodeState")/mg
 
-    const regex1 = `("id":|"id":"|"wireId":"|"wireId":)\d+`
-    const regexId = new RegExp(regex1,"gm");
+    // const regex1 = `("id":|"id":"|"wireId":"|"wireId":)(\\d+)`
+    // const regexId = new RegExp(regex1,"gm");
 
-    const regex2 = `(list.*)\d+(.*)(?=\]})`
-    const regexList = new RegExp(regex2,"gm");
+    // const regex2 = `(list.*)\\d+(.*)(?=\]})`
+    // const regexList = new RegExp(regex2,"gm");
 
-    const regex3 = `(},"|},)\d+(":{"nodeState"|:{"nodeState")`
-    const wireKey = new RegExp(regex3,"gm");
+    // const regex3 = `(},"|},)\\d+(":{"nodeState"|:{"nodeState")`
+    // const wireKey = new RegExp(regex3,"gm");
 
     // decrement all id's 
-    let idS = []
-    for (let [key, json] of Object.entries(custom)) {
-        let a = json.match(regexId);
-        let b = json.match(regexList)
-        let c = json.match(wireKey)
-
-        if (a === null) a = []
-        if (b === null) b = []
-        if (c === null) c = []
-
-        
-        idS = [...idS, ...a]
-        idS = [...idS, ...b]
-        idS = [...idS, ...c]
-    }
-    let removeDuplicates = [...new Set(idS)].sort(function(a, b){return a - b});
-    let stack = removeDuplicates.map(x => parseInt(x))
-    
-    let i = 1 
-    while (stack.length > 0) {
-        const id = stack.shift()
-
-        const regex1 = `("id":|"id":"|"wireId":"|"wireId":)${id}`
-        const regexId = new RegExp(regex1,"gm");
-
-        const regex2 = `(list.*)${id}(.*)(?=\]})`
-        const regexList = new RegExp(regex2,"gm");
-
-        const regex3 = `(},"|},)${id}(":{"nodeState"|:{"nodeState")`
-        const wireKey = new RegExp(regex3,"gm");
-
+    if (reset) {
+        let idS = []
         for (let [key, json] of Object.entries(custom)) {
-            custom[key] = json.replace(regexId, `$1${i}`)
-            custom[key] = custom[key].replace(regexList, `$1${i}$2`)
-            custom[key] = custom[key].replace(wireKey, `$1${i}$2`)
+            let a = json.match(regexId);
+            let b = json.match(regexList)
+            let c = json.match(wireKey)
+    
+            if (a === null) a = []
+            if (b === null) b = []
+            if (c === null) c = []
+    
+            
+            idS = [...idS, ...a]
+            idS = [...idS, ...b]
+            idS = [...idS, ...c]
+        }
+        let removeDuplicates = [...new Set(idS)].sort(function(a, b){return a - b});
+        let stack = removeDuplicates.map(x => parseInt(x))
+        
+        let i = 1 
+        while (stack.length > 0) {
+            const id = stack.shift()
+            
+            const regex1 = `("id":|"id":"|"wireId":"|"wireId":)${id}`
+            const regexId = new RegExp(regex1,"gm");
+    
+            const regex2 = `(list.*)${id}(.*)(?=\]})`
+            const regexList = new RegExp(regex2,"gm");
+    
+            const regex3 = `(},"|},)${id}(":{"nodeState"|:{"nodeState")`
+            const wireKey = new RegExp(regex3,"gm");
+    
+            for (let [key, json] of Object.entries(custom)) {
+                custom[key] = json.replace(regexId, `$1${i}`)
+                custom[key] = custom[key].replace(regexList, `$1${i}$2`)
+                custom[key] = custom[key].replace(wireKey, `$1${i}$2`)
+            }
+        
+            i++
         }
     
-        i++
-    }
-
-    i = 1
-    for (let [key, json] of Object.entries(custom)) {
-        if (parseInt(key) !== i) {
-            Object.defineProperty(custom, i,
-                Object.getOwnPropertyDescriptor(custom, key));
-            delete custom[key];
+        i = 1
+        for (let [key, json] of Object.entries(custom)) {
+            if (parseInt(key) !== i) {
+                Object.defineProperty(custom, i,
+                    Object.getOwnPropertyDescriptor(custom, key));
+                delete custom[key];
+            }
+            i++
         }
-        i++
     }
 
     function storeCustomComponent(component) {
@@ -1286,12 +1297,11 @@ saveComponentButton.onclick = function() {
             storeWire(wire)
         }
 
-        // remove wires
+        // get wire id's
         let wires = []
         for (const [id, wire] of Object.entries(component.wires)) {
             wires.push(id)
         }
-        delete component.wires
 
         custom[component.id] = JSON.stringify(
             { 
@@ -1301,7 +1311,6 @@ saveComponentButton.onclick = function() {
                 'wires': wires
             }, replacer
         );
-
     }
 
     function storeWire(wire) {
@@ -1326,12 +1335,14 @@ saveComponentButton.onclick = function() {
     
     function replacer(key, value) {
         // Filtering out properties
-        //if (key === 'wires' || key === 'objects' || key === 'connectionType') {
         if (key === 'objects' || key === 'connectionType') {
             return;
         }
         if (key === 'connected') {
             return false
+        }
+        if (key === 'wires' && !Array.isArray(value)) {
+            return
         }
         return value;
     }
@@ -1355,9 +1366,42 @@ saveComponentButton.onclick = function() {
         return value;
     }
 
-    console.log(custom)
+    return custom
+}
 
-    //buildComponent(custom)
+saveComponentButton.onclick = function() {
+    let object = objectUnderCursor.object
+    if (highlightedComponents().length > 1) {
+        alert("can only save 1 component")
+        return
+    }
+
+    if (object.constructor !== CustomComponent) {
+        alert("object is not a Custom Component")
+        return
+    }
+
+    let obj = convertSelectiontoJson(true)
+}
+
+const cutButton = document.getElementById("cut");
+cutButton.onclick = function() {
+    copy = convertSelectiontoJson(false)
+
+    let parts = highlightedComponents()
+    for (let part of parts) {
+        deleteComponent(part.id, true)
+    }
+}
+
+const copyButton = document.getElementById("copy");
+copyButton.onclick = function() {
+    copy = convertSelectiontoJson(true)
+}
+
+const pasteButton = document.getElementById("paste");
+pasteButton.onclick = function() {
+    buildComponent(copy)
 }
 
 saveButton.onclick = function() {

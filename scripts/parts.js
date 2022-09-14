@@ -26,7 +26,6 @@ class Wire {
     }
 
     //reduced(array) { return array.reduce((partialSum, a) => partialSum + a, 0); }
-
     nodeState = { a: 0, b: 0}
     storeState = 0
 
