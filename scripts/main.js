@@ -1,4 +1,5 @@
 'use strict';
+
 import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent, Clock, ConstantHigh } from "./parts.js"
 
 import { shape } from "./shapes.js"
@@ -70,7 +71,7 @@ const select = {
     nodes: [],
 }
 
-const objectUnderCursor = {
+const clicked = {
     state: false,
     isComponent: false,
     isNode: false,
@@ -79,6 +80,15 @@ const objectUnderCursor = {
     node: undefined,
     wire: undefined,
 };
+
+// update selection on change
+const clickedProxy = new Proxy(clicked, {
+    set: function (target, key, value) {
+        target[key] = value;
+        selectedComponents()
+        return true;
+    }
+})
 
 window.settings = {
     //settings menu is open
@@ -115,7 +125,7 @@ window.mouse = {
     canvas: { x: 0, y: 0 },
     cell: {x: 0, y: 0},
     //offset for moving multiple objects
-    moveOffset: []
+    moveOffset: {components: [], nodes: []}
 };
 
 window.objects = {};            // components
@@ -249,45 +259,29 @@ function draw() {
     ctx.lineTo((-origin.x + .1 + 0.5)* z, (origin.y + .1 + 0.5) * z, z, z);
     ctx.stroke();
 
-    //highlight selection //TODO: FIXME:
-    if (select.components.length > 0) {
-    //if (true) {
-        for (let [key, value] of Object.entries(objects)) {
-            if (value.highlight === true) {
-                if (value.img !== 'svg') {
-                    ctx.lineWidth = z/4;
-                    ctx.strokeStyle = '#00B6FF';
-                    ctx.lineJoin = 'round';
-                    ctx.setLineDash([]);
-                    ctx.fillStyle = '#00B6FF';
-                    drawRotatedImg(value, value.shape, value.w, value.h)
-
-                }
-                ctx.stroke();
-
-                // //highlight connected wires
-                // if (select.components.length < 2) continue
-                //     for (const node of value.nodes) {
-                //         if (value[node].wireId !== undefined) {
-                //             wires[value[node].wireId].highlight = true
-
-                //             // ctx.strokeStyle = '#00B6FF';
-                //             // ctx.lineWidth = z/5;
-                //             // drawWire(wires[value[node].wireId])
-                //         } 
-                // }
-            }
-        }
-
-        for (let [key, value] of Object.entries(wires)) {
-            if (value.highlight === true) {
+    for (let [key, value] of Object.entries(objects)) {
+        if (value.highlight === true) {
+            if (value.img !== 'svg') {
+                ctx.lineWidth = z/4;
                 ctx.strokeStyle = '#00B6FF';
-                ctx.lineWidth = z/5;
-                drawWire(value)
+                ctx.lineJoin = 'round';
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#00B6FF';
+                drawRotatedImg(value, value.shape, value.w, value.h)
+
             }
+            ctx.stroke();
         }
     }
 
+    for (let [key, value] of Object.entries(wires)) {
+        if (value.highlight === true) {
+            ctx.strokeStyle = '#00B6FF';
+            ctx.lineWidth = z/5;
+            drawWire(value)
+        }
+    }
+    
     // draw wires
     for (let [key, value] of Object.entries(wires)) {
         ctx.setLineDash([]);
@@ -318,8 +312,9 @@ function draw() {
 
     // FIXME: rotate multiple components 
     // show rotate buttons on selected component
-    if (select.components.length < 2 && objectUnderCursor.isComponent ) {
-        locateRotateButtons(objectUnderCursor.object);
+
+    if (select.components.length < 2 && clickedProxy.isComponent ) {
+        locateRotateButtons(clickedProxy.object);
     }
 
 
@@ -553,9 +548,9 @@ canvas.onmousemove = function(e) {
     };
 
     // move node
-    if (objectUnderCursor.node && mouseDown && dragging && !drawing ) {
-        objectUnderCursor.node.x = Math.round(mouse.canvas.x*4)/4;
-        objectUnderCursor.node.y = Math.round(mouse.canvas.y*4)/4;
+    if (clickedProxy.node && mouseDown && dragging && !drawing ) {
+        clickedProxy.node.x = Math.round(mouse.canvas.x*4)/4;
+        clickedProxy.node.y = Math.round(mouse.canvas.y*4)/4;
         return
     }
 
@@ -567,16 +562,21 @@ canvas.onmousemove = function(e) {
             y:(-origin.click.y / z) + origin.y + 0.5 - parseFloat(mouse.canvas.y)
         }
 
+        // if mulitple objects
         if (highlighted.length > 1) {
-            for (const part of mouse.moveOffset) {
+            for (const part of mouse.moveOffset.components) {
                 objects[part.id].x = part.x + -1 * Math.round(delta.x*2)/2
                 objects[part.id].y = part.y + -1 * Math.round(delta.y*2)/2
+            }
+            for (const node of mouse.moveOffset.nodes) {
+                wires[node.wireId].nodes[node.index].x = node.x + -1 * Math.round(delta.x*2)/2
+                wires[node.wireId].nodes[node.index].y = node.y + -1 * Math.round(delta.y*2)/2
             }
             return
         }
 
-        objectUnderCursor.object.x = Math.round(mouse.canvas.x*2)/2;
-        objectUnderCursor.object.y = Math.round(mouse.canvas.y*2)/2;
+        clickedProxy.object.x = Math.round(mouse.canvas.x*2)/2;
+        clickedProxy.object.y = Math.round(mouse.canvas.y*2)/2;
     }
 
     if (drawing === true) {
@@ -591,11 +591,11 @@ canvas.onmousemove = function(e) {
     if (select.action && drawingRect.length) {
         drawingRect[0].w = e.x - origin.click.x
         drawingRect[0].h = e.y - origin.click.y
+        const x1 = (origin.click.x / z + origin.x) - 0.5
+        const y1 = (-origin.click.y / z + origin.y) + 0.5
 
         // get objects within selected rectangle
         for (let [key, value] of Object.entries(objects)) {
-            let x1 = (origin.click.x / z + origin.x) - 0.5
-            let y1 = (-origin.click.y / z + origin.y) + 0.5
 
             value.highlight = false;
             for (const node of value.nodes) {
@@ -618,10 +618,17 @@ canvas.onmousemove = function(e) {
             }
         }
 
-        selectedComponents()
-
         // get nodes within selected rectangle
+        for (let [key, wire] of Object.entries(wires)) {
+            for (const node of wire.nodes) {
+                node.highlight = false;
+                if (!((x1 - node.x) * (mouse.canvas.x - node.x) <= 0)) continue
+                if (!((y1 - node.y) * (mouse.canvas.y - node.y) <= 0)) continue
+                node.highlight = true;
+            }
+        }
 
+        selectedComponents()
         return
     }
 };
@@ -660,10 +667,11 @@ canvas.onmousedown = function(e) {
             return
         }
 
-        if (objectUnderCursor.isComponent) {
+        if (clickedProxy.isComponent) {
             clearHighlight( 'objects' )
-            objectUnderCursor.object.highlight = true;
-            if (objectUnderCursor.object.constructor === Clock) {
+            clickedProxy.object.highlight = true;
+            
+            if (clickedProxy.object.constructor === Clock) {
                 setClock.style.display = "flex";
                 return
             }
@@ -671,60 +679,66 @@ canvas.onmousedown = function(e) {
             return
         }
 
-        if (objectUnderCursor.isWire) {
-            objectUnderCursor.wire.highlight = true
+        if (clickedProxy.isWire) {
+            clickedProxy.wire.highlight = true
         }
         return
     }
 
+    // selection tool
     if (select.action) {
         drawingRect.push({x: origin.click.x, y: origin.click.y, w: 0, h: 0})
         return
     }
 
-    if (objectUnderCursor.isComponent) {
-        mouse.moveOffset = []
+    if (clickedProxy.isComponent) {
+        mouse.moveOffset.components = []
+        mouse.moveOffset.nodes = []
         for (const part of select.components) {
-            mouse.moveOffset.push({id: parseInt(part.id), x: part.x, y: part.y})
+            mouse.moveOffset.components.push({id: parseInt(part.id), x: part.x, y: part.y})
         }
-        //objectUnderCursor.object.highlight = true;
+        for (const node of select.nodes) {
+            let wire = wires[node.wireId]
+            mouse.moveOffset.nodes.push({wireId: node.wireId, index: node.index,
+                 x: wire.nodes[node.index].x, 
+                 y: wire.nodes[node.index].y})
+        }
+        clickedProxy.object.highlight = true;
         dragging = true;
-        //selected = true;
     }
 
-    if (objectUnderCursor.isNode) do {
+    if (clickedProxy.isNode) do {
         clearHighlight( 'objects' )
         clearHighlight( 'wires' )
         rotateButtons('hide')
-        if (objectUnderCursor.node.highlight) {
-            objectUnderCursor.node.highlight = true;
+        if (clickedProxy.node.highlight) {
+            clickedProxy.node.highlight = true;
             dragging = true;
-            //selected = true;
             break
         }
         clearHighlight( 'nodes' )
         drawing = true;
 
-        //create temporary line with one ends location set to clicked node
-        drawingLine.push(new TempLine(objectUnderCursor.node));
+        //create temporary line with one ends location set to clickedProxy node
+        drawingLine.push(new TempLine(clickedProxy.node));
 
         // set seconds ends location to cursor
         drawingLine[0].x2 = (e.x / z - 0.5) + origin.x;
         drawingLine[0].y2 = (-e.y / z + 0.5) + origin.y;
     } while (false)
 
-    if (objectUnderCursor.isWire) {
-        let node = make.node(Math.round(mouse.canvas.x*2)/2, Math.round(mouse.canvas.y*2)/2 ,objectUnderCursor.wire.id, 'output')
+    if (clickedProxy.isWire) {
+        let node = make.node(Math.round(mouse.canvas.x*2)/2, Math.round(mouse.canvas.y*2)/2 ,clickedProxy.wire.id, 'output')
 
         //place new node between correct nodes
         let newNodesArray = []
-        if (objectUnderCursor.wire.nodes.length < 1) {
+        if (clickedProxy.wire.nodes.length < 1) {
             newNodesArray.push(node);
-            objectUnderCursor.wire.nodes = newNodesArray;
+            clickedProxy.wire.nodes = newNodesArray;
             return
         }
     
-        let wire = objectUnderCursor.wire
+        let wire = clickedProxy.wire
         // all nodes on wire
         let orderedPoints = [wire.node.a, ...wire.nodes, wire.node.b]
         
@@ -743,20 +757,19 @@ canvas.onmousedown = function(e) {
         //remove first node
         newNodesArray.shift()
         clearHighlight( 'nodes' )
-        objectUnderCursor.wire.nodes = newNodesArray
+        clickedProxy.wire.nodes = newNodesArray
     }
 
-    if (!objectUnderCursor.isNode && !objectUnderCursor.isComponent) {
+    if (!clickedProxy.isNode && !clickedProxy.isComponent) {
         nameFormContainer.style.display = "none";
         document.getElementById("fname").value = ''
         clearHighlight( 'all' )
-        //selected = false;
         rotateButtons('hide')
     }
 
-    if (!objectUnderCursor.isNode) {
-        clearHighlight( 'nodes' )
-    }
+    // if (!clickedProxy.isNode) {
+    //     clearHighlight( 'nodes' )
+    // }
 
     rightClickMenu.style.visibility = "hidden";
     rightClickSecondary.style.visibility = "hidden";
@@ -770,7 +783,7 @@ canvas.onmousedown = function(e) {
 canvas.onmouseup = function(e) {
     e.preventDefault();
 
-    let previousNode = objectUnderCursor.node;
+    let previousNode = clickedProxy.node;
     getObject(mouse.canvas.x, mouse.canvas.y);
 
     mouseDown = false
@@ -784,19 +797,19 @@ canvas.onmouseup = function(e) {
         return
     }
 
-    if (objectUnderCursor.isComponent) {
+    if (clickedProxy.isComponent) {
         if (mouseClickDuration(timer.start, timer.end, .2)) {
-            objectUnderCursor.object.changeState;
+            clickedProxy.object.changeState;
             clearHighlight( 'objects' )
             clearHighlight( 'wires' )
         } 
-        objectUnderCursor.object.highlight = true;
+        clickedProxy.object.highlight = true;
     }
 
-    if (objectUnderCursor.isNode) do {
+    if (clickedProxy.isNode) do {
         if (mouseClickDuration(timer.start, timer.end, .2)) {
-            if (objectUnderCursor.node.connectionType === wires) {
-                objectUnderCursor.node.highlight = true;
+            if (clickedProxy.node.connectionType === wires) {
+                clickedProxy.node.highlight = true;
             }
             break;
         } 
@@ -817,32 +830,32 @@ canvas.onmouseup = function(e) {
 }
 
 function connectNodes(pNode) {
-    if (pNode.connected || objectUnderCursor.node.connected || !objectUnderCursor.isNode) {
+    if (pNode.connected || clickedProxy.node.connected || !clickedProxy.isNode) {
         return;
     }
 
-    if ( pNode.id === objectUnderCursor.node.id) {
+    if ( pNode.id === clickedProxy.node.id) {
         return
     }
 
     // if inputs are both inputs or both outputs reject
-    if ( stringIncludes('output', pNode.name) && stringIncludes('output', objectUnderCursor.node.name) ) {
+    if ( stringIncludes('output', pNode.name) && stringIncludes('output', clickedProxy.node.name) ) {
         return
     }
 
-    if ( stringIncludes('input', pNode.name) && stringIncludes('input', objectUnderCursor.node.name) ) {
+    if ( stringIncludes('input', pNode.name) && stringIncludes('input', clickedProxy.node.name) ) {
         return
     }
 
-    let wire = new Wire( { a: pNode, b: objectUnderCursor.node } );
+    let wire = new Wire( { a: pNode, b: clickedProxy.node } );
     wire.id = generateId();
     wires[wire.id] = wire
 
     pNode.connected = true;
-    objectUnderCursor.node.connected = true;
+    clickedProxy.node.connected = true;
     // set id for wire connected to node
     pNode.wireId = wire.id;
-    objectUnderCursor.node.wireId = wire.id;
+    clickedProxy.node.wireId = wire.id;
     wires[wire.id].state
 }
 
@@ -861,7 +874,7 @@ function clearHighlight( type ) {
         }
     }
 
-    if (type === 'nodes') {
+    if (type === 'nodes' || type === 'all') {
         for (let [key, wire] of Object.entries(wires)) {
             for (const node of wire.nodes) {
                 node.highlight = false;
@@ -880,9 +893,9 @@ function getObject(x, y) {
             let b = objects[ele][e].y
             //.09 is detection radius from center of node
             if (within.circle(a, b, 0.1, x, y)) {
-                objectUnderCursor.isNode = true;
-                objectUnderCursor.object = objects[ele];
-                objectUnderCursor.node = objects[ele][e];
+                clickedProxy.isNode = true;
+                clickedProxy.object = objects[ele];
+                clickedProxy.node = objects[ele][e];
                 return; 
             }
         }
@@ -893,9 +906,9 @@ function getObject(x, y) {
             let b = node.y
             //.09 is detection radius from center of node
             if (within.circle(a, b, 0.1, x, y)) {
-                objectUnderCursor.isNode = true;
-                objectUnderCursor.object = node;
-                objectUnderCursor.node = node;
+                clickedProxy.isNode = true;
+                clickedProxy.object = node;
+                clickedProxy.node = node;
                 return; 
             }
         }
@@ -903,8 +916,8 @@ function getObject(x, y) {
     //detect component under cursor
     for (let [key, obj] of Object.entries(objects)) {
         if (within.rectangle(obj.x - (obj.hitbox.w/2), obj.y - (obj.hitbox.h/2), obj.hitbox.w, obj.hitbox.h, x, y)) {
-            objectUnderCursor.isComponent = true;
-            objectUnderCursor.object = obj;
+            clickedProxy.isComponent = true;
+            clickedProxy.object = obj;
             return;
         }
     }
@@ -913,8 +926,8 @@ function getObject(x, y) {
     for (let [key, wire] of Object.entries(wires)) {
         for (const segment of getWireSegments(wire)) {
             if (pointOnLine (segment[0],segment[1], x, y, .09)) {
-                objectUnderCursor.isWire = true;
-                objectUnderCursor.wire = wire;
+                clickedProxy.isWire = true;
+                clickedProxy.wire = wire;
                 return
             }
 
@@ -922,12 +935,12 @@ function getObject(x, y) {
     }
 
     function resetStates() {
-        objectUnderCursor.isComponent = false;
-        objectUnderCursor.isNode = false;
-        objectUnderCursor.isWire = false;
-        objectUnderCursor.object = undefined;
-        objectUnderCursor.node = undefined;
-        objectUnderCursor.wire = undefined;
+        clickedProxy.isComponent = false;
+        clickedProxy.isNode = false;
+        clickedProxy.isWire = false;
+        clickedProxy.object = undefined;
+        clickedProxy.node = undefined;
+        clickedProxy.wire = undefined;
     }
     return false
 }
@@ -1144,7 +1157,7 @@ function locateRotateButtons(object) {
 rotateRight.onclick = function() {
     const angle = [270, 180, 90, 0];
     const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
-    let id = objectUnderCursor.object.id
+    let id = clickedProxy.object.id
     objects[id].r = next(objects[id].r);
     objects[id].rotateNodes('left');
 }
@@ -1152,27 +1165,27 @@ rotateRight.onclick = function() {
 rotateLeft.onclick = function() {
     const angle = [0, 90, 180, 270];
     const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
-    let id = objectUnderCursor.object.id
+    let id = clickedProxy.object.id
     objects[id].r = next(objects[id].r);
     objects[id].rotateNodes('right');
 }
 
 deleteButton.onclick = function() {
-    if (objectUnderCursor.wire) {
-        deleteWire(objectUnderCursor.wire.id, true)
+    if (clickedProxy.wire) {
+        deleteWire(clickedProxy.wire.id, true)
         return
     }
 
-    if (objectUnderCursor.isNode) {
-        if (objectUnderCursor.node.wireId) {
-            deleteWire(objectUnderCursor.node.wireId, true)
+    if (clickedProxy.isNode) {
+        if (clickedProxy.node.wireId) {
+            deleteWire(clickedProxy.node.wireId, true)
         }
-        for (let index in wires[objectUnderCursor.node.id].nodes) {
-            let x = wires[objectUnderCursor.node.id].nodes[index].x
-            let y = wires[objectUnderCursor.node.id].nodes[index].y
+        for (let index in wires[clickedProxy.node.id].nodes) {
+            let x = wires[clickedProxy.node.id].nodes[index].x
+            let y = wires[clickedProxy.node.id].nodes[index].y
 
-            if (x === objectUnderCursor.node.x && y === objectUnderCursor.node.y) {
-                wires[objectUnderCursor.node.id].nodes.splice(index, 1)
+            if (x === clickedProxy.node.x && y === clickedProxy.node.y) {
+                wires[clickedProxy.node.id].nodes.splice(index, 1)
            }
         }
         return
@@ -1188,7 +1201,7 @@ deleteButton.onclick = function() {
         return
     }
 
-    deleteComponent(objectUnderCursor.object.id, true)
+    deleteComponent(clickedProxy.object.id, true)
     rotateButtons('hide')
 }
 
@@ -1199,8 +1212,8 @@ document.addEventListener('keydown', (event) => {
     rightClickMenu.style.visibility = "hidden";
     rightClickSecondary.style.visibility = "hidden";
 
-    if (objectUnderCursor.wire) {
-        deleteWire(objectUnderCursor.wire.id, true)
+    if (clickedProxy.wire) {
+        deleteWire(clickedProxy.wire.id, true)
         return
     }
 
@@ -1212,10 +1225,10 @@ document.addEventListener('keydown', (event) => {
                 deleteComponent(part.id, true)
             }
             // reset id iterator
-            if (Object.keys(objects).length === 0 && Object.keys(wires).length === 0) iterate = 0
+            if (Object.keys(objects).length === 0 && Object.keys(wires).length === 0) iterate = 1
             return
         }
-        deleteComponent(objectUnderCursor.object.id, true)
+        deleteComponent(clickedProxy.object.id, true)
         rotateButtons('hide')
     }
 })
@@ -1312,6 +1325,9 @@ function resetSettingsMenu() {
     settings.open = false
 }
 
+
+// FIXME:
+//boolean to reset id's from 1
 function convertSelectiontoJson(reset) {
     let custom = {}
     selectedComponents()
@@ -1357,7 +1373,7 @@ function convertSelectiontoJson(reset) {
 
     // decrement all id's 
     if (reset) {
-        let idS = []
+        let idArray = []
         for (let [key, json] of Object.entries(custom)) {
             let a = json.match(regexId);
             let b = json.match(regexList)
@@ -1368,35 +1384,33 @@ function convertSelectiontoJson(reset) {
             if (c === null) c = []
     
             
-            idS = [...idS, ...a]
-            idS = [...idS, ...b]
-            idS = [...idS, ...c]
+            idArray = [...idArray, ...a]
+            idArray = [...idArray, ...b]
+            idArray = [...idArray, ...c]
         }
 
-        //remove non digits
-        // for (let i in idS) {
-        //     console.log(idS[i]);
-        //     idS[i] = idS[i].replace(/\D/g,'')
-        // }
-
-        let removeDuplicates = [...new Set(idS)].sort(function(a, b){return a - b});
+        let removeDuplicates = [...new Set(idArray)].sort(function(a, b){return a - b});
         let stack = removeDuplicates.map(x => parseInt(x))
-        
+
+        if (stack.includes(0)) {
+            throw 'Cannot copy, sub-component has id of "0"';
+          }
+
         let i = 1 
         while (stack.length > 0) {
             const id = stack.shift()
-            
-            const regex1 = `("id":|"id":"|"wireId":"|"wireId":)${id}`
+
+            const regex1 = `("id":|"id":"|"wireId":"|"wireId":)${id}(,|")`
             const regexId = new RegExp(regex1,"gm");
     
-            const regex2 = `(list.*)${id}(.*)(?=\]})`
+            const regex2 = `(list.*")${id}(".*)(?=\]})`
             const regexList = new RegExp(regex2,"gm");
     
             const regex3 = `(},"|},)${id}(":{"nodeState"|:{"nodeState")`
             const wireKey = new RegExp(regex3,"gm");
     
             for (let [key, json] of Object.entries(custom)) {
-                custom[key] = json.replace(regexId, `$1${i}`)
+                custom[key] = json.replace(regexId, `$1${i}$2`)
                 custom[key] = custom[key].replace(regexList, `$1${i}$2`)
                 custom[key] = custom[key].replace(wireKey, `$1${i}$2`)
             }
@@ -1499,11 +1513,12 @@ function convertSelectiontoJson(reset) {
     }
 
     console.log(custom)
+
     return custom
 }
 
 saveComponentButton.onclick = function() {
-    let object = objectUnderCursor.object
+    let object = clickedProxy.object
     if (select.components.length > 1) {
         alert("can only save 1 component")
         return
@@ -1529,11 +1544,16 @@ cutButton.onclick = function() {
 
 const copyButton = document.getElementById("copy");
 copyButton.onclick = function() {
-    copy = convertSelectiontoJson(true)
+    try {
+        copy = convertSelectiontoJson(true)
+      } catch (e) {
+        console.error(e);
+      }
 }
 
 const pasteButton = document.getElementById("paste");
 pasteButton.onclick = function() {
+    clearHighlight( 'all' )
     buildComponent(copy)
 }
 
@@ -1578,8 +1598,6 @@ function loadSave() {
             const nodeId = {
                 a: object.a.id.toString(),
                 b: object.b.id.toString()
-                // a: parseInt(object.a.id),
-                // b: parseInt(object.b.id)
             } 
 
             // check if node is on an object or wire
@@ -1885,18 +1903,27 @@ function detectWireIntersection() {
 
 function selectedComponents() {
     let components = []
+    let nodes = []
     for (let [key, value] of Object.entries(objects)) {
         if (value.highlight) {
             components.push(value)
         }
     }
+
+    for (let [key, wire] of Object.entries(wires)) {
+        for (const index in wire.nodes) {
+            if (wire.nodes[index].highlight) {
+                nodes.push({wireId: wire.nodes[index].id, index: index})
+            }
+        }
+    }
     select.components = components
-    //select.nodes = 0
+    select.nodes = nodes
 }
 
 
 nameButton.onclick = function() {
-    if (!objectUnderCursor.object) return
+    if (!clickedProxy.object) return
     nameComponent()
 }
 
@@ -1907,16 +1934,16 @@ function nameComponent() {
 
     if (select.components.length === 1) {
         clearHighlight( 'objects' )
-        objectUnderCursor.object.highlight = true;
+        clickedProxy.object.highlight = true;
     }
 
     nameFormContainer.style.display = "flex";
     document.getElementById("fname").focus()
 
-    document.getElementById('name-form-type').textContent = objectUnderCursor.object.classname
+    document.getElementById('name-form-type').textContent = clickedProxy.object.classname
     
-    if (objectUnderCursor.object.name !== "undefined") {
-        document.getElementById('name-form-label').textContent = `Name: ${objectUnderCursor.object.name}`
+    if (clickedProxy.object.name !== "undefined") {
+        document.getElementById('name-form-label').textContent = `Name: ${clickedProxy.object.name}`
     } else {
         document.getElementById('name-form-label').textContent = ''
     }
@@ -1930,7 +1957,7 @@ function handleForm(event) { event.preventDefault();
         alert(`Invalid Character ${invalid}`)
         return
     }
-    objectUnderCursor.object.name = input
+    clickedProxy.object.name = input
     nameFormContainer.style.display = "none";
 
     document.getElementById("fname").value = ''
@@ -2061,6 +2088,7 @@ options.onmouseout = function() {
         if (s < -.15 || s > 1.3) rightClickSecondary.style.visibility = "hidden";
         if (delta.y < 2 && delta.x < 1) rightClickSecondary.style.visibility = "hidden";
     }, 70)
+
 };
 
 const undoContext = document.getElementById("undo-context");
@@ -2068,7 +2096,6 @@ undoContext.onmouseover = function() {
     if (rightClickSecondaryExit) rightClickSecondary.style.visibility = "hidden";
     rightClickSecondaryExit = false
     hideTimer = setTimeout(function() {
-        console.log('hey')
         rightClickSecondary.style.visibility = "hidden";
     }, 500)
 }

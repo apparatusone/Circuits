@@ -189,7 +189,6 @@ export function buildComponent(custom) {
     }
 
     function replacer(match, p1, p2, p3, offset, string) {
-
         if (match === 'd') return 'd'
         return (parseInt(match) + parseInt(iterate) - 1) 
     }
@@ -280,7 +279,7 @@ export function buildComponent(custom) {
             for (const id of object.list) {
                 list.push(objects[id])
             }
-
+            
             objects[id] = makeCustomComponent(list, id)
 
             objects[id].x = object.component.x
@@ -298,8 +297,16 @@ export function buildComponent(custom) {
         }
     }
 
-    for (const id of range.id) {
+    //filter range of components inside custom components
+    const filtered = range.id.filter(id => (objects[id] !== undefined));
+
+    for (const id of filtered) {
         if (objects[id] === undefined) continue
+        if (filtered.length === 1) {
+            objects[id].x = Math.round(mouse.canvas.x*2)/2;
+            objects[id].y = Math.round(mouse.canvas.y*2)/2;
+            break
+        }
         objects[id].x = objects[id].x - average(minMax(range.x)) + Math.round(mouse.canvas.x*2)/2;
         objects[id].y = objects[id].y - average(minMax(range.y)) + Math.round(mouse.canvas.y*2)/2;
     }
