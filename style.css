@@ -444,7 +444,8 @@ canvas {
   /* right click stuff */
 #right-click{
     position:absolute;
-    display: none; /* change to flex to display menu */
+    display: flex;
+    visibility: hidden;
     justify-content: space-around;
     align-items: center;
     flex-direction: column;
@@ -459,6 +460,32 @@ canvas {
         41.8px 41.8px 33.4px rgba(0, 0, 0, 0.029),
         100px 100px 80px rgba(0, 0, 0, 0.04)
   ;
+}
+
+#right-click-secondary{
+    position:absolute;
+    display: flex;
+    visibility: hidden;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: column;
+    gap: 2px;
+    z-index:101;
+
+    box-shadow:
+        2.8px 2.8px 2.2px rgba(0, 0, 0, 0.011),
+        6.7px 6.7px 5.3px rgba(0, 0, 0, 0.016),
+        12.5px 12.5px 10px rgba(0, 0, 0, 0.02),
+        22.3px 22.3px 17.9px rgba(0, 0, 0, 0.024),
+        41.8px 41.8px 33.4px rgba(0, 0, 0, 0.029),
+        100px 100px 80px rgba(0, 0, 0, 0.04)
+  ;
+}
+
+#options{
+    display: flex;
+    /* width: 150px;
+    height: 20px; */
 }
 
 menu {
@@ -476,7 +503,7 @@ menu {
     white-space:nowrap;
 }
 
-.options:hover{
+.options:hover, .options-secondary:hover {
     background-color: #2289ffe7;
 }
 
@@ -492,6 +519,20 @@ menu {
     border-radius: 3px;
     width: 150px;
     height: 20px;
+}
+
+#options {
+    display: flex;
+    justify-content: space-between;
+}
+
+#set-clock {
+    display: none;
+}
+
+.chevron {
+    padding-right: 5px;
+    pointer-events: none;
 }
 
 /* horizontal line */

@@ -106,11 +106,13 @@ export function getClass(name){
 export const color = (function() {
     const root = document.documentElement;
 
-    let background, line, object, grid, menu, icon, tooltip, rotate, windowBox;
+    let background, line, lineHigh, lineLow, object, grid, menu, icon, tooltip, rotate, windowBox;
 
     function update() {
         this.background = (settings.darkMode) ? "rgba(15,15,15,1)":"white";
         this.line = (settings.darkMode) ? "white":"black";
+        this.lineHigh = (settings.darkMode) ? "white":"black";
+        this.lineLow = (settings.darkMode) ? "#9E9E9E":"#737373";
         this.object = (settings.darkMode) ? "#222222":"white";
         this.grid = (settings.darkMode) ? "rgba(255,255,255,.5)":"rgba(150,150,150,.3)";
         this.menu = (settings.darkMode) ? "rgba(255, 255, 255, 0.5)":"rgba(0, 7, 21, 0.738)";
@@ -145,6 +147,8 @@ export const color = (function() {
 
         background: background,
         line: line,
+        lineHigh, lineHigh,
+        lineLow, lineLow,
         object: object,
         grid: grid,
         menu: menu,
@@ -648,5 +652,80 @@ export function deleteWire(id,reset) {
     }
     if (node.b.connectionType === objects) {
         objects[node.b.id].state
+    }
+}
+
+export function addMdi(mdi, domObject, color, viewBox, scale, cssClass) {
+    let iconSvg = document.createElementNS("http://www.w3.org/2000/svg", 'svg'); //Create a path in SVG's namespace
+    const iconPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+    
+    iconSvg.setAttribute('fill', color);
+    iconSvg.setAttribute('viewBox', `0 0 ${viewBox} ${viewBox}`);
+    iconSvg.classList.add(cssClass);
+
+    iconPath.setAttribute('d', mdi);
+    iconPath.setAttribute('stroke-linecap', 'round');
+    iconPath.setAttribute('stroke-linejoin', 'round');
+    iconPath.setAttribute('stroke-width', '1');
+    iconSvg.appendChild(iconPath);
+    iconSvg.setAttribute('width', scale);
+    iconSvg.setAttribute('height', scale);
+    domObject.appendChild(iconSvg);
+}
+
+export function pointOnLine (p1,p2,x,y,radius) {
+    let a,b;
+
+    if (Array.isArray(p1)) {
+        a = { x: p1[0], y: p1[1] }
+        b = { x: p2[0], y: p2[1] }
+    }  else {
+        a = p1;
+        b = p2;
+    }
+
+    let m;
+    let rectx;
+    let recty;
+
+    let width = minMax([a.x, b.x])[1] - minMax([a.x, b.x])[0]
+    let height = minMax([a.y, b.y])[1] - minMax([a.y, b.y])[0]
+
+    if (a.x === b.x) {
+        rectx = minMax([a.x, b.x])[0] - .04
+    } else {
+        rectx = minMax([a.x, b.x])[0]
+    }
+
+    if (a.y === b.y) {
+        recty = minMax([a.y, b.y])[0] - .04
+    } else {
+        recty = minMax([a.y, b.y])[0]
+    }
+
+    if (within.rectangle(rectx, recty, Math.max(radius, width), Math.max(radius, height), x, y)) {
+        if (a.x === b.x) {
+            if (Math.abs(a.x - x) < .04) return true;
+        }
+
+        if (a.y === b.y) {
+            if (Math.abs(a.y - y) < .04) return true;
+        }
+
+        //get equation for line
+        m = slope( a, b )
+        b = -(m*a.x - a.y)
+        let line = m*x + b - y
+
+        if (Math.abs(line) < .07) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function mouseClickDuration(start, end, time) {
+    if ((end - start) < time) {
+        return true
     }
 }

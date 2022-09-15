@@ -79,6 +79,7 @@ const y = [135, 0];
 let i = 1;
 let location = { x: 35, y: 20}
 let bottomComponent;
+//set location of headings, add headings
 for (let [key, value] of Object.entries(menuObjects)) {
     if (stringIncludes ('heading',key)) {
         let offset = 0
@@ -101,7 +102,6 @@ for (let [key, value] of Object.entries(menuObjects)) {
 }
 
 for (const [key, value] of Object.entries(menuObjects)) {
-
     //remove headings and dividers from object
     if (stringIncludes ('heading',key)) {
         delete menuObjects[key]
@@ -122,6 +122,7 @@ for (const [key, value] of Object.entries(menuObjects)) {
         name = value.name
     }
 
+    // add component labels
     p.setAttribute('id', `${value.name.toLowerCase()}-text`);
     p.textContent = `${name.toUpperCase().replace(/(-)/g,' ')}`
     p.style.fontFamily = "Arial, Helvetica, sans-serif"
@@ -179,6 +180,7 @@ function menuHeading(y,text) {
     menuBackgroundLeft.append(divider)
 }
 
+// temp object dragged into main canvas
 const ghostObject = []
 export let clickedObject;
 
@@ -285,7 +287,6 @@ function menuDraw(newtime) {
     }
 }
 
-
 let create = false
 window.onmousemove = function(e) {
 
@@ -382,7 +383,6 @@ window.onmouseup = function(e) {
         fpsInterval = 1000 / 1;
       }, "500")
 }
-
 
 menuBackgroundLeft.onmouseover = function() {
     menuCanvas.classList.remove("unselectable");

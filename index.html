@@ -19,9 +19,6 @@
         <ul>
             <li><strong>Safari Browser</strong></li>
             <li>Undo</li>
-            <li>Cut</li>
-            <li>Copy</li>
-            <li>Paste</li>
             <li>Add Node</li>
         </ul>
         <h2>How to use:</h2>
@@ -114,10 +111,16 @@
     <menu id="right-click">
         <div class="options">Add Node</div>
         <div id="custom-component"class="options">Create Component</div>
-        <div id="name-component" class="options">Name Component</div>
+        <!-- <div id="name-component" class="options">Name Component</div> -->
         <div id="save-component" class="options">Save Component</div>
+
+        <div id="options" class="options">
+            Options
+            <div id="chevron" class="chevron"></div>
+        </div>
+
         <hr/>
-        <div class="options">Undo</div>
+        <div id="undo-context" class="options">Undo</div>
         <hr/>
         <div id="cut" class="options">Cut</div>
         <div id="copy" class="options">Copy</div>
@@ -125,7 +128,14 @@
         <hr/>
         <div id="delete" class="options">Delete</div>
     </menu>
-    <div id="notepad"></div>
+
+    <menu id="right-click-secondary">
+        <div id="custom-component"class="options">Create Component</div>
+        <div id="name-component" class="options">Name Component</div>
+        <div id="save-component" class="options">Save Component</div>
+        <div id="set-clock" class="options">Set Clock Speed</div>
+    </menu>
+    <!-- <div id="notepad"></div> -->
 
 </body>
 </html>
