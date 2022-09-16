@@ -75,7 +75,7 @@ export const minMax = function (items) {
 }
 
 // return slope of line between points 'a' and 'b'
-export const slope = function ( a, b)
+export const slope = function (a,b)
 {
     if (b.x - a.x != 0)
     {
@@ -291,24 +291,29 @@ export function buildComponent(custom) {
         }
 
         if (object.type !== 'wire') { 
-            range.x.push(objects[id].x)
-            range.y.push(objects[id].y)
             range.id.push(id)
         }
     }
 
     //filter range of components inside custom components
     const filtered = range.id.filter(id => (objects[id] !== undefined));
+    for (const id of filtered) {
+        range.x.push(objects[id].x)
+        range.y.push(objects[id].y)
+    }
 
+    // set coordinates
     for (const id of filtered) {
         if (objects[id] === undefined) continue
+
         if (filtered.length === 1) {
             objects[id].x = Math.round(mouse.canvas.x*2)/2;
             objects[id].y = Math.round(mouse.canvas.y*2)/2;
             break
         }
-        objects[id].x = objects[id].x - average(minMax(range.x)) + Math.round(mouse.canvas.x*2)/2;
-        objects[id].y = objects[id].y - average(minMax(range.y)) + Math.round(mouse.canvas.y*2)/2;
+        objects[id].highlight = true
+        objects[id].x = Math.round((objects[id].x - average(minMax(range.x)) + parseFloat(mouse.canvas.x))*2)/2;
+        objects[id].y = Math.round((objects[id].y - average(minMax(range.y)) + parseFloat(mouse.canvas.y))*2)/2; 
     }
 
     if (Object.keys(parsed).length < 1 ) return
@@ -318,7 +323,7 @@ export function buildComponent(custom) {
 }
 
 export function makeCustomComponent(parts, id) {
-    // check if switches and led's have names
+    // check if SWITCHES and LED's have names
     for (const part of parts) {
         if (part.constructor === Led || part.constructor === OnOffSwitch) {
             if (part.name === 'undefined') {

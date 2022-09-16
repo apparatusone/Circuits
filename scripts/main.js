@@ -25,13 +25,8 @@ function resizeCanvas() {
     canvas.height = Math.floor(window.innerHeight * scale);
 }
 
-
-
 const rotateLeft = document.getElementById("rotate-left");
 const rotateRight = document.getElementById("rotate-right");
-
-
-
 const deleteButton = document.getElementById("delete");
 const settingsButton = document.getElementById("settings");
 const settingsMenu = document.getElementById("settings-menu");
@@ -45,15 +40,12 @@ const nameFormContainer = document.getElementById("name-form-container");
 
 rightClickMenu.addEventListener("click", toggleRightClickMenu, false);
 
-
-
-
 addMdi(mdiCog,settingsButton, color.icon, 24, 24, 'post-icon')
 addMdi(dltRotate,rotateLeft, color.rotate, 100, 35, 'rotate')
 addMdi(dltRotate,rotateRight, color.rotate, 100, 35, 'rotate')
 
 // default zoom
-window.z = 100;
+window.z = 200;
 let smoothZoom = z;
 
 //TODO: REFACTOR
@@ -76,6 +68,7 @@ const clicked = {
     isComponent: false,
     isNode: false,
     isWire: false,
+    isLabel: false,
     object: undefined,
     node: undefined,
     wire: undefined,
@@ -383,18 +376,11 @@ function draw() {
             if (!value.highlight && !settings.showLabels) continue
             //draw labels
             for (let [key, off] of Object.entries(value.offset)) {
-                let invert = 1
-                if (off.x < 0) {
-                    if  (value.r === 0 || value.r === 180) {
-                        invert = -1;
-                    }
-                }
 
-                if (off.y < 0) {
-                    if  (value.r === 90 || value.r === 270) {
-                        invert = -1;
-                    }
-                }
+                let invert = 1
+                if  (off.x < 0 && (value.r === 0 || value.r === 180)) invert = -1;
+                if  (off.y < 0 && (value.r === 90 || value.r === 270)) invert = -1;
+
                 
                 let textWidth = ctx.measureText(key).width;
                 let width = invert * (textWidth*1.2 + z/4)
@@ -542,10 +528,29 @@ canvas.onmousemove = function(e) {
 
     //TODO: REFACTOR
     // move canvas
-    if (mouseDown && !dragging && !drawing && !select.action) {
+    if (mouseDown && !dragging && !drawing && !select.action && !clicked.isLabel) {
         origin.x = origin.prev.x + (origin.click.x - e.x)/z;
         origin.y = origin.prev.y - (origin.click.y - e.y)/z;
     };
+
+    //move label
+    if (mouseDown && clicked.isLabel === true) {
+        const id = clicked.object.id
+        const name = clicked.object.name
+        const x = objects[id].x
+        const y = objects[id].y
+
+        // move label within range
+        if  (objects[id].r === 0 || objects[id].r === 180) {
+            objects[id].offset[name].y = Math.max( -objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.y) - y))
+        }
+        if  (objects[id].r === 90 || objects[id].r === 270) {
+            objects[id].offset[name].x = Math.max( - objects[id].w + .15, Math.min(objects[id].w - .15, parseFloat(mouse.canvas.x) - x))
+        }
+
+        moveLabels(id,name)
+        return
+    }
 
     // move node
     if (clickedProxy.node && mouseDown && dragging && !drawing ) {
@@ -760,16 +765,76 @@ canvas.onmousedown = function(e) {
         clickedProxy.wire.nodes = newNodesArray
     }
 
-    if (!clickedProxy.isNode && !clickedProxy.isComponent) {
+    //detect label
+    for (let [id, object] of Object.entries(objects)) {
+        if (object.constructor === CustomComponent) {
+        if (!object.highlight && !settings.showLabels) continue
+            for (let [name, node] of Object.entries(object.offset)) {
+                
+                let invert = 1
+                if  (node.x < 0 && (object.r === 0 || object.r === 180)) invert = -1;
+                if  (node.y < 0 && (object.r === 90 || object.r === 270)) invert = -1;
+
+                const textWidth = ctx.measureText(name).width
+                let height = z/6
+                let width = invert * (textWidth*1.2 + z/15)
+                if  (object.r === 90 || object.r === 270) {
+                    height = invert * (textWidth*1.2 + z/15)
+                    width = z/6
+                }
+
+                let offset = { x: -.085, y: - height/2/z}
+                if (node.x < 0 && (object.r === 0 || object.r === 180)) offset.x *= -1;
+                if (object.r === 90 || object.r === 270) {
+                    offset = { x: width/2/z, y: -(height/z) - invert * .085}
+                }
+
+                let x = (-origin.x + .5 + object.x + node.x - offset.x) * z
+                let y = (origin.y + .5 - object.y - node.y + offset.y) * z
+
+                if (width < 0) x+=width
+                if (height < 0) y+=height
+
+                let a = within.rectangle(x,y, Math.abs(width), Math.abs(height), e.x, e.y)
+                if (!a) continue
+                clicked.isLabel = true
+                clickedProxy.object = {id: id, name: name}
+
+                //get all offsets on side of custom component
+                offsetRange = {}
+                if (objects[id].offset[name].x < 0 && (object.r === 0 || object.r === 180)) {
+                    for (const [key,node] of Object.entries(objects[id].offset)) {
+                        if (node.x < 0) offsetRange[key] = {x: node.x, y: node.y}
+                    }
+                }
+
+                if (objects[id].offset[name].x > 0 && (object.r === 0 || object.r === 180)) {
+                    for (const [key,node] of Object.entries(objects[id].offset)) {
+                        if (node.x > 0) offsetRange[key] = {x: node.x, y: node.y}
+                    }
+                }
+
+                if (objects[id].offset[name].y < 0 && (object.r === 90 || object.r === 270)) {
+                    for (const [key,node] of Object.entries(objects[id].offset)) {
+                        if (node.y < 0) offsetRange[key] = {x: node.x, y: node.y}
+                    }
+                }
+
+                if (objects[id].offset[name].y > 0 && (object.r === 90 || object.r === 270)) {
+                    for (const [key,node] of Object.entries(objects[id].offset)) {
+                        if (node.y > 0) offsetRange[key] = {x: node.x, y: node.y}
+                    }
+                }
+            }
+        }
+    }
+
+    if (!clickedProxy.isNode && !clickedProxy.isComponent && !clicked.isLabel) {
         nameFormContainer.style.display = "none";
         document.getElementById("fname").value = ''
         clearHighlight( 'all' )
         rotateButtons('hide')
     }
-
-    // if (!clickedProxy.isNode) {
-    //     clearHighlight( 'nodes' )
-    // }
 
     rightClickMenu.style.visibility = "hidden";
     rightClickSecondary.style.visibility = "hidden";
@@ -795,6 +860,18 @@ canvas.onmouseup = function(e) {
         drawingRect = [];
         select.action = false;
         return
+    }
+
+    if (clicked.isLabel) {
+        const id = clicked.object.id
+        const name = clicked.object.name
+        if (objects[id].r === 0 || objects[id].r === 180) {
+            objects[id].offset[name].y = offsetRange[name].y
+        }
+        if (objects[id].r === 90 || objects[id].r === 270) {
+            objects[id].offset[name].x = offsetRange[name].x
+        }
+        clicked.isLabel = false
     }
 
     if (clickedProxy.isComponent) {
@@ -885,6 +962,7 @@ function clearHighlight( type ) {
 
 //returns component and node 
 function getObject(x, y) {
+    if (clicked.isLabel) return
     resetStates()
     //detect node under cursor
     for (const ele in objects) {
@@ -938,11 +1016,37 @@ function getObject(x, y) {
         clickedProxy.isComponent = false;
         clickedProxy.isNode = false;
         clickedProxy.isWire = false;
+        //clickedProxy.isLabel = false;
         clickedProxy.object = undefined;
         clickedProxy.node = undefined;
         clickedProxy.wire = undefined;
     }
     return false
+}
+
+
+let offsetRange = {}
+function moveLabels(id,name) {
+    for (const [key, offset] of Object.entries(offsetRange)) {
+        if (key === name) continue
+        let difference = offset.y + -1 * objects[id].offset[name].y
+        if (objects[id].r === 90 || objects[id].r === 270) {
+            difference = offset.x + -1 * objects[id].offset[name].x
+        }
+        if (difference < .1 && difference > -.1) {
+
+            if (objects[id].r === 0 || objects[id].r === 180) {
+                //swap values
+                [offsetRange[key].y,offsetRange[name].y] = [offsetRange[name].y,offsetRange[key].y]
+                //update node offset
+                objects[id].offset[key].y = offsetRange[key].y
+            }
+            if (objects[id].r === 90 || objects[id].r === 270) {
+                [offsetRange[key].x,offsetRange[name].x] = [offsetRange[name].x,offsetRange[key].x]
+                objects[id].offset[key].x = offsetRange[key].x
+            }
+        }
+    }
 }
 
 // action menu buttons
@@ -1206,35 +1310,35 @@ deleteButton.onclick = function() {
 }
 
 //delete key
-document.addEventListener('keydown', (event) => {
-    const keyName = event.key;
+//FIXME: disable when typing in form
+// document.addEventListener('keydown', (event) => {
+//     const keyName = event.key;
 
-    rightClickMenu.style.visibility = "hidden";
-    rightClickSecondary.style.visibility = "hidden";
+//     rightClickMenu.style.visibility = "hidden";
+//     rightClickSecondary.style.visibility = "hidden";
 
-    if (clickedProxy.wire) {
-        deleteWire(clickedProxy.wire.id, true)
-        return
-    }
+//     if (clickedProxy.wire) {
+//         deleteWire(clickedProxy.wire.id, true)
+//         return
+//     }
 
-    if (keyName === "Backspace") {
+//     if (keyName === "Backspace") {
 
-        let parts = select.components
-        if (parts.length > 1) {
-            for (let part of parts) {
-                deleteComponent(part.id, true)
-            }
-            // reset id iterator
-            if (Object.keys(objects).length === 0 && Object.keys(wires).length === 0) iterate = 1
-            return
-        }
-        deleteComponent(clickedProxy.object.id, true)
-        rotateButtons('hide')
-    }
-})
+//         let parts = select.components
+//         if (parts.length > 1) {
+//             for (let part of parts) {
+//                 deleteComponent(part.id, true)
+//             }
+//             // reset id iterator
+//             if (Object.keys(objects).length === 0 && Object.keys(wires).length === 0) iterate = 1
+//             return
+//         }
+//         deleteComponent(clickedProxy.object.id, true)
+//         rotateButtons('hide')
+//     }
+// })
 
 // auto generate "settings-menu-container"
-
 const settings1 = document.getElementById("settings-1");
 const settings2 = document.getElementById("settings-2");
 const settings3 = document.getElementById("settings-3");
@@ -1511,9 +1615,6 @@ function convertSelectiontoJson(reset) {
         }
         return value;
     }
-
-    console.log(custom)
-
     return custom
 }
 
@@ -2154,3 +2255,4 @@ export function defineNodes (id, nodes, object, objects) {
         writable: true
     });
 }
+
