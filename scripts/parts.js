@@ -1,6 +1,6 @@
 'use strict';
 
-import { generateId, color } from './utilities.js'
+import { generateId, color, easeOutBounce, easeInExpo } from './utilities.js'
 import { shape } from './shapes.js'
 import { defineNodes } from './main.js'
 
@@ -220,19 +220,38 @@ class OnOffSwitch extends Generic{
             output: { x: 0, y: 0.5 },
         }
 
+        this.swLocation = 1
         this.classname = 'Switch'
     }
 
     type = 'interactive'
     img = 'button'
-    color = '#27CF00'
+    color = color.background
 
     state = 0
 
     // changes state of switch between 0 and 1
     get changeState () {
         this.state ^= 1;
-        this.output.setter = this.state
+        this.animate();
+        this.output.setter = this.state;
+    }
+
+    animate() {
+        const self = this
+        let i = 0
+        iterate()
+        function iterate () {
+            setTimeout(function() {
+                if (self.state) self.swLocation = 1 - easeOutBounce(i/40)
+                if (!self.state) self.swLocation = easeOutBounce(i/40)
+            i++
+            if (i < 40) {        
+                iterate();
+            }           
+            if (i === 40) self.swLocation = !self.state
+            }, 6)          
+        }
     }
 
     shape = shape.switch
@@ -427,7 +446,7 @@ class CustomComponent {
         this.w = w
         this.h = h
         this.hitbox = { w: w, h: h }
-        this.name = 'undefined'
+        this.name = 'New Component'
         this.highlight = false;
         this.nodes = []
         this.offset =  {}

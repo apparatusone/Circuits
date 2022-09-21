@@ -9,6 +9,8 @@
     <script defer type="module" src="scripts/main.js"></script>
     <script defer type="module" src="scripts/menu.js"></script>
     <script defer type="module" src="scripts/parts.js"></script>
+    <script defer type="module" src="scripts/hidden-canvas.js"></script>
+    
     <style> @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;500&display=swap');</style>
         
     <title>computer</title>
@@ -92,6 +94,7 @@
     <button id="rotate-left" class="hide"></button>
     <button id="rotate-right" class="hide"></button>
     <canvas id="canvas"></canvas>
+    <canvas id="hidden-canvas"></canvas>
     <div style="display:none;">
         <img id="source"
              src="svg/dot-01.svg"
@@ -113,6 +116,7 @@
         <div id="custom-component"class="options">Create Component</div>
         <!-- <div id="name-component" class="options">Name Component</div> -->
         <div id="save-component" class="options">Save Component</div>
+        <div id="name-component" class="options">Rename</div>
 
         <div id="options" class="options">
             Options
@@ -131,7 +135,6 @@
 
     <menu id="right-click-secondary">
         <div id="custom-component"class="options">Create Component</div>
-        <div id="name-component" class="options">Name Component</div>
         <div id="save-component" class="options">Save Component</div>
         <div id="set-clock" class="options">Set Clock Speed</div>
     </menu>

@@ -7,10 +7,11 @@ import { shape } from "./shapes.js"
 import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle, mdiCog, dltRotate, mdiChevronRight } from './shapes.js';
 import { within, drawShape, generateId, stringIncludes, minMax, slope, capitalize, getClass, color,
      radians, buildComponent, makeCustomComponent, deleteComponent, deleteWire, addMdi, pointOnLine,
-     mouseClickDuration } from "./utilities.js";
+     mouseClickDuration, formatBytes, delay, easeInOutCirc } from "./utilities.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
+
 ctx.imageSmoothingEnabled = false;
 ctx.imageSmoothingQuality = 'high';
 
@@ -190,43 +191,43 @@ function draw() {
     // };
 
     // more effecient to render when zoomed out
-    ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
+    //ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
 
-    let i;
-    for (i = (-origin.x * z) % z; i < canvas.width; i+=z) {
-        //ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
-    };
+    // let i;
+    // for (i = (-origin.x * z) % z; i < canvas.width; i+=z) {
+    //     //ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
+    // };
 
-    for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
-        ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
-    };
+    // for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
+    //     ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
+    // };
 
-    if ( z < 40 ) {
-        ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
-        for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) {
-            for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
-                ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
-            };
-        };
-    }
+    // if ( z < 40 ) {
+    //     ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
+    //     for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) {
+    //         for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
+    //             ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
+    //         };
+    //     };
+    // }
 
     // TODO: simplify grid generation
     // FIXME: very slow on zoom out
     //main grid
-    if( z > 15 ) {
-        for (let i = ((-origin.x - 50) * z) % z; i < canvas.width + 50; i+=z) {
-            for (let j = ((origin.y - 50) * z) % z; j < canvas.height + 50; j+=z) {
-                ctx.strokeStyle = color.grid;
-                ctx.setLineDash([]);
-                // x1,y1, x2, y2, linewidth
-                drawLine( ((i - z / 20) + .05*z), (j - z / 500), ((i - z / 20) + .05*z), ((j - z / 500) + z), 55);
-                drawLine( (i - z / 500), ((j - z / 20) + .05*z), ((i - z / 500) + z), ((j - z / 20) + .05*z), 55);
-            }
-        }
-    }
+    // if( z > 15 ) {
+    //     for (let i = ((-origin.x - 50) * z) % z; i < canvas.width + 50; i+=z) {
+    //         for (let j = ((origin.y - 50) * z) % z; j < canvas.height + 50; j+=z) {
+    //             ctx.strokeStyle = color.grid;
+    //             ctx.setLineDash([]);
+    //             // x1,y1, x2, y2, linewidth
+    //             drawLine( ((i - z / 20) + .05*z), (j - z / 500), ((i - z / 20) + .05*z), ((j - z / 500) + z), 55);
+    //             drawLine( (i - z / 500), ((j - z / 20) + .05*z), ((i - z / 500) + z), ((j - z / 20) + .05*z), 55);
+    //         }
+    //     }
+    // }
 
-    // DOESN'T cause slow down on zoom out
-    // sub grid
+    //DOESN'T cause slow down on zoom out
+    //sub grid
     if( z > 40 ) {
         for (let i = ((-origin.x - 50) * z) % z; i < canvas.width + 50; i+=z) {
             for (let j = ((origin.y - 50) * z) % z; j < canvas.height + 50; j+=z) {
@@ -241,6 +242,7 @@ function draw() {
         }
     }
 
+
     // X @ center of canvas
     ctx.lineWidth = z/60;
     ctx.strokeStyle = '#6F6F6F';
@@ -252,6 +254,8 @@ function draw() {
     ctx.lineTo((-origin.x + .1 + 0.5)* z, (origin.y + .1 + 0.5) * z, z, z);
     ctx.stroke();
 
+    // draw highlight
+    ctx.lineCap = 'round';
     for (let [key, value] of Object.entries(objects)) {
         if (value.highlight === true) {
             if (value.img !== 'svg') {
@@ -290,16 +294,19 @@ function draw() {
     for (let [key, value] of Object.entries(objects)) {
         ctx.strokeStyle = color.line;
         ctx.lineWidth = z/15;
-        //FIXME:
-        if (value.img !== 'svg') {
-            if (value.state) {
-                ctx.fillStyle = value.color;
-                drawRotatedImg(value)
-            }
-            if (!value.state) {
-                ctx.fillStyle = color.object;
-                drawRotatedImg(value)
-            }
+        if (value.constructor === OnOffSwitch) {
+            ctx.fillStyle = color.object;
+            drawRotatedImg(value)
+            continue
+        }
+
+        if (value.state) {
+            ctx.fillStyle = value.color;
+            drawRotatedImg(value)
+        }
+        if (!value.state) {
+            ctx.fillStyle = color.object;
+            drawRotatedImg(value)
         }
     }
 
@@ -308,6 +315,9 @@ function draw() {
 
     if (select.components.length < 2 && clickedProxy.isComponent ) {
         locateRotateButtons(clickedProxy.object);
+    }
+    if (z < 55) {
+        rotateButtons('hide')
     }
 
 
@@ -545,7 +555,7 @@ canvas.onmousemove = function(e) {
             objects[id].offset[name].y = Math.max( -objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.y) - y))
         }
         if  (objects[id].r === 90 || objects[id].r === 270) {
-            objects[id].offset[name].x = Math.max( - objects[id].w + .15, Math.min(objects[id].w - .15, parseFloat(mouse.canvas.x) - x))
+            objects[id].offset[name].x = Math.max( - objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.x) - x))
         }
 
         moveLabels(id,name)
@@ -1027,11 +1037,11 @@ function getObject(x, y) {
 
 let offsetRange = {}
 function moveLabels(id,name) {
-    for (const [key, offset] of Object.entries(offsetRange)) {
+    for (const [key, {x,y}] of Object.entries(offsetRange)) {
         if (key === name) continue
-        let difference = offset.y + -1 * objects[id].offset[name].y
+        let difference = y + -1 * objects[id].offset[name].y
         if (objects[id].r === 90 || objects[id].r === 270) {
-            difference = offset.x + -1 * objects[id].offset[name].x
+            difference = x + -1 * objects[id].offset[name].x
         }
         if (difference < .1 && difference > -.1) {
 
@@ -1039,11 +1049,13 @@ function moveLabels(id,name) {
                 //swap values
                 [offsetRange[key].y,offsetRange[name].y] = [offsetRange[name].y,offsetRange[key].y]
                 //update node offset
-                objects[id].offset[key].y = offsetRange[key].y
+                animate(objects[id].offset[key], offsetRange[key].y, 'y')
+                //objects[id].offset[key].y = offsetRange[key].y
             }
             if (objects[id].r === 90 || objects[id].r === 270) {
                 [offsetRange[key].x,offsetRange[name].x] = [offsetRange[name].x,offsetRange[key].x]
-                objects[id].offset[key].x = offsetRange[key].x
+                animate(objects[id].offset[key], offsetRange[key].x, 'x')
+                //objects[id].offset[key].x = offsetRange[key].x
             }
         }
     }
@@ -1223,6 +1235,15 @@ saveButton.onclick = function() {
             return;
         }
         return value;
+    }
+
+    const limit = 1024 * 1024 * 5; // 5 MB
+    const used = decodeURI(encodeURIComponent(JSON.stringify(localStorage))).length
+    const remSpace = limit - used;
+    console.log(`${formatBytes(used)} used of Local Storage. ${formatBytes(remSpace)} remaining`);
+
+    if (remSpace <= 0) {
+        alert('Local Storage is full')
     }
 }
 
@@ -1833,7 +1854,7 @@ function drawRotated(image, x, y, w, h, degrees) {
 }
 
 //draw line function
-function drawLine (x1, y1, x2, y2, width) {
+export function drawLine (x1, y1, x2, y2, width) {
     ctx.lineWidth = z/width;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -2256,3 +2277,34 @@ export function defineNodes (id, nodes, object, objects) {
     });
 }
 
+
+// const animate = async (current, newValue) => {
+//     console.log(current.y, newValue)
+//     //current.y = newValue
+//     for (current.y; current.y < newValue; current.y+=.01) {
+//         console.log(current.y)
+//         delay(500)
+//     }
+// }
+
+
+function animate(current, newValue, n) {
+    let i = 0
+    const difference = (newValue - current[n])/2
+    iterate(current, newValue)
+    function iterate (current, newValue) {
+        setTimeout(function() {   
+        if (easeInOutCirc(i/20) <= .5) {
+            current[n] += parseFloat((difference * easeInOutCirc(i/20)*.7303).toFixed(5))
+        } else {
+            current[n] += parseFloat((difference * (1 - easeInOutCirc(i/20))).toFixed(5))
+        }
+
+        i++
+        if (i < 20) {        
+            iterate(current, newValue);
+        }           
+        if (i === 20) current[n] = newValue
+        }, 4)
+    }
+  }

@@ -6,6 +6,8 @@ export const shape = (function() {
     // paths
     const ledPath = function (x1, y1, a, b, z, w, h, context) {
         context.setLineDash([]);
+        context.lineCap = 'butt';
+        context.lineJoin = 'miter';
 
         context.beginPath();
         context.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .10 * z, 0, 1 * Math.PI, true);
@@ -16,7 +18,6 @@ export const shape = (function() {
         context.fill();
 
         context.lineWidth = z/25;
-        context.lineCap = 'butt';
         context.beginPath();
         context.lineTo((-a + x1 + 0.5) * z, (b + y1 + .75) * z);
         context.lineTo((-a + x1 + 0.5) * z, (b + y1 + 1) * z);
@@ -481,14 +482,14 @@ export const shape = (function() {
 
     };
 
-    const onOffSwitchPath = function (x, y, a, b, z, w, h, context) {
+    const onOffSwitchPath = function (x, y, a, b, z, w, h, context, value) {
         context.setLineDash([]);
 
         const top = (b + y + .2) * z;
         const left = (-a + x + .3) * z;
         const width = .4*z;
         const height = .6*z;
-        const radius = .075*z;
+        const radius = .06*z;
         
         context.beginPath();
         context.moveTo(left + radius, top);
@@ -503,14 +504,41 @@ export const shape = (function() {
         context.stroke();
         context.fill()
 
-        context.lineWidth = z/25;
-        context.beginPath();
-        context.lineTo((-a + x + 0.5) * z, (b + y + .3) * z);
-        context.lineTo((-a + x + 0.5) * z, (b + y + .4) * z);
-        context.stroke();
+        // switch part of switch
+        const swTop = top + (height - height/2.4) * Math.min(.95, Math.max(.05,value.swLocation))
+        const swLeft = left + (width - width/1.1)/2
+        const swWidth = width/1.1
+        const swHeight = height/2.4
+        const swRadius = .04*z
+
+        context.lineWidth = z/95;
+
+        if (value.state) context.fillStyle = '#39DE00';
+        if (!value.state) context.fillStyle = '#ADADAD';
         
         context.beginPath();
-        context.arc((-a + x + 0.5)* z, (b + y + 0.65) * z, .06*z, 0, 2 * Math.PI);
+        context.moveTo(swLeft + swRadius, swTop);
+        context.lineTo(swLeft + swWidth - swRadius, swTop);
+        context.arcTo(swLeft + swWidth, swTop, swLeft + swWidth, swTop + swRadius, swRadius);
+        context.lineTo(swLeft + swWidth, swTop + swHeight - swRadius);
+        context.arcTo(swLeft + swWidth, swTop + swHeight, swLeft + swWidth - swRadius, swTop + swHeight, swRadius);
+        context.lineTo(swLeft + swRadius, swTop + swHeight);
+        context.arcTo(swLeft, swTop + swHeight, swLeft, swTop + swHeight - swRadius, swRadius);
+        context.lineTo(swLeft, swTop + swRadius);
+        context.arcTo(swLeft, swTop, swLeft + swRadius, swTop, swRadius);
+        //context.stroke();
+        context.fill()
+
+        // 'on' symbol
+        context.lineWidth = z/35;
+        context.beginPath();
+        context.lineTo((-a + x + 0.5) * z, (b + y + .29) * z);
+        context.lineTo((-a + x + 0.5) * z, (b + y + .39) * z);
+        context.stroke();
+        
+        // 'off' symbol
+        context.beginPath();
+        context.arc((-a + x + 0.5)* z, (b + y + 0.66) * z, .06*z, 0, 2 * Math.PI);
         context.stroke();
 
         context.lineCap = 'butt';
