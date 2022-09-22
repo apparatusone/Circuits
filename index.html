@@ -6,10 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <!-- <script defer src="scripts/astar.js"></script> -->
+    <script defer type="module" src="scripts/src/setupGlobals.js"></script>
     <script defer type="module" src="scripts/main.js"></script>
     <script defer type="module" src="scripts/menu.js"></script>
     <script defer type="module" src="scripts/parts.js"></script>
     <script defer type="module" src="scripts/hidden-canvas.js"></script>
+    <script defer type="module" src="scripts/menus/action-menu.js"></script>
     
     <style> @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;500&display=swap');</style>
         
@@ -52,12 +54,12 @@
                     <label for="menu-darkmode">Dark Mode</label>
                 </div>
                 <div id="settings-2" class="settings-menu-container">
-                    <input type="checkbox" id="menu-welcome">
-                    <label for="menu-welcome">Disable Welcome Message</label>
+                    <input type="checkbox" id="menu-show-labels">
+                    <label for="menu-show-labels">Always Show Labels</label>
                 </div>
                 <div id="settings-3" class="settings-menu-container">
-                    <input type="checkbox" id="menu-show-labels">
-                    <label for="menu-show-labels">Show Labels</label>
+                    <input type="checkbox" id="menu-welcome">
+                    <label for="menu-welcome">Disable Welcome Message</label>
                 </div>
                 <div id="settings-4" class="settings-menu-container">
                     <input type="checkbox" id="menu-smooth-zoom" checked>

@@ -4,10 +4,11 @@ import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent, Clock, C
 
 import { shape } from "./shapes.js"
 //import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, } from "../node_modules/@mdi/js/mdi.js";
-import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle, mdiCog, dltRotate, mdiChevronRight } from './shapes.js';
+//import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle, mdiCog, dltRotate, mdiChevronRight } from './shapes.js';
 import { within, drawShape, generateId, stringIncludes, minMax, slope, capitalize, getClass, color,
      radians, buildComponent, makeCustomComponent, deleteComponent, deleteWire, addMdi, pointOnLine,
      mouseClickDuration, formatBytes, delay, easeInOutCirc } from "./utilities.js";
+import { hideSettingsMenu } from "./menus/action-menu.js"
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
@@ -29,10 +30,7 @@ function resizeCanvas() {
 const rotateLeft = document.getElementById("rotate-left");
 const rotateRight = document.getElementById("rotate-right");
 const deleteButton = document.getElementById("delete");
-const settingsButton = document.getElementById("settings");
-const settingsMenu = document.getElementById("settings-menu");
-const darkModeBox = document.getElementById("menu-darkmode");
-const showLabelsBox = document.getElementById("menu-show-labels");
+
 const customComponentButton = document.getElementById("custom-component");
 const nameButton = document.getElementById("name-component");
 const saveComponentButton = document.getElementById("save-component");
@@ -41,22 +39,21 @@ const nameFormContainer = document.getElementById("name-form-container");
 
 rightClickMenu.addEventListener("click", toggleRightClickMenu, false);
 
-addMdi(mdiCog,settingsButton, color.icon, 24, 24, 'post-icon')
-addMdi(dltRotate,rotateLeft, color.rotate, 100, 35, 'rotate')
-addMdi(dltRotate,rotateRight, color.rotate, 100, 35, 'rotate')
 
-// default zoom
-window.z = 200;
-let smoothZoom = z;
+// addMdi(dltRotate,rotateLeft, color.rotate, 100, 35, 'rotate')
+// addMdi(dltRotate,rotateRight, color.rotate, 100, 35, 'rotate')
+
 
 //TODO: REFACTOR
-//global conditions
-let dragging = false;
-let drawing = false;
-let mouseDown = false;
-//let rightClick = false;
+window.globalCond = {
+    dragging: false,
+    drawing: false,
+    mouseDown: false,
+    disableToolTip: false,
+    // rightClick: false,
+};
 
-const select = {
+export const select = {
     //currently using selection tool
     action: false,
     //selected (highlighted) components and nodes
@@ -538,13 +535,13 @@ canvas.onmousemove = function(e) {
 
     //TODO: REFACTOR
     // move canvas
-    if (mouseDown && !dragging && !drawing && !select.action && !clicked.isLabel) {
+    if (globalCond.mouseDown && !globalCond.dragging && !globalCond.drawing && !select.action && !clicked.isLabel) {
         origin.x = origin.prev.x + (origin.click.x - e.x)/z;
         origin.y = origin.prev.y - (origin.click.y - e.y)/z;
     };
 
     //move label
-    if (mouseDown && clicked.isLabel === true) {
+    if (globalCond.mouseDown && clicked.isLabel === true) {
         const id = clicked.object.id
         const name = clicked.object.name
         const x = objects[id].x
@@ -563,14 +560,14 @@ canvas.onmousemove = function(e) {
     }
 
     // move node
-    if (clickedProxy.node && mouseDown && dragging && !drawing ) {
+    if (clickedProxy.node && globalCond.mouseDown && globalCond.dragging && !globalCond.drawing ) {
         clickedProxy.node.x = Math.round(mouse.canvas.x*4)/4;
         clickedProxy.node.y = Math.round(mouse.canvas.y*4)/4;
         return
     }
 
     // move object(s)
-    if (mouseDown && dragging && !drawing) {
+    if (globalCond.mouseDown && globalCond.dragging && !globalCond.drawing) {
         let highlighted = select.components
         let delta = {
             x:(origin.click.x / z) + origin.x - 0.5 - parseFloat(mouse.canvas.x),
@@ -594,12 +591,12 @@ canvas.onmousemove = function(e) {
         clickedProxy.object.y = Math.round(mouse.canvas.y*2)/2;
     }
 
-    if (drawing === true) {
+    if (globalCond.drawing === true) {
         drawingLine[0].x2 = (e.x / z - 0.5) + origin.x
         drawingLine[0].y2 = (-e.y / z + 0.5) + origin.y
     }
 
-    if (mouseDown) {
+    if (globalCond.mouseDown) {
         //detectWireIntersection()
     }
 
@@ -659,8 +656,8 @@ canvas.onmousewheel = function(e) {
             15), 300
     );
 
-    //level of current zoom shown on screen
-    zoomPercentage.innerHTML = Math.round(z) + '%';                 
+    //level of current zoom in action (top) menu
+    document.getElementById("zoomlevel").innerHTML = Math.round(z) + '%';                 
     return false;
 }
 
@@ -719,7 +716,7 @@ canvas.onmousedown = function(e) {
                  y: wire.nodes[node.index].y})
         }
         clickedProxy.object.highlight = true;
-        dragging = true;
+        globalCond.dragging = true;
     }
 
     if (clickedProxy.isNode) do {
@@ -728,11 +725,11 @@ canvas.onmousedown = function(e) {
         rotateButtons('hide')
         if (clickedProxy.node.highlight) {
             clickedProxy.node.highlight = true;
-            dragging = true;
+            globalCond.dragging = true;
             break
         }
         clearHighlight( 'nodes' )
-        drawing = true;
+        globalCond.drawing = true;
 
         //create temporary line with one ends location set to clickedProxy node
         drawingLine.push(new TempLine(clickedProxy.node));
@@ -848,7 +845,7 @@ canvas.onmousedown = function(e) {
 
     rightClickMenu.style.visibility = "hidden";
     rightClickSecondary.style.visibility = "hidden";
-    mouseDown = true;
+    globalCond.mouseDown = true;
     //start timer for mouse click duration
     timer.start = new Date().getTime() / 1000                        
     pointerEventsNone('add');
@@ -861,12 +858,12 @@ canvas.onmouseup = function(e) {
     let previousNode = clickedProxy.node;
     getObject(mouse.canvas.x, mouse.canvas.y);
 
-    mouseDown = false
+    globalCond.mouseDown = false
     //end timer for mouse click duration
     timer.end = new Date().getTime() / 1000;
 
     if (select.action) {
-        selectButton.classList.remove("action-menu-item-highlight");
+        document.getElementById("select").classList.remove("action-menu-item-highlight");
         drawingRect = [];
         select.action = false;
         return
@@ -903,12 +900,12 @@ canvas.onmouseup = function(e) {
         connectNodes(previousNode)
     } while (false);
 
-    if (drawing) drawingLine = [];
+    if (globalCond.drawing) drawingLine = [];
 
     //rightClick = false;
-    dragging = false;
-    drawing = false;
-    resetSettingsMenu()
+    globalCond.dragging = false;
+    globalCond.drawing = false;
+    hideSettingsMenu()
     if (mouseClickDuration(timer.start, timer.end, .2) && select.components.length > 0) {
         rotateButtons('unhide')
     }
@@ -1061,191 +1058,7 @@ function moveLabels(id,name) {
     }
 }
 
-// action menu buttons
-const undobutton = document.getElementById("undo");
-addMdi(mdiUndoVariant,undobutton, color.icon, 24, 24, 'post-icon')
-undobutton.onclick = function() {
-    if (wires.length === 0) return;
 
-    let wireId = wires[(wires.length - 1)].id
-
-    for (const ele in objects) {
-        for (const e of objects[ele].nodes) {
-            if (objects[ele][e].connection === wireId) {
-                objects[ele][e].connection = undefined
-            }
-        }
-    }
-    wires.pop()
-}
-
-const zoomPercentage = document.getElementById("zoomlevel");
-zoomPercentage.innerHTML = Math.round(z) + '%';
-// reset canvas to origin
-zoomPercentage.onclick = function() {
-    z = 100;
-    smoothZoom = z;
-    origin.x = canvasCenter.x;
-    origin.y = canvasCenter.y;
-    zoomPercentage.innerHTML = Math.round(z) + '%';
-};
-
-const zoomInButton = document.getElementById("zoom-in");
-addMdi(mdiPlus,zoomInButton, color.icon, 24, 24, 'post-icon')
-zoomInButton.onmousedown = function() {
-    zoomInButton.classList.add("action-menu-item-highlight");
-    mouse.screen.x = canvas.width / 2;
-    mouse.screen.y = canvas.height /2;
-    smoothZoom = Math.min(500, Math.round(smoothZoom + settings.zoomButtons));
-    zoomPercentage.innerHTML = Math.round(smoothZoom) + '%';
-};
-
-const zoomOutButton = document.getElementById("zoom-out");
-addMdi(mdiMinus,zoomOutButton, color.icon, 24, 24, 'post-icon')
-zoomOutButton.onclick = function() {
-    mouse.screen.x = canvas.width / 2;
-    mouse.screen.y = canvas.height /2;
-    smoothZoom = Math.max(10, Math.round(smoothZoom - settings.zoomButtons));
-    zoomPercentage.innerHTML = smoothZoom + '%';
-};
-
-const selectButton = document.getElementById("select");
-addMdi(mdiSelection,selectButton, color.icon, 24, 24, 'post-icon')
-selectButton.onclick = function() {
-    if (select.action) {
-        select.action = false;
-        selectButton.classList.remove("action-menu-item-highlight")
-    } else {
-        select.action = true;
-        selectButton.classList.add("action-menu-item-highlight")
-    }
-}
-
-const saveButton = document.getElementById("save");
-addMdi(mdiContentSave,saveButton, color.icon, 24, 24, 'post-icon')
-saveButton.onclick = function() {
-    window.localStorage.clear();
-
-    for (let [key, object] of Object.entries(objects)) {
-
-        if (object.constructor === CustomComponent) {
-            storeCustomComponent(object)
-            continue
-        }
-
-        if (object.constructor === Clock) {
-            console.log('reject clock')
-            continue
-        }
-
-        if (object.constructor === ConstantHigh) {
-            console.log('reject constant')
-            continue
-        }
-
-        storeObject(object, false)
-    }
-
-    for (let [key, wire] of Object.entries(wires)) {
-        storeWire(wire, false)
-    }
-
-    // if no objects set generator to 1
-    if (Object.keys(objects).length === 0) {
-        window.localStorage.setItem('gen', 1)
-        return
-    }
-
-    // get largest id
-    const keysObjects = Object.keys(objects);
-    const keysWires = Object.keys(wires);
-    const maxId = Math.max(...keysObjects, ...keysWires)
-    // store value for id generator
-    window.localStorage.setItem('gen', maxId + 1)
-
-    // store settings
-    window.localStorage.setItem('darkMode', settings.darkMode)
-    window.localStorage.setItem('showLabels', settings.showLabels)
-
-    function storeWire(wire) {
-        window.localStorage.setItem(wire.id, JSON.stringify(
-            { 
-                'type': 'wire',
-                'a': {id: wire.node.a.id, name: wire.node.a.name},
-                'b': {id: wire.node.b.id, name: wire.node.b.name},
-                'nodes': wire.nodes
-            }, replacerConnectionType
-        ));
-    }
-
-    function storeObject(object) {
-        window.localStorage.setItem(object.id, JSON.stringify(
-            { 
-                'type': 'object',
-                'component': object,
-            }, replacerImg
-        ));
-    }
-
-    function storeCustomComponent(component) {
-
-        window.localStorage.setItem(component.id, JSON.stringify(
-            { 
-                'type': 'customcomponent',
-                'component': component,
-                'list': Object.keys(component.objects)
-            }, replacer
-        ));
-
-        for (const [id, object] of Object.entries(component.objects)) {
-            if (object.constructor === CustomComponent) {
-                storeCustomComponent(object)
-                continue
-            }
-            storeObject(object)
-        }
-
-        for (const [id, wire] of Object.entries(component.wires)) {
-            storeWire(wire)
-        }
-    }
-
-    function replacerImg(key, value) {
-        // Filtering out properties
-        if (key === 'image' || key === 'img') {
-            return;
-        }
-        return value;
-    }
-    
-    function replacer(key, value) {
-        // Filtering out properties
-        if (key === 'objects' || key === 'connectionType') {
-            return;
-        }
-        return value;
-    }
-
-    function replacerConnectionType(key, value) {
-        // Filtering out properties
-        if (key === 'connectionType') {
-            for (const [key, wire] of Object.entries(value)) {
-                if (wire.constructor === Wire) return 'wires'
-            }
-            return;
-        }
-        return value;
-    }
-
-    const limit = 1024 * 1024 * 5; // 5 MB
-    const used = decodeURI(encodeURIComponent(JSON.stringify(localStorage))).length
-    const remSpace = limit - used;
-    console.log(`${formatBytes(used)} used of Local Storage. ${formatBytes(remSpace)} remaining`);
-
-    if (remSpace <= 0) {
-        alert('Local Storage is full')
-    }
-}
 
 
 
@@ -1359,96 +1172,16 @@ deleteButton.onclick = function() {
 //     }
 // })
 
-// auto generate "settings-menu-container"
-const settings1 = document.getElementById("settings-1");
-const settings2 = document.getElementById("settings-2");
-const settings3 = document.getElementById("settings-3");
-const settings4 = document.getElementById("settings-4");
-const settingsMenuArrow = document.getElementById("settings-menu-arrow");
 
-const settingsMenuObserver = new ResizeObserver(entries => {
-    // this will get called whenever div dimension changes
-     entries.forEach(entry => {
-       if (entry.contentRect.height > 5) settings1.style.visibility = "visible";
-       if (entry.contentRect.height > 5) settings1.style.opacity = "1";
-       if (entry.contentRect.height > 25) settings2.style.visibility = "visible";
-       if (entry.contentRect.height > 25) settings2.style.opacity = "1";
-       if (entry.contentRect.height > 45) settings3.style.visibility = "visible";
-       if (entry.contentRect.height > 45) settings3.style.opacity = "1";
-       if (entry.contentRect.height > 65) settings4.style.visibility = "visible";
-       if (entry.contentRect.height > 65) settings4.style.opacity = "1";
-     });
-   });
 
-let disableToolTip
-settingsButton.onclick = function() {
-    disableToolTip = true
-    tooltip.style.display = "none";
-    settingsButton.classList.add("action-menu-item-highlight-edge");
 
-    let top = getOffset(settingsButton).top;
-    settingsMenuObserver.observe(settingsMenu);
-    settingsMenu.style.visibility = "visible";
-    settingsMenuArrow.style.visibility = "visible";
 
-    settingsMenu.style.width = '200px'
-    settingsMenu.style.height = '75px'
 
-    settingsMenu.style.top = (top+44)+"px";
 
-    setTimeout(() => {
-        settings.open = true
-        settingsMenuObserver.disconnect()
-      }, "500")
-}
 
-darkModeBox.addEventListener('change', function() {
-  if (this.checked) {
-    settings.darkMode = true;
-    color.update()
-  } else {
-    settings.darkMode = false;
-    color.update()
-  }
-});
 
-showLabelsBox.addEventListener('change', function() {
-    if (this.checked) {
-      settings.showLabels = true;
-    } else {
-      settings.showLabels = false;
-    }
-  });
 
-const smoothZoomBox = document.getElementById("menu-smooth-zoom");
-smoothZoomBox.addEventListener('change', function() {
-  if (this.checked) {
-    settings.smoothZoom = true;
-  } else {
-    settings.smoothZoom = false;
-  }
-});
 
-function resetSettingsMenu() {
-    if (!settings.open) return
-
-    settingsMenu.style.visibility = "hidden";
-    settingsMenuArrow.style.visibility = "hidden";
-    settings1.style.visibility = "hidden";
-    settings2.style.visibility = "hidden";
-    settings3.style.visibility = "hidden";
-    settings4.style.visibility = "hidden";
-
-    settingsMenu.style.width = '41px'
-    settingsMenu.style.height = '0px'
-
-    settings1.style.opacity = "0";
-    settings2.style.opacity = "0";
-    settings3.style.opacity = "0";
-    settings4.style.opacity = "0";
-    disableToolTip = false
-    settings.open = false
-}
 
 
 // FIXME:
@@ -1701,12 +1434,12 @@ function loadSave() {
 
         if (id === 'darkMode') {
             settings.darkMode = object
-            darkModeBox.checked = object
+            document.getElementById("menu-darkmode").checked = object
         }
 
         if (id === 'showLabels') {
             settings.showLabels = object
-            showLabelsBox.checked = object
+            document.getElementById("menu-show-labels").checked = object
         }
     }
 
@@ -2086,82 +1819,20 @@ function handleForm(event) { event.preventDefault();
 } 
 window.handleForm = handleForm
 
-const tooltip = document.getElementById("tooltip")
-const toolText = document.getElementById("tooltip-text")
-
-const buttons = document.querySelectorAll('.btn')
 
 
-//tooltip
-buttons.forEach(function(currentBtn){
-  currentBtn.addEventListener('mouseover', function() {
-    if (disableToolTip) return
-    let left = getOffset(currentBtn).left;
-    let top = getOffset(currentBtn).top;
-    tooltip.style.width = "fit-content"
-    
-    tooltip.style.display = "flex";
-    //tooltip.ontransitionend = () => { toolText.textContent = currentBtn.name };
-    toolText.textContent = currentBtn.name
-    let width = getOffset(currentBtn).width;
-    let length = toolText.offsetWidth + 20
 
-    tooltip.style.left = (left - length/2 + width/2 )+"px";
-    //settingsMenu.style.left = (left - length/2 + width/2 )+"px";
-    tooltip.style.top = (top+50)+"px";
-    });
-})
 
-function getOffset(el) {
-    const rect = el.getBoundingClientRect();
 
-    return {
-      left: rect.left + window.scrollX,
-      top: rect.top + window.scrollY,
-      width: rect.width,
-      height: rect.height
-    };
-  }
 
-buttons.forEach(function(currentBtn){
-currentBtn.addEventListener('mouseout', function() {
-        tooltip.style.display = "none";
-        if (currentBtn.name === 'Select') return
-        currentBtn.classList.remove("action-menu-item-highlight");
-        currentBtn.classList.remove("action-menu-item-highlight-right");
-        currentBtn.classList.remove("action-menu-item-highlight-left");
-    });
-})
 
-buttons.forEach(function(currentBtn){
-    currentBtn.addEventListener('mousedown', function() {
-            if (currentBtn.name === 'Settings') {
-                currentBtn.classList.add("action-menu-item-highlight-right");
-                return
-            }
-            if (currentBtn.name === 'Undo') {
-                currentBtn.classList.add("action-menu-item-highlight-left");
-                return
-            }
-            currentBtn.classList.add("action-menu-item-highlight");
-        });
-    })
 
-buttons.forEach(function(currentBtn){
-    currentBtn.addEventListener('mouseup', function() {
-            if (currentBtn.name === 'Select') return
-            currentBtn.classList.remove("action-menu-item-highlight");
-            currentBtn.classList.remove("action-menu-item-highlight-right");
-            currentBtn.classList.remove("action-menu-item-highlight-left");
-        });
-    })
 
-const welcomeClose = document.getElementById("welcome-close");
-addMdi(mdiCloseCircle,welcomeClose, 'white', 24, 24)
-const welcome = document.getElementById("welcome");
-welcomeClose.onclick = function() {
-    welcome.style.display = "none";
-}
+
+
+
+
+
 
 //right click
 document.addEventListener('contextmenu', function(e) {
@@ -2173,7 +1844,7 @@ document.addEventListener('contextmenu', function(e) {
 
 //secondary menu
 const chevron = document.getElementById("chevron");
-addMdi(mdiChevronRight, chevron, 'white', 20, 15, 'chevron')
+//addMdi(icons.mdiChevronRight, chevron, 'white', 20, 15, 'chevron')
 
 const options = document.getElementById("options");
 const rightClickSecondary = document.getElementById("right-click-secondary");
@@ -2276,16 +1947,6 @@ export function defineNodes (id, nodes, object, objects) {
         writable: true
     });
 }
-
-
-// const animate = async (current, newValue) => {
-//     console.log(current.y, newValue)
-//     //current.y = newValue
-//     for (current.y; current.y < newValue; current.y+=.01) {
-//         console.log(current.y)
-//         delay(500)
-//     }
-// }
 
 
 function animate(current, newValue, n) {

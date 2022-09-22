@@ -237,19 +237,31 @@ class OnOffSwitch extends Generic{
         this.output.setter = this.state;
     }
 
+    timeoutID = undefined
     animate() {
         const self = this
         let i = 0
+
+        // if button is clicked before previous animation ends
+        if (self.timeoutID !== undefined) {
+            clearTimeout(self.timeoutID)
+            self.swLocation = self.state
+        }
+
         iterate()
+        //animate state change
         function iterate () {
-            setTimeout(function() {
+            self.timeoutID = setTimeout(function() {
                 if (self.state) self.swLocation = 1 - easeOutBounce(i/40)
                 if (!self.state) self.swLocation = easeOutBounce(i/40)
             i++
             if (i < 40) {        
                 iterate();
             }           
-            if (i === 40) self.swLocation = !self.state
+            if (i === 40) {
+                self.swLocation = !self.state
+                self.timeoutID = undefined
+            }
             }, 6)          
         }
     }
