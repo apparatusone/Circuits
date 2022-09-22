@@ -729,5 +729,4 @@ export const icons = (function() {
         dltRotate,
         mdiChevronRight,
     }
-
 })();

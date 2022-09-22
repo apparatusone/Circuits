@@ -9,6 +9,7 @@ import { within, drawShape, generateId, stringIncludes, minMax, slope, capitaliz
      radians, buildComponent, makeCustomComponent, deleteComponent, deleteWire, addMdi, pointOnLine,
      mouseClickDuration, formatBytes, delay, easeInOutCirc } from "./utilities.js";
 import { hideSettingsMenu } from "./menus/action-menu.js"
+import { hideRightClickMenu } from "./menus/context-menu.js"
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
@@ -34,10 +35,10 @@ const deleteButton = document.getElementById("delete");
 const customComponentButton = document.getElementById("custom-component");
 const nameButton = document.getElementById("name-component");
 const saveComponentButton = document.getElementById("save-component");
-const rightClickMenu = document.getElementById("right-click");
+
 const nameFormContainer = document.getElementById("name-form-container");
 
-rightClickMenu.addEventListener("click", toggleRightClickMenu, false);
+
 
 
 // addMdi(dltRotate,rotateLeft, color.rotate, 100, 35, 'rotate')
@@ -843,8 +844,7 @@ canvas.onmousedown = function(e) {
         rotateButtons('hide')
     }
 
-    rightClickMenu.style.visibility = "hidden";
-    rightClickSecondary.style.visibility = "hidden";
+    hideRightClickMenu()
     globalCond.mouseDown = true;
     //start timer for mouse click duration
     timer.start = new Date().getTime() / 1000                        
@@ -1057,10 +1057,6 @@ function moveLabels(id,name) {
         }
     }
 }
-
-
-
-
 
 const rotateButtons = (x) => {
     if (x === 'unhide') {
@@ -1559,13 +1555,10 @@ customComponentButton.onclick = function() {
     objects[id] = cc
 }
 
-// TODO: remove
-function toggleRightClickMenu() {
-    rightClickMenu.style.visibility = 'hidden';
-    rightClickSecondary.style.visibility = "hidden";
-}
+
 
 const pointerEventsNone = (x) => {
+    return
     let elements = [
         zoomInButton,
         zoomOutButton,
@@ -1817,6 +1810,7 @@ function handleForm(event) { event.preventDefault();
 
     document.getElementById("fname").value = ''
 } 
+
 window.handleForm = handleForm
 
 
@@ -1834,74 +1828,21 @@ window.handleForm = handleForm
 
 
 
-//right click
-document.addEventListener('contextmenu', function(e) {
-    rightClickMenu.style.visibility = "visible";
-    rightClickMenu.style.left = (e.pageX)+"px";
-    rightClickMenu.style.top = (e.pageY - 5)+"px";
-    e.preventDefault();
-}, false);
 
-//secondary menu
-const chevron = document.getElementById("chevron");
-//addMdi(icons.mdiChevronRight, chevron, 'white', 20, 15, 'chevron')
 
-const options = document.getElementById("options");
-const rightClickSecondary = document.getElementById("right-click-secondary");
-let hideTimer;
-let rightClickSecondaryExit = false;
-rightClickSecondary.addEventListener("click", toggleRightClickMenu, false);
-options.onmouseover = function() {
-    clearTimeout(hideTimer)
-    rightClickSecondary.style.visibility = "visible";
 
-    const left = options.getBoundingClientRect().left
-    const top = options.getBoundingClientRect().top
-    
-    rightClickSecondary.style.left = (left + 160)+"px";
-    rightClickSecondary.style.top = (top)+"px";
-};
 
-options.onmouseout = function() {
-    //get cursor trajectory
-    const array = []
-    let delta = {x: 0, y: 0}
-    function set(e) {
-        let point = {x: e.screenX, y: e.screenY}
-        array.push(point)
-        delta.x = e.movementX
-        delta.y = e.movementY  
-    }
 
-    document.addEventListener('mousemove', set, true);
+// const undoContext = document.getElementById("undo-context");
+// undoContext.onmouseover = function() {
+//     if (rightClickSecondaryExit) rightClickSecondary.style.visibility = "hidden";
+//     rightClickSecondaryExit = false
+//     hideTimer = setTimeout(function() {
+//         rightClickSecondary.style.visibility = "hidden";
+//     }, 500)
+// }
 
-    setTimeout(function() {
-        document.removeEventListener('mousemove', set, true)
-        const s = slope(array.pop(), array.shift())
-        if (s < -.15 || s > 1.3) rightClickSecondary.style.visibility = "hidden";
-        if (delta.y < 2 && delta.x < 1) rightClickSecondary.style.visibility = "hidden";
-    }, 70)
 
-};
-
-const undoContext = document.getElementById("undo-context");
-undoContext.onmouseover = function() {
-    if (rightClickSecondaryExit) rightClickSecondary.style.visibility = "hidden";
-    rightClickSecondaryExit = false
-    hideTimer = setTimeout(function() {
-        rightClickSecondary.style.visibility = "hidden";
-    }, 500)
-}
-
-rightClickSecondary.onmouseover= function() {
-    //clear hide timer
-    clearTimeout(hideTimer)
-}
-
-rightClickSecondary.onmouseout= function() {
-    //exit event
-    rightClickSecondaryExit = true;
-}
 
 const setClock = document.getElementById("set-clock");
 setClock.onclick = function() {

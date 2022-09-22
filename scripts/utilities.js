@@ -771,4 +771,15 @@ export function easeOutBounce(x) {
 export function easeInExpo(x) {
     return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
 }
+
+// get div location
+export function getOffset(el) {
+    const rect = el.getBoundingClientRect();
+    return {
+        left: rect.left + window.scrollX,
+        top: rect.top + window.scrollY,
+        width: rect.width,
+        height: rect.height
+    };
+}
     

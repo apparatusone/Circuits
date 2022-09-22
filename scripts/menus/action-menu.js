@@ -2,7 +2,7 @@
 
 import { select } from "../main.js"
 import { Wire, CustomComponent, Clock, ConstantHigh } from "../parts.js"
-import { addMdi, color, formatBytes } from "../utilities.js"
+import { addMdi, color, formatBytes, getOffset } from "../utilities.js"
 import { icons } from '../shapes.js'
 
 // action menu buttons
@@ -215,7 +215,7 @@ settingsButton.onclick = function() {
     settingsMenuArrow.style.visibility = "visible";
 
     settingsMenu.style.width = '200px'
-    settingsMenu.style.height = '75px'
+    settingsMenu.style.height = `${14 + 16*settingsArray.length}px`
 
     settingsMenu.style.top = (top+44)+"px";
 
@@ -359,19 +359,3 @@ smoothZoomBox.addEventListener('change', function() {
   }
 });
 
-
-
-
-
-
-
-
-function getOffset(el) {
-    const rect = el.getBoundingClientRect();
-    return {
-        left: rect.left + window.scrollX,
-        top: rect.top + window.scrollY,
-        width: rect.width,
-        height: rect.height
-    };
-}
