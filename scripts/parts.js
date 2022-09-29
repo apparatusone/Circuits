@@ -129,8 +129,11 @@ class Generic {
 
     get state () {
         if (this.temp !== this.logic()) {
-            let state = this.logic();
+            const state = this.logic();
+            if (state === undefined) console.log('why')
 
+            console.log(state);
+            
             this.temp = state;
             this.output.setter = state
             return state
@@ -332,6 +335,22 @@ class AndGate extends Generic {
         super(x,y,r,id);
     }
 
+
+    temp1 = 0
+    temp2 = 0
+
+    get state () {
+        if (this.temp1 === this.input1.state && this.temp2 === this.input2.state) return
+
+        const state = this.logic();
+        if (state === undefined) console.log('why')
+
+        console.log(state);
+        this.temp1 = this.input1.state
+        this.temp2 = this.input2.state
+        this.output.setter = state
+    }
+
     logic() {
         if (this.input1.state && this.input2.state) {
             return 1;
@@ -346,6 +365,20 @@ class AndGate extends Generic {
 class NandGate extends Generic {
     constructor(x,y,r,id) {
         super(x,y,r,id);
+    }
+
+    temp1 = 0
+    temp2 = 0
+
+    get state () {
+        if (this.temp1 === this.input1.state && this.temp2 === this.input2.state) return
+
+        const state = this.logic();
+        if (state === undefined) console.log('why')
+
+        this.temp1 = this.input1.state
+        this.temp2 = this.input2.state
+        this.output.setter = state
     }
 
     logic() {
@@ -514,7 +547,7 @@ const make = (function() {
         return id
     }
 
-    const makeClock = function  (x,y,r, frequency = 1000,id) {
+    const makeClock = function  (x,y,r, frequency = 100,id) {
         id = id || generateId()
         let nodes = ['output']
         objects[id] = new Clock(x, y, r, id, frequency)

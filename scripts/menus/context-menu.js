@@ -1,7 +1,9 @@
 // right click menu
 
-import { addMdi, slope, getOffset } from "../utilities.js"
+import { clickedProxy, select } from "../main.js"
+import { addMdi, slope, getOffset, clearHighlight, generateId, makeCustomComponent } from "../utilities.js"
 import { icons } from "../shapes.js"
+import { nameFormX } from "../forms.js"
 
 
 const rightClickMenu = document.getElementById("right-click");
@@ -32,13 +34,72 @@ document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
 }, false);
 
-export function hideRightClickMenu() {
-    rightClickMenu.style.visibility = 'hidden';
-    rightClickSecondary.style.visibility = "hidden";
+// rename component
+const nameButton = document.getElementById("name-component");
+nameButton.onclick = function() {
+    if (!clickedProxy.object) return
+    nameComponent()
 }
 
+function nameComponent() {
+    if (select.components.length === 0) {
+        return
+    }
 
+    if (select.components.length === 1) {
+        clearHighlight( 'objects' )
+        clickedProxy.object.highlight = true;
+    }
 
+    nameFormX()
+    //document.getElementById("fname").focus()
+
+    //document.getElementById('name-form-type').textContent = clickedProxy.object.classname
+    
+    // if (clickedProxy.object.name !== "undefined") {
+    //     document.getElementById('name-form-label').textContent = `Name: ${clickedProxy.object.name}`
+    // } else {
+    //     document.getElementById('name-form-label').textContent = ''
+    // }
+}
+
+// create custom component from selection
+const customComponentButton = document.getElementById("custom-component");
+customComponentButton.onclick = function() {
+    let parts = select.components
+    const id = generateId()
+    let cc = makeCustomComponent(parts, id)
+    
+    if (cc === undefined) return
+    
+    objects[id] = cc
+}
+
+// save custom component to drag and drop menu
+const saveComponentButton = document.getElementById("save-component");
+saveComponentButton.onclick = function() {
+    let object = clickedProxy.object
+    if (select.components.length > 1) {
+        alert("can only save 1 component")
+        return
+    }
+
+    if (object.constructor !== CustomComponent) {
+        alert("object is not a Custom Component")
+        return
+    }
+
+    let obj = convertSelectiontoJson(true)
+}
+
+// const undoContext = document.getElementById("undo-context");
+// undoContext.onmouseover = function() {
+//     if (rightClickSecondaryExit) rightClickSecondary.style.visibility = "hidden";
+//     rightClickSecondaryExit = false
+//     hideTimer = setTimeout(function() {
+//         rightClickSecondary.style.visibility = "hidden";
+//     }, 500)
+// }
 
 
 
@@ -90,11 +151,16 @@ options.onmouseout = function() {
 
     document.addEventListener('mousemove', set, true);
 
+    // if cursor is moving to secondary menu
     setTimeout(function() {
         document.removeEventListener('mousemove', set, true)
         const s = slope(array.pop(), array.shift())
         if (s < -.15 || s > 1.3) rightClickSecondary.style.visibility = "hidden";
         if (delta.y < 2 && delta.x < 1) rightClickSecondary.style.visibility = "hidden";
     }, 70)
-
 };
+
+export function hideRightClickMenu() {
+    rightClickMenu.style.visibility = 'hidden';
+    rightClickSecondary.style.visibility = "hidden";
+}

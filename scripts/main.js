@@ -1,13 +1,11 @@
 'use strict';
 
 import { Wire, TempLine, Node, Led, OnOffSwitch, make, CustomComponent, Clock, ConstantHigh } from "./parts.js"
-
-import { shape } from "./shapes.js"
+import { shape, icons } from "./shapes.js"
 //import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, } from "../node_modules/@mdi/js/mdi.js";
-//import { mdiPlus, mdiMinus, mdiUndoVariant, mdiSelection, mdiContentSave, mdiCloseCircle, mdiCog, dltRotate, mdiChevronRight } from './shapes.js';
 import { within, drawShape, generateId, stringIncludes, minMax, slope, capitalize, getClass, color,
      radians, buildComponent, makeCustomComponent, deleteComponent, deleteWire, addMdi, pointOnLine,
-     mouseClickDuration, formatBytes, delay, easeInOutCirc } from "./utilities.js";
+     mouseClickDuration, formatBytes, delay, easeInOutCirc, clearHighlight } from "./utilities.js";
 import { hideSettingsMenu } from "./menus/action-menu.js"
 import { hideRightClickMenu } from "./menus/context-menu.js"
 
@@ -28,22 +26,6 @@ function resizeCanvas() {
     canvas.height = Math.floor(window.innerHeight * scale);
 }
 
-const rotateLeft = document.getElementById("rotate-left");
-const rotateRight = document.getElementById("rotate-right");
-const deleteButton = document.getElementById("delete");
-
-const customComponentButton = document.getElementById("custom-component");
-const nameButton = document.getElementById("name-component");
-const saveComponentButton = document.getElementById("save-component");
-
-const nameFormContainer = document.getElementById("name-form-container");
-
-
-
-
-// addMdi(dltRotate,rotateLeft, color.rotate, 100, 35, 'rotate')
-// addMdi(dltRotate,rotateRight, color.rotate, 100, 35, 'rotate')
-
 
 //TODO: REFACTOR
 window.globalCond = {
@@ -53,6 +35,12 @@ window.globalCond = {
     disableToolTip: false,
     // rightClick: false,
 };
+
+
+window.testState = {
+    isOpen: false,
+    toggle: function() { this.isOpen = !this.isOpen; return}
+}
 
 export const select = {
     //currently using selection tool
@@ -74,7 +62,7 @@ const clicked = {
 };
 
 // update selection on change
-const clickedProxy = new Proxy(clicked, {
+export const clickedProxy = new Proxy(clicked, {
     set: function (target, key, value) {
         target[key] = value;
         selectedComponents()
@@ -130,9 +118,20 @@ let drawingLine = []         // line shown when drawing connection
 let drawingRect = []
 
 //load from localstorage
-loadSave()
+loadSave();
 //set gui colors
-color.update()
+color.update();
+
+
+//main clock function
+(function loop() {
+    setTimeout(() => {
+       //console.log('tick')
+ 
+       loop();
+   }, 1000);
+ })();
+
 
 if (localStorage.length < 2) tutorial()
 
@@ -314,18 +313,15 @@ function draw() {
     if (select.components.length < 2 && clickedProxy.isComponent ) {
         locateRotateButtons(clickedProxy.object);
     }
-    if (z < 55) {
-        rotateButtons('hide')
-    }
-
+    if (z < 55) rotateButtons('hide');
 
     //FIXME:
     drawNodeHighlight()
 
+    //TODO: REFACTOR
     // draw custom component
     for (let [key, value] of Object.entries(objects)) {
         if (value.constructor === CustomComponent) {
-
             // Name of Component
             let fontSize = z/10
             ctx.fillStyle = 'white'
@@ -528,8 +524,6 @@ function draw() {
 
 draw();
 
-
-
 canvas.onmousemove = function(e) {
     mouse.canvas.x = Number.parseFloat((e.x / z + origin.x) - .5).toFixed(2);
     mouse.canvas.y = Number.parseFloat((-e.y / z + origin.y) + .5).toFixed(2);
@@ -672,23 +666,27 @@ canvas.onmousedown = function(e) {
 
     getObject(mouse.canvas.x,mouse.canvas.y)
 
-    // detect right click
+    // if right-click
     if (e.button === 2) {
         //rightClick = true;
 
         if (select.components.length > 1) {
+
+            console.log('right click return');
+            
             return
         }
 
         if (clickedProxy.isComponent) {
             clearHighlight( 'objects' )
             clickedProxy.object.highlight = true;
+            selectedComponents()
             
             if (clickedProxy.object.constructor === Clock) {
-                setClock.style.display = "flex";
+                //setClock.style.display = "flex";
                 return
             }
-            setClock.style.display = "none";
+            //setClock.style.display = "none";
             return
         }
 
@@ -838,8 +836,8 @@ canvas.onmousedown = function(e) {
     }
 
     if (!clickedProxy.isNode && !clickedProxy.isComponent && !clicked.isLabel) {
-        nameFormContainer.style.display = "none";
-        document.getElementById("fname").value = ''
+        //nameFormContainer.style.display = "none";
+        //document.getElementById("fname").value = ''
         clearHighlight( 'all' )
         rotateButtons('hide')
     }
@@ -906,9 +904,7 @@ canvas.onmouseup = function(e) {
     globalCond.dragging = false;
     globalCond.drawing = false;
     hideSettingsMenu()
-    if (mouseClickDuration(timer.start, timer.end, .2) && select.components.length > 0) {
-        rotateButtons('unhide')
-    }
+    if (mouseClickDuration(timer.start, timer.end, .2) && select.components.length > 0) rotateButtons('unhide');
     pointerEventsNone('remove');
     canvas.style.cursor = "crosshair";
 }
@@ -941,30 +937,6 @@ function connectNodes(pNode) {
     pNode.wireId = wire.id;
     clickedProxy.node.wireId = wire.id;
     wires[wire.id].state
-}
-
-function clearHighlight( type ) {
-
-    if (type === 'wires' || type === 'all') {
-        for (let [key, value] of Object.entries(wires)) {
-            value.highlight = false
-        }
-        if (type === 'wires') return
-    }
-
-    if (type === 'objects' || type === 'all') {
-        for (let [key, value] of Object.entries(objects)) {
-            value.highlight = false
-        }
-    }
-
-    if (type === 'nodes' || type === 'all') {
-        for (let [key, wire] of Object.entries(wires)) {
-            for (const node of wire.nodes) {
-                node.highlight = false;
-            }
-        }
-    }
 }
 
 //returns component and node 
@@ -1031,7 +1003,6 @@ function getObject(x, y) {
     return false
 }
 
-
 let offsetRange = {}
 function moveLabels(id,name) {
     for (const [key, {x,y}] of Object.entries(offsetRange)) {
@@ -1088,6 +1059,8 @@ function locateRotateButtons(object) {
     rotateRight.style.top = `${y - 17}px`;
 }
 
+const rotateRight = document.getElementById("rotate-right");
+addMdi(icons.dltRotate,rotateRight, color.rotate, 100, 35, 'rotate')
 rotateRight.onclick = function() {
     const angle = [270, 180, 90, 0];
     const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
@@ -1096,6 +1069,8 @@ rotateRight.onclick = function() {
     objects[id].rotateNodes('left');
 }
 
+const rotateLeft = document.getElementById("rotate-left");
+addMdi(icons.dltRotate,rotateLeft, color.rotate, 100, 35, 'rotate')
 rotateLeft.onclick = function() {
     const angle = [0, 90, 180, 270];
     const next = (current) => angle[(angle.indexOf(current) + 1) % 4];
@@ -1104,6 +1079,7 @@ rotateLeft.onclick = function() {
     objects[id].rotateNodes('right');
 }
 
+const deleteButton = document.getElementById("delete");
 deleteButton.onclick = function() {
     if (clickedProxy.wire) {
         deleteWire(clickedProxy.wire.id, true)
@@ -1169,43 +1145,27 @@ deleteButton.onclick = function() {
 // })
 
 
-
-
-
-
-
-
-
-
-
-
-
 // FIXME:
 //boolean to reset id's from 1
 function convertSelectiontoJson(reset) {
-    let custom = {}
-    selectedComponents()
-    let parts = select.components
-    let partIdArray = []
-
-    for (const part of parts) {
-        partIdArray.push(parseInt(part.id))
-    }
+    let custom = {};
+    selectedComponents();
+    const parts = select.components;
+    let partIdArray = parts.map(part => parseInt(part.id));
 
     for (const part of parts) {
         if (part.constructor === CustomComponent) {
-            storeCustomComponent(part)
+            storeCustomComponent(part);
             continue
         }
-        storeObject(part)
+        storeObject(part);
     }
 
     for (let [id, wire] of Object.entries(wires)) {
         if (wire.highlight) {
             //ignore partially connected wires 
-            if (!partIdArray.includes(parseInt(wire.node.a.id))) continue
-            if (!partIdArray.includes(parseInt(wire.node.b.id))) continue
-
+            if (!partIdArray.includes(parseInt(wire.node.a.id))) continue;
+            if (!partIdArray.includes(parseInt(wire.node.b.id))) continue;
             storeWire(wire)
         }
     }
@@ -1237,7 +1197,6 @@ function convertSelectiontoJson(reset) {
             if (b === null) b = []
             if (c === null) c = []
     
-            
             idArray = [...idArray, ...a]
             idArray = [...idArray, ...b]
             idArray = [...idArray, ...c]
@@ -1293,15 +1252,11 @@ function convertSelectiontoJson(reset) {
             storeObject(object)
         }
 
-        for (const [id, wire] of Object.entries(component.wires)) {
-            storeWire(wire)
-        }
+        // store wire
+        Object.values(component.wires).forEach( wire => storeWire(wire) )
 
         // get wire id's
-        let wires = []
-        for (const [id, wire] of Object.entries(component.wires)) {
-            wires.push(id)
-        }
+        const wires = Object.keys(component.wires).map( id => id);
 
         custom[component.id] = JSON.stringify(
             { 
@@ -1335,23 +1290,19 @@ function convertSelectiontoJson(reset) {
     
     function replacer(key, value) {
         // Filtering out properties
-        if (key === 'objects' || key === 'connectionType') {
-            return;
-        }
-        if (key === 'connected') {
-            return false
-        }
-        if (key === 'wires' && !Array.isArray(value)) {
-            return
-        }
+        if (key === 'objects' || key === 'connectionType') return;
+
+        if (key === 'connected') return false;
+
+        if (key === 'wires' && !Array.isArray(value)) return;
+
         return value;
     }
 
     function replacerImg(key, value) {
         // Filtering out properties
-        if (key === 'image' || key === 'img') {
-            return;
-        }
+        if (key === 'image' || key === 'img') return;
+
         return value;
     }
 
@@ -1366,21 +1317,6 @@ function convertSelectiontoJson(reset) {
         return value;
     }
     return custom
-}
-
-saveComponentButton.onclick = function() {
-    let object = clickedProxy.object
-    if (select.components.length > 1) {
-        alert("can only save 1 component")
-        return
-    }
-
-    if (object.constructor !== CustomComponent) {
-        alert("object is not a Custom Component")
-        return
-    }
-
-    let obj = convertSelectiontoJson(true)
 }
 
 const cutButton = document.getElementById("cut");
@@ -1408,7 +1344,7 @@ pasteButton.onclick = function() {
     buildComponent(copy)
 }
 
-
+// FIXME: states are lost on save load
 function loadSave() {
     if (window.localStorage.length < 1) return
 
@@ -1428,6 +1364,7 @@ function loadSave() {
             delete parsed[id]
         }
 
+        // update setttings checkboxes
         if (id === 'darkMode') {
             settings.darkMode = object
             document.getElementById("menu-darkmode").checked = object
@@ -1482,7 +1419,7 @@ function loadSave() {
                 node.b = wireNode
             }
 
-            let wire = new Wire( { a: node.a, b: node.b } );
+            const wire = new Wire( { a: node.a, b: node.b } );
 
             wires[id] = wire
             wires[id].id = id
@@ -1545,18 +1482,6 @@ function loadSave() {
     // propogate state of all wires
 }
 
-customComponentButton.onclick = function() {
-    let parts = select.components
-    const id = generateId()
-    let cc = makeCustomComponent(parts, id)
-    
-    if (cc === undefined) return
-    
-    objects[id] = cc
-}
-
-
-
 const pointerEventsNone = (x) => {
     return
     let elements = [
@@ -1592,8 +1517,8 @@ function drawNodes() {
     // get nodes on objects
     for (const ele in objects) {
         for (const e of objects[ele].nodes) {
-            let a = objects[ele][e].x
-            let b = objects[ele][e].y
+            const a = objects[ele][e].x
+            const b = objects[ele][e].y
             ctx.lineWidth = z/30;
             drawShape.circle(a , b, 5.5, 'black', true, 'white', true, ctx)
             if (objects[ele][e].connected === true) {
@@ -1608,8 +1533,8 @@ function drawNodes() {
     //get nodes on wires
     for (let [key, wire] of Object.entries(wires)) {
         for (const node of wire.nodes) {
-            let a = node.x
-            let b = node.y
+            const a = node.x
+            const b = node.y
             ctx.lineWidth = z/30;
             drawShape.circle(a , b, 5.5, 'black', true, 'white', true, ctx)
 
@@ -1663,32 +1588,23 @@ function drawRotatedImg(value) {
 
     let a = z/2 + value.x*z
     let b = z/2 + -value.y*z
-    let xOrigin;
-    let yOrigin;
+    let o = { x: origin.x, y: origin.y}
 
-    // TODO: REFACTOR
-    if (value.r === 0) {
-        xOrigin = origin.x;
-        yOrigin = origin.y;
-    }
     if (value.r === 90) {
-        xOrigin = origin.y;
-        yOrigin = -origin.x;
+        o = { x: origin.y, y: -origin.x}
     }
     if (value.r === 180) {
-        xOrigin = -origin.x;
-        yOrigin = -origin.y;
+        o = { x: -origin.x, y: -origin.y}
     }
     if (value.r === 270) {
-        xOrigin = -origin.y;
-        yOrigin = origin.x;
+        o = { x: -origin.y, y: origin.x}
     }
 
     ctx.translate(a, b)
     ctx.rotate(value.r * -Math.PI / 180);
     ctx.translate(-a, -b)
 
-    value.shape(value.x, -value.y, xOrigin, yOrigin, z, value.w, value.h, ctx, value)
+    value.shape(value.x, -value.y, o.x, o.y, z, value.w, value.h, ctx, value)
 
     ctx.restore();
 }
@@ -1769,87 +1685,6 @@ function selectedComponents() {
     select.nodes = nodes
 }
 
-
-nameButton.onclick = function() {
-    if (!clickedProxy.object) return
-    nameComponent()
-}
-
-function nameComponent() {
-    if (select.components.length === 0) {
-        return
-    }
-
-    if (select.components.length === 1) {
-        clearHighlight( 'objects' )
-        clickedProxy.object.highlight = true;
-    }
-
-    nameFormContainer.style.display = "flex";
-    document.getElementById("fname").focus()
-
-    document.getElementById('name-form-type').textContent = clickedProxy.object.classname
-    
-    if (clickedProxy.object.name !== "undefined") {
-        document.getElementById('name-form-label').textContent = `Name: ${clickedProxy.object.name}`
-    } else {
-        document.getElementById('name-form-label').textContent = ''
-    }
-}
-
-function handleForm(event) { event.preventDefault(); 
-    let input = document.getElementById("fname").value;
-    const myRe = new RegExp('[\\\/?@#\$\^&*()+=!:;.,\'\"\~\`]', 'gmi');
-    const invalid = input.match(myRe);
-    if (invalid !== null) {
-        alert(`Invalid Character ${invalid}`)
-        return
-    }
-    clickedProxy.object.name = input
-    nameFormContainer.style.display = "none";
-
-    document.getElementById("fname").value = ''
-} 
-
-window.handleForm = handleForm
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const undoContext = document.getElementById("undo-context");
-// undoContext.onmouseover = function() {
-//     if (rightClickSecondaryExit) rightClickSecondary.style.visibility = "hidden";
-//     rightClickSecondaryExit = false
-//     hideTimer = setTimeout(function() {
-//         rightClickSecondary.style.visibility = "hidden";
-//     }, 500)
-// }
-
-
-
-const setClock = document.getElementById("set-clock");
-setClock.onclick = function() {
-    setClock.style.display = "none";
-}
-
-
 // gets list of nodes and adds nodes to gate
 export function defineNodes (id, nodes, object, objects) {
     //set scope
@@ -1903,9 +1738,7 @@ function animate(current, newValue, n) {
         }
 
         i++
-        if (i < 20) {        
-            iterate(current, newValue);
-        }           
+        if (i < 20)  iterate(current, newValue);         
         if (i === 20) current[n] = newValue
         }, 4)
     }

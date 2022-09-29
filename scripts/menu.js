@@ -31,8 +31,8 @@ menuCanvas.width = window.innerWidth;
 
 const menuBackgroundLeft = document.getElementById("menu-background-left");
 const menuHideLeft = document.getElementById("menu-hide-left");
-const menuBackgroundRight = document.getElementById("menu-background-right");
-const menuHideRight = document.getElementById("menu-hide-right");
+// const menuBackgroundRight = document.getElementById("menu-background-right");
+// const menuHideRight = document.getElementById("menu-hide-right");
 
 
 scroll = {

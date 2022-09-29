@@ -268,6 +268,15 @@ canvas {
     pointer-events: none;
     z-index: 10;
 
+    box-shadow:
+    2.8px 2.8px 2.2px rgba(0, 0, 0, 0.02),
+    6.7px 6.7px 5.3px rgba(0, 0, 0, 0.028),
+    12.5px 12.5px 10px rgba(0, 0, 0, 0.035),
+    22.3px 22.3px 17.9px rgba(0, 0, 0, 0.042),
+    41.8px 41.8px 33.4px rgba(0, 0, 0, 0.05),
+    100px 100px 80px rgba(0, 0, 0, 0.07)
+;
+
     transition-property: width, height, left, padding;
     transition-duration: .25s, .3s, .25s, .25s;
     transition-delay: .0s, .2s, .0s, 1s;
@@ -294,6 +303,8 @@ canvas {
     gap: 10px;
 }
 
+
+/* FIXME: generate dynamically */
 #settings-1, #settings-2, #settings-3, #settings-4 {
     display: flex;
     visibility: hidden;
@@ -322,15 +333,19 @@ canvas {
     visibility: hidden;
 }
 
-.action-menu-item-highlight, .action-menu-item-highlight-right, .action-menu-item-highlight-left {
-    background-color: rgba(35, 130, 255, 0.709);
+#action-menu > button:active {
+    background-color: rgba(35, 130, 255, 0.709)
 }
 
-.action-menu-item-highlight-right {
+.action-menu-item-highlight {
+    background-color: rgba(35, 130, 255, 0.709)
+}
+
+#settings:active {
     border-radius: 0 10px 10px 0;
 }
 
-.action-menu-item-highlight-left {
+#undo:active {
     border-radius: 10px 0 0 10px;
 }
 
@@ -346,16 +361,20 @@ canvas {
     border-radius: 10px;
 }
 
-#name-form-container {
+#form-container {
+    --width: 350px;
+    --height: 150px;
     position: fixed;
-    display: none;
+    display: flex;
+    visibility: hidden;
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    top: calc(50% - 120px/2);
-    left: calc(50% - 300px/2);
-    width: 300px;
-    height: 120px;
+    font-family: 'Roboto', sans-serif;
+    top: calc(50% - var(--height)/2);
+    left: calc(50% - var(--width)/2);
+    width: var(--width);
+    height: var(--height);
     gap: 2px;
     border: .6px double #858387d6;
     box-shadow: 0 0 0 .1px rgba(0, 0, 0, 0.779);
@@ -375,29 +394,36 @@ canvas {
     ;
 }
 
-#name-form-container div:first-child {
-    font-family: 'Roboto', sans-serif;
-    font-size: 28px;
-    margin-top: 15px;
-    margin-left: 15px;
-    align-self: flex-start;
-    color: var(--text-color);
+#form-container:focus {
+    outline: 5px solid rgba(35, 130, 255, 0.709);
 }
 
-#name-form-container div:nth-child(2) {
-    font-family: Arial, Helvetica, sans-serif;
-    padding-bottom: 5px;
-    font-size: 18px;
-    margin-left: 46px;
-    align-self: flex-start;
-    color: var(--text-color)
-}
-
-#name-form {
+/* close form */
+#form-close {
+    position: absolute;
     display: flex;
-    /* flex-grow: 2;
-    height: 20px; */
+    justify-content: center;
+    align-items: center;
+    outline: none;
+    background-color: white;
+    font-size: 25px;
+    top: 10px;
+    right: 10px;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
 }
+
+#form-close:hover {
+    background-color: rgba(255, 255, 255, 0.824);
+    color: rgb(0, 0, 0);
+}
+
+#form-close:active {
+    background-color: rgba(35, 130, 255, 0.709);
+    color: white;
+}
+
 
 #rotate-left, #rotate-right {
     position: fixed;

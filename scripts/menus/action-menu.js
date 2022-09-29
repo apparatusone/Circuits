@@ -38,7 +38,6 @@ zoomPercentage.onclick = function() {
 const zoomInButton = document.getElementById("zoom-in");
 addMdi(icons.mdiPlus,zoomInButton, color.icon, 24, 24, 'post-icon')
 zoomInButton.onmousedown = function() {
-    zoomInButton.classList.add("action-menu-item-highlight");
     mouse.screen.x = canvas.width / 2;
     mouse.screen.y = canvas.height /2;
     smoothZoom = Math.min(500, Math.round(smoothZoom + settings.zoomButtons));
@@ -207,7 +206,6 @@ settingsButton.onclick = function() {
 
     globalCond.disableToolTip = true
     tooltip.style.display = "none";
-    settingsButton.classList.add("action-menu-item-highlight-edge");
 
     let top = getOffset(settingsButton).top;
     settingsMenuObserver.observe(settingsMenu);
@@ -245,7 +243,7 @@ buttons.forEach(function(currentBtn){
       let length = toolText.offsetWidth + 20
   
       tooltip.style.left = (left - length/2 + width/2 )+"px";
-      tooltip.style.top = (top+50)+"px";
+      tooltip.style.top = (top+51)+"px";
     });
 })
 
@@ -253,38 +251,8 @@ buttons.forEach(function(currentBtn){
 buttons.forEach(function(currentBtn){
     currentBtn.addEventListener('mouseout', function() {
             tooltip.style.display = "none";
-            if (currentBtn.name === 'Select') return
-            currentBtn.classList.remove("action-menu-item-highlight");
-            currentBtn.classList.remove("action-menu-item-highlight-right");
-            currentBtn.classList.remove("action-menu-item-highlight-left");
     });
 })
-
-// highlight button on click
-buttons.forEach(function(currentBtn){
-    currentBtn.addEventListener('mousedown', function() {
-            if (currentBtn.name === 'Settings') {
-                currentBtn.classList.add("action-menu-item-highlight-right");
-                return
-            }
-            if (currentBtn.name === 'Undo') {
-                currentBtn.classList.add("action-menu-item-highlight-left");
-                return
-            }
-            currentBtn.classList.add("action-menu-item-highlight");
-     });
-})
-
-// remove highlight
-buttons.forEach(function(currentBtn){
-    currentBtn.addEventListener('mouseup', function() {
-            if (currentBtn.name === 'Select') return
-            currentBtn.classList.remove("action-menu-item-highlight");
-            currentBtn.classList.remove("action-menu-item-highlight-right");
-            currentBtn.classList.remove("action-menu-item-highlight-left");
-    });
-})
-
 
 // SETTINGS MENU
 const settingsMenu = document.getElementById("settings-menu");

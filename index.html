@@ -13,6 +13,7 @@
     <script defer type="module" src="scripts/hidden-canvas.js"></script>
     <script defer type="module" src="scripts/menus/action-menu.js"></script>
     <script defer type="module" src="scripts/menus/context-menu.js"></script>
+    <script defer type="module" src="scripts/forms.js"></script>
     
     <style> @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;500&display=swap');</style>
         
@@ -74,15 +75,7 @@
         </button>
     </div>
 
-
-
-    <div id="name-form-container">
-        <div id="name-form-type">Led</div>
-        <div id="name-form-label">Output</div>
-        <form id="name-form" onsubmit="handleForm(event)">
-            <input type="text" id="fname" name="fname" placeholder="Component Name" autocomplete="off" style="width: 200px">
-        </form>
-    </div>
+    <div tabindex="0" id="form-container"></div>
 
     <canvas id="menu-canvas" class="unselectable animated"></canvas>
     <div id="menu-background-left" class="animated"></div>
@@ -115,11 +108,10 @@
     </div>
 
     <menu id="right-click">
-        <div class="options">Add Node</div>
+        <div id="name-component" class="options">Rename</div>
         <div id="custom-component"class="options">Create Component</div>
         <!-- <div id="name-component" class="options">Name Component</div> -->
         <div id="save-component" class="options">Save Component</div>
-        <div id="name-component" class="options">Rename</div>
 
         <div id="options" class="options">
             Options

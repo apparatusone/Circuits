@@ -782,4 +782,25 @@ export function getOffset(el) {
         height: rect.height
     };
 }
+
+// clear highlight on specified components
+export function clearHighlight( type ) {
+
+    if (type === 'wires' || type === 'all') {
+        Object.values(wires).forEach( wire => wire.highlight = false)
+        if (type === 'wires') return
+    }
+
+    if (type === 'objects' || type === 'all') {
+        Object.values(objects).forEach( object => object.highlight = false)
+    }
+
+    if (type === 'nodes' || type === 'all') {
+        for (let [key, wire] of Object.entries(wires)) {
+            for (const node of wire.nodes) {
+                node.highlight = false;
+            }
+        }
+    }
+}
     
