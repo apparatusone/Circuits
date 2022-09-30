@@ -1,3 +1,3 @@
 // default zoom
-window.z = 200;
+window.z = 100;
 window.smoothZoom = z;

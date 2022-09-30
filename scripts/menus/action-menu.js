@@ -1,6 +1,6 @@
 // menu at top
 
-import { select } from "../main.js"
+import { select, clickedProxy } from "../main.js"
 import { Wire, CustomComponent, Clock, ConstantHigh } from "../parts.js"
 import { addMdi, color, formatBytes, getOffset } from "../utilities.js"
 import { icons } from '../shapes.js'
@@ -38,8 +38,11 @@ zoomPercentage.onclick = function() {
 const zoomInButton = document.getElementById("zoom-in");
 addMdi(icons.mdiPlus,zoomInButton, color.icon, 24, 24, 'post-icon')
 zoomInButton.onmousedown = function() {
-    mouse.screen.x = canvas.width / 2;
-    mouse.screen.y = canvas.height /2;
+
+    // zoom in to selected object
+    mouse.screen.x = (clickedProxy.object !== undefined) ? clickedProxy.object.gridCoordinates.x : window.innerWidth/2
+    mouse.screen.y = (clickedProxy.object !== undefined) ? clickedProxy.object.gridCoordinates.y : window.innerHeight/2
+
     smoothZoom = Math.min(500, Math.round(smoothZoom + settings.zoomButtons));
     zoomPercentage.innerHTML = Math.round(smoothZoom) + '%';
 };
@@ -47,8 +50,11 @@ zoomInButton.onmousedown = function() {
 const zoomOutButton = document.getElementById("zoom-out");
 addMdi(icons.mdiMinus,zoomOutButton, color.icon, 24, 24, 'post-icon')
 zoomOutButton.onclick = function() {
-    mouse.screen.x = canvas.width / 2;
-    mouse.screen.y = canvas.height /2;
+
+    //zoom out of selected object
+    mouse.screen.x = (clickedProxy.object !== undefined) ? clickedProxy.object.gridCoordinates.x : window.innerWidth/2
+    mouse.screen.y = (clickedProxy.object !== undefined) ? clickedProxy.object.gridCoordinates.y : window.innerHeight/2
+
     smoothZoom = Math.max(10, Math.round(smoothZoom - settings.zoomButtons));
     zoomPercentage.innerHTML = smoothZoom + '%';
 };
