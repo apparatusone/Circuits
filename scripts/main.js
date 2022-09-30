@@ -671,9 +671,7 @@ canvas.onmousedown = function(e) {
         //rightClick = true;
 
         if (select.components.length > 1) {
-
             console.log('right click return');
-            
             return
         }
 

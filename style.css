@@ -382,7 +382,7 @@ canvas {
     background-color: var(--window-color);
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
-    z-index: 2;
+    z-index: 15;
 
     box-shadow:
         2.8px 2.8px 2.2px rgba(0, 0, 0, 0.02),

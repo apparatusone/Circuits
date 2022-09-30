@@ -13,20 +13,14 @@ rightClickMenu.addEventListener("click", hideRightClickMenu, false);
 document.addEventListener('contextmenu', function(e) {
     // handle right click event at edges of screen
     let loc = {x: 0, y: 0}
-    const width = getOffset(rightClickMenu).width
-    const height = getOffset(rightClickMenu).height
+    const width = getOffset(rightClickMenu).width;
+    const height = getOffset(rightClickMenu).height;
 
-    if (e.pageX + width > window.innerWidth) {
-        loc.x = e.pageX - width
-    } else {
-        loc.x = e.pageX
-    }
+    // right x boundary
+    (e.pageX + width > window.innerWidth) ? loc.x = e.pageX - width : loc.x = e.pageX;
 
-    if (e.pageY + height > window.innerHeight) {
-        loc.y = window.innerHeight - height - 6
-    } else {
-        loc.y = e.pageY - 5
-    }
+    // bottom y boundary
+    (e.pageY + height > window.innerHeight) ? loc.y = window.innerHeight - height - 6 : loc.y = e.pageY - 5;
 
     rightClickMenu.style.visibility = "visible";
     rightClickMenu.style.left = (loc.x)+"px";

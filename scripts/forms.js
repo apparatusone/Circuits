@@ -6,19 +6,23 @@ import { icons } from "./shapes.js"
 const formContainer = document.getElementById("form-container");
 const form = document.createElement("form");
 
+const dim = document.createElement("div");
+dim.style.width = `${window.innerWidth}px`
+dim.style.height = `${window.innerHeight}px`
+dim.style.position = "absolute";
+dim.style.backgroundColor = "#00000085";
+dim.style.zIndex = "14";
+
 // form container close button
 const formClose = document.createElement("button");
 formClose.setAttribute("id", "form-close");
 formClose.innerHTML = '&times;'
 //addMdi(icons.mdiCloseCircle,formClose, 'white', 24, 24)
 formClose.onclick = function() {
+    document.body.removeChild(dim)
     formContainer.replaceChildren()
     formContainer.style.visibility = "hidden";
 }
-
-
-
-
 
 // name form
 //const nameFormContainer = document.getElementById("name-form-container");
@@ -31,6 +35,8 @@ export function nameFormX() {
     formContainer.style.visibility = "visible";
     formContainer.style.setProperty('--width', '350px');
     formContainer.style.setProperty('--height', '150px');
+
+    document.body.appendChild(dim)
 
     const type = document.createElement("div");
     const addSpace = clickedProxy.object.classname.replace(/([A-Z])/g, ' $1').trim()
@@ -65,6 +71,7 @@ form.addEventListener("submit", function(event) {
     const input = event.target.firstElementChild.value
     clickedProxy.object.name = input
     event.target.firstElementChild.value = ''
+    document.body.removeChild(dim)
     formContainer.replaceChildren()
     formContainer.style.visibility = "hidden";
 });
