@@ -79,7 +79,7 @@ addMdi(icons.mdiContentSave,saveButton, color.icon, 24, 24, 'post-icon')
 saveButton.onclick = function() {
     window.localStorage.clear();
 
-    for (let [key, object] of Object.entries(objects)) {
+    for (let object of Object.values(objects)) {
 
         if (object.constructor === CustomComponent) {
             storeCustomComponent(object)

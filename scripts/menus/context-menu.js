@@ -45,7 +45,9 @@ function nameComponent() {
         clickedProxy.object.highlight = true;
     }
 
-    nameFormX()
+    rightClickMenu.addEventListener("transitionend", nameFormX, true);
+    //rightClickMenu.removeEventListener("transitionend", nameFormX, true);
+    //nameFormX()
     //document.getElementById("fname").focus()
 
     //document.getElementById('name-form-type').textContent = clickedProxy.object.classname
@@ -154,7 +156,39 @@ options.onmouseout = function() {
     }, 70)
 };
 
+
+// async ?
 export function hideRightClickMenu() {
-    rightClickMenu.style.visibility = 'hidden';
-    rightClickSecondary.style.visibility = "hidden";
+    let clicked;
+
+    const buttons = document.querySelectorAll('#right-click > div, #right-click-secondary > div');
+
+    for (const button of buttons) {
+        if (button.matches(':hover')) {
+            clicked = button
+        }
+    }
+
+    if (clicked !== undefined) {
+        clicked.style.pointerEvents = 'none'
+        clicked.style.backgroundColor = 'transparent'
+
+        setTimeout(() => {
+            clicked.style.pointerEvents = 'auto'
+            clicked.style.backgroundColor = '#2289ffe7'
+        }, 80);
+    }
+
+    setTimeout(() => {
+        rightClickMenu.style.opacity = "0"
+        rightClickSecondary.style.opacity = "0";
+    }, 100);
+
+    setTimeout(() => {
+        rightClickMenu.style.visibility = 'hidden';
+        rightClickSecondary.style.visibility = "hidden";
+        if (clicked !== undefined) clicked.style.backgroundColor = ''
+        rightClickMenu.style.opacity = "100"
+        rightClickSecondary.style.opacity = "100";
+    }, 250);
 }

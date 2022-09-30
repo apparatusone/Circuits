@@ -10,8 +10,12 @@ const dim = document.createElement("div");
 dim.style.width = `${window.innerWidth}px`
 dim.style.height = `${window.innerHeight}px`
 dim.style.position = "absolute";
+dim.style.visibility = "hidden";
 dim.style.backgroundColor = "#00000085";
+dim.style.opacity = "0";
 dim.style.zIndex = "14";
+dim.style.transition = "opacity .1s linear";
+document.body.appendChild(dim)
 
 // form container close button
 const formClose = document.createElement("button");
@@ -19,9 +23,11 @@ formClose.setAttribute("id", "form-close");
 formClose.innerHTML = '&times;'
 //addMdi(icons.mdiCloseCircle,formClose, 'white', 24, 24)
 formClose.onclick = function() {
-    document.body.removeChild(dim)
     formContainer.replaceChildren()
     formContainer.style.visibility = "hidden";
+    dim.style.visibility = "hidden";
+    dim.style.opacity = "0"
+    formContainer.style.opacity = "0";
 }
 
 // name form
@@ -33,10 +39,11 @@ export function nameFormX() {
     form.replaceChildren()
     formContainer.appendChild(formClose)
     formContainer.style.visibility = "visible";
+    dim.style.visibility = "visible";
+    dim.style.opacity = "100"
+    formContainer.style.opacity = "100";
     formContainer.style.setProperty('--width', '350px');
     formContainer.style.setProperty('--height', '150px');
-
-    document.body.appendChild(dim)
 
     const type = document.createElement("div");
     const addSpace = clickedProxy.object.classname.replace(/([A-Z])/g, ' $1').trim()
@@ -64,6 +71,9 @@ export function nameFormX() {
     input.style.width = "200px";
     form.appendChild(input)
     input.focus()
+
+    //remove transistion event listener
+    document.getElementById("right-click").removeEventListener("transitionend", nameFormX, true);
 }
 
 form.addEventListener("submit", function(event) {
@@ -71,9 +81,11 @@ form.addEventListener("submit", function(event) {
     const input = event.target.firstElementChild.value
     clickedProxy.object.name = input
     event.target.firstElementChild.value = ''
-    document.body.removeChild(dim)
     formContainer.replaceChildren()
     formContainer.style.visibility = "hidden";
+    dim.style.visibility = "hidden";
+    dim.style.opacity = "0"
+    formContainer.style.opacity = "0";
 });
 
 

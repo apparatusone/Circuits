@@ -382,6 +382,7 @@ canvas {
     background-color: var(--window-color);
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
+    opacity: 0;
     z-index: 15;
 
     box-shadow:
@@ -392,6 +393,9 @@ canvas {
         41.8px 41.8px 33.4px rgba(0, 0, 0, 0.05),
         100px 100px 80px rgba(0, 0, 0, 0.07)
     ;
+
+    transition-property: opacity;
+    transition-duration: .1s;
 }
 
 #form-container:focus {
@@ -464,9 +468,6 @@ canvas {
   }
 
 
-
-
-
   /* right click stuff */
 #right-click{
     position:absolute;
@@ -476,7 +477,8 @@ canvas {
     align-items: center;
     flex-direction: column;
     gap: 2px;
-    z-index:100;
+    opacity: 100;
+    z-index: 100;
 
     box-shadow:
         2.8px 2.8px 2.2px rgba(0, 0, 0, 0.011),
@@ -486,6 +488,8 @@ canvas {
         41.8px 41.8px 33.4px rgba(0, 0, 0, 0.029),
         100px 100px 80px rgba(0, 0, 0, 0.04)
   ;
+  transition-property: opacity;
+  transition-duration: .2s;
 }
 
 #right-click-secondary{
@@ -496,6 +500,7 @@ canvas {
     align-items: center;
     flex-direction: column;
     gap: 2px;
+    opacity: 100;
     z-index:101;
 
     box-shadow:
@@ -506,6 +511,9 @@ canvas {
         41.8px 41.8px 33.4px rgba(0, 0, 0, 0.029),
         100px 100px 80px rgba(0, 0, 0, 0.04)
   ;
+
+  transition-property: opacity;
+  transition-duration: .2s;
 }
 
 #options{

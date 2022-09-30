@@ -840,6 +840,7 @@ canvas.onmousedown = function(e) {
         rotateButtons('hide')
     }
 
+    // FIXME: runs even when context menu is hidden
     hideRightClickMenu()
     globalCond.mouseDown = true;
     //start timer for mouse click duration
