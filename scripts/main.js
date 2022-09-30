@@ -8,6 +8,7 @@ import { within, drawShape, generateId, stringIncludes, minMax, slope, capitaliz
      mouseClickDuration, formatBytes, delay, easeInOutCirc, clearHighlight } from "./utilities.js";
 import { hideSettingsMenu } from "./menus/action-menu.js"
 import { hideRightClickMenu } from "./menus/context-menu.js"
+import { bmp, offScreenDraw } from "./hidden-canvas.js"
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
@@ -26,7 +27,6 @@ function resizeCanvas() {
     canvas.height = Math.floor(window.innerHeight * scale);
 }
 
-
 //TODO: REFACTOR
 window.globalCond = {
     dragging: false,
@@ -40,6 +40,17 @@ window.globalCond = {
 window.testState = {
     isOpen: false,
     toggle: function() { this.isOpen = !this.isOpen; return}
+}
+
+// update offscreen canvas
+const update = {
+    x: 0,
+    y: 0,
+    z: 0,
+    condition: function() { 
+        if ( this.x !== parseFloat(origin.x.toFixed(4)) || this.y !== parseFloat(origin.y.toFixed(4)) || this.z !== parseFloat(z.toFixed(4)) ) return true
+        return false
+    }
 }
 
 export const select = {
@@ -85,19 +96,6 @@ const timer = {
     start: 0,
     end: 0
 }
-
-const canvasCenter = {
-    x: - Number.parseFloat((window.innerWidth/(z*2)).toFixed(3)) + 0.5,
-    y: Number.parseFloat((window.innerHeight/(z*2)).toFixed(3)) - 0.5
-}
-
-//set origin to center of screen
-window.origin = {                                         
-    x: canvasCenter.x,
-    y: canvasCenter.y,
-    click: { x:0, y:0 },
-    prev: { x:0, y:0 },                      
-};
 
 // location of cursor
 window.mouse = {
@@ -179,6 +177,16 @@ function draw() {
     ctx.fillStyle = color.background;
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
+    if (update.condition()) {
+        offScreenDraw() 
+        update.x = parseFloat(origin.x.toFixed(4))
+        update.y = parseFloat(origin.y.toFixed(4))
+        update.z = parseFloat(z.toFixed(4))
+    }
+
+    ctx.drawImage(bmp,0,0);
+
+
     // if( z > 40 ) {
     //     for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) { //
     //         for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
@@ -223,22 +231,21 @@ function draw() {
     //     }
     // }
 
-    //DOESN'T cause slow down on zoom out
+    //DOES cause massive slow down on everything
     //sub grid
-    if( z > 40 ) {
-        for (let i = ((-origin.x - 50) * z) % z; i < canvas.width + 50; i+=z) {
-            for (let j = ((origin.y - 50) * z) % z; j < canvas.height + 50; j+=z) {
-                ctx.strokeStyle = 'rgba(0,0,0,.1)';
-                ctx.setLineDash([0, .14*z]);
-                ctx.lineDashOffset = z/.2061;
-                ctx.lineCap = 'round';
-                // 1.82 approx offset for subgrid
-                drawLine ((i - z / 1.82) + .05*z, (j - z / 1.82), (i - z / 1.82) + .05*z, (j - z / 1.82) + z, 35)
-                drawLine ((i - z / 1.82), (j - z / 1.82) + .05*z, (i - z / 1.82) + z, (j - z / 1.82) + .05*z, 35)
-            }
-        }
-    }
-
+    // if( z > 40 ) {
+    //     for (let i = ((-origin.x - 50) * z) % z; i < canvas.width + 50; i+=z) {
+    //         for (let j = ((origin.y - 50) * z) % z; j < canvas.height + 50; j+=z) {
+    //             ctx.strokeStyle = 'rgba(0,0,0,.1)';
+    //             ctx.setLineDash([0, .14*z]);
+    //             ctx.lineDashOffset = z/.2061;
+    //             ctx.lineCap = 'round';
+    //             // 1.82 approx offset for subgrid
+    //             drawLine ((i - z / 1.82) + .05*z, (j - z / 1.82), (i - z / 1.82) + .05*z, (j - z / 1.82) + z, 35)
+    //             drawLine ((i - z / 1.82), (j - z / 1.82) + .05*z, (i - z / 1.82) + z, (j - z / 1.82) + .05*z, 35)
+    //         }
+    //     }
+    // }
 
     // X @ center of canvas
     ctx.lineWidth = z/60;
@@ -503,7 +510,7 @@ function draw() {
     if(settings.smoothZoom) {
         origin.x += mouse.screen.x * (1 / z - 5 / (smoothZoom + 4 * z));
         origin.y -= mouse.screen.y * (1 / z - 5 / (smoothZoom + 4 * z));
-        z = z - (z - smoothZoom) / 5;
+        z = z - (z - smoothZoom) / 5
     } else {
         origin.x = (origin.x + mouse.screen.x * (1 / z - 1 / (smoothZoom)));
         origin.y = (origin.y - mouse.screen.y * (1 / z - 1 / (smoothZoom)));
@@ -531,8 +538,8 @@ canvas.onmousemove = function(e) {
     //TODO: REFACTOR
     // move canvas
     if (globalCond.mouseDown && !globalCond.dragging && !globalCond.drawing && !select.action && !clicked.isLabel) {
-        origin.x = origin.prev.x + (origin.click.x - e.x)/z;
-        origin.y = origin.prev.y - (origin.click.y - e.y)/z;
+        origin.x = parseFloat((origin.prev.x + (origin.click.x - e.x)/z).toFixed(4));
+        origin.y = parseFloat((origin.prev.y - (origin.click.y - e.y)/z).toFixed(4));
     };
 
     //move label

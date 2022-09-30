@@ -176,13 +176,13 @@ export function hideRightClickMenu() {
         setTimeout(() => {
             clicked.style.pointerEvents = 'auto'
             clicked.style.backgroundColor = '#2289ffe7'
-        }, 80);
+        }, 60);
     }
 
     setTimeout(() => {
         rightClickMenu.style.opacity = "0"
         rightClickSecondary.style.opacity = "0";
-    }, 100);
+    }, 80);
 
     setTimeout(() => {
         rightClickMenu.style.visibility = 'hidden';
@@ -190,5 +190,5 @@ export function hideRightClickMenu() {
         if (clicked !== undefined) clicked.style.backgroundColor = ''
         rightClickMenu.style.opacity = "100"
         rightClickSecondary.style.opacity = "100";
-    }, 250);
+    }, 150);
 }

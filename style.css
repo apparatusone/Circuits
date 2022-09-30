@@ -489,7 +489,7 @@ canvas {
         100px 100px 80px rgba(0, 0, 0, 0.04)
   ;
   transition-property: opacity;
-  transition-duration: .2s;
+  transition-duration: .1s;
 }
 
 #right-click-secondary{
@@ -513,7 +513,7 @@ canvas {
   ;
 
   transition-property: opacity;
-  transition-duration: .2s;
+  transition-duration: .1s;
 }
 
 #options{
