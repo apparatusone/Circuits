@@ -8,7 +8,6 @@ class Wire {
     constructor(node) {
         this.node = node
 
-
         this.id;
         this.nodes = [];
 
@@ -29,7 +28,64 @@ class Wire {
     nodeState = { a: 0, b: 0}
     storeState = 0
 
+    // get state () {
+    //     let idArray = [this.id]
+    //     getId(this.id)
+
+
+    //     function getId(id) {
+    //         wires[id].nodes.forEach(element => {
+    //             if(element.wireId) getId(element.wireId)
+    //             idArray.push(element.wireId);
+    //         });    
+    //     }
+
+    //     let objectArray = []
+
+    //     idArray.forEach(id => {
+    //         const a = parseInt(wires[id].node.a.id)
+    //         const b = parseInt(wires[id].node.b.id)
+
+    //         if (objects[a]) {  
+    //             if (objects[a].constructor === OnOffSwitch) objectArray.push(objects[a])
+    //         }
+
+    //         if (objects[b]) {
+    //             if (objects[b].constructor === OnOffSwitch) objectArray.push(objects[b])
+    //         }
+    //     });
+
+    //     let states = []
+
+    //     objectArray.forEach(object => {
+    //         states.push(parseInt(object.state))
+    //     });    
+
+
+    //     if(states.includes(1)) this.storeState = 1
+    //     if(!states.includes(1)) this.storeState = 0
+
+    //     this.node.a.state = this.storeState;
+    //     this.node.b.state = this.storeState;
+    //     this.nodeState.a = this.storeState
+    //     this.nodeState.b = this.storeState
+
+    //     for (let n of this.nodes) {
+    //         n.setter = this.storeState
+    //     }
+    //     return this.storeState;
+        
+    //     // get all connected wires
+    //     // get all inputs
+    //     // reduce to 1 or 0
+    //     // set all output to 1 or 0
+
+    //     return 0
+    //     //return this.storeState;
+    // }
+
     get state () {
+    
         //update nodes on state change
         if (this.node.a.state !== this.nodeState.a) {
             if (this.node.a.state === undefined) {
@@ -241,6 +297,7 @@ class OnOffSwitch extends Generic{
     }
 
     timeoutID = undefined
+    
     animate() {
         const self = this
         let i = 0
