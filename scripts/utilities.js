@@ -109,7 +109,7 @@ export const color = (function() {
     let background, line, lineHigh, lineLow, object, grid, menu, icon, tooltip, rotate, windowBox;
 
     function update() {
-        this.background = (settings.darkMode) ? "rgba(15,15,15,1)":"white";
+        this.background = (settings.darkMode) ? "rgba(15,15,15,1)":"#ECF0F3";
         this.line = (settings.darkMode) ? "white":"black";
         this.lineHigh = (settings.darkMode) ? "white":"black";
         this.lineLow = (settings.darkMode) ? "#9E9E9E":"#737373";

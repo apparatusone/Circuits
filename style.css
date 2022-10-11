@@ -3,13 +3,15 @@
     padding: 0;
 }
 
-root {
+:root {
     --menu-color: rgba(0, 7, 21, 0.738);
     --side-menu-color: rgba(0, 7, 21, 0.5);
     --icon-color: 'white';
     --tooltip-color: 'black';
     --text-color: 'white';
     --window-color: #000000ba;
+    --ui-blue: rgb(0, 110, 255);
+    --slider: 22px;
 }
 
 body {
@@ -109,17 +111,20 @@ canvas {
     transition-duration: .3s;
 }
 
-#tooltip-tail {
-    position: absolute;
-    margin: 0 auto;
-    width: 25px;
-    height: 25px;
-    margin-top: -14px;
-    background-color: var(--tooltip-color);
-    transform: rotate(45deg);
-
-    transition-property: left;
-    transition-duration: .3s;
+/* tooltip arrow */
+#tooltip:after {
+	bottom: 100%;
+	left: 50%;
+	border: solid transparent;
+	content: "";
+	height: 0;
+	width: 0;
+	position: absolute;
+	pointer-events: none;
+	border-color: rgba(0, 0, 0, 0);
+	border-bottom-color: var(--tooltip-color);
+	border-width: 8px;
+	margin-left: -8px;
 }
 
 #menu-canvas {
@@ -332,6 +337,68 @@ canvas {
 #settings-4 {
     visibility: hidden;
 }
+
+
+/* The switch */
+.switch {
+    position: relative;
+    display: flex;
+    width: var(--slider);
+    height: calc((6/10) * var(--slider));
+  }
+  
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .15s;
+    transition: .15s;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: calc((6/14) * var(--slider));
+    width: calc((6/14) * var(--slider));
+    left: calc(0.05 * var(--slider));
+    top: calc(.08 * var(--slider));
+    background-color: white;
+    -webkit-transition: .15s;
+    transition: .15s;
+  }
+  
+  input:checked + .slider {
+    background-color: var(--ui-blue);
+  }
+  
+  input:focus + .slider {
+    box-shadow: 0 0 1px var(--ui-blue);
+  }
+  
+  input:checked + .slider:before {
+    -webkit-transform: translateX(calc((21/44) * var(--slider)));
+    -ms-transform: translateX(calc((21/44) * var(--slider)));
+    transform: translateX(calc((21/44) * var(--slider)));
+  }
+  
+  .slider.round {
+    border-radius: calc((3/10) * var(--slider));
+  }
+  
+  .slider.round:before {
+    border-radius: 50%;
+  }
+
 
 #action-menu > button:active {
     background-color: rgba(35, 130, 255, 0.709)

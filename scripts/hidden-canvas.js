@@ -15,6 +15,17 @@ export function offScreenDraw() {
     // clear the canvas
     htx.clearRect(0, 0, offscreen.width, offscreen.height);
 
+    // X @ center of canvas
+    htx.lineWidth = z/60;
+    htx.strokeStyle = '#6F6F6F';
+    htx.setLineDash([]);
+    htx.beginPath();
+    htx.moveTo((-origin.x - .1 + 0.5)* z, (origin.y + .1 + 0.5) * z, z, z);
+    htx.lineTo((-origin.x + .1 + 0.5)* z, (origin.y - .1 + 0.5) * z, z, z);
+    htx.moveTo((-origin.x - .1 + 0.5)* z, (origin.y - .1 + 0.5) * z, z, z);
+    htx.lineTo((-origin.x + .1 + 0.5)* z, (origin.y + .1 + 0.5) * z, z, z);
+    htx.stroke();
+
     //main grid
     htx.strokeStyle = color.grid;
     htx.setLineDash([]);

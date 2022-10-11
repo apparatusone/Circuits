@@ -4,18 +4,24 @@ import { color } from "./utilities.js";
 
 export const shape = (function() {
     // paths
-    const ledPath = function (x1, y1, a, b, z, w, h, context) {
+    const ledPath = function (x1, y1, a, b, z, w, h, context,value) {
         context.setLineDash([]);
+        context.miterLimit = 10;
         context.lineCap = 'butt';
         context.lineJoin = 'miter';
+
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
+            context.lineWidth = z/30;
+        }
 
         context.beginPath();
         context.arc((-a + x1 + 0.5) * z, (b + y1 + 0.5) * z, .10 * z, 0, 1 * Math.PI, true);
         context.lineTo((-a+ x1 + 0.4) * z, (b + y1 + .75) * z);
         context.lineTo((-a + x1 + 0.6) * z, (b + y1 + .75) * z);
         context.lineTo((-a + x1 + 0.6) * z, (b + y1 + 0.5) * z);
-        context.stroke();
         context.fill();
+        context.stroke();
+
 
         context.lineWidth = z/25;
         context.beginPath();

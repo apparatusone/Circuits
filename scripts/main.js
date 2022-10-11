@@ -184,8 +184,8 @@ function draw() {
         update.z = parseFloat(z.toFixed(4))
     }
 
+    // draw hidden canvas
     ctx.drawImage(bmp,0,0);
-
 
     // if( z > 40 ) {
     //     for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) { //
@@ -195,41 +195,7 @@ function draw() {
     //     };
     // };
 
-    // more effecient to render when zoomed out
     //ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
-
-    // let i;
-    // for (i = (-origin.x * z) % z; i < canvas.width; i+=z) {
-    //     //ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
-    // };
-
-    // for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
-    //     ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
-    // };
-
-    // if ( z < 40 ) {
-    //     ctx.fillStyle = "rgba(0,0,0," + Math.min(1, z / 20) + ")";
-    //     for (let i = (-origin.x * z) % z; i < canvas.width; i+=z) {
-    //         for (let j = (origin.y * z) % z; j < canvas.height; j+=z) { 
-    //             ctx.fillRect(i - z / 40, j - z / 40, z / 20, z / 20);
-    //         };
-    //     };
-    // }
-
-    // TODO: simplify grid generation
-    // FIXME: very slow on zoom out
-    //main grid
-    // if( z > 15 ) {
-    //     for (let i = ((-origin.x - 50) * z) % z; i < canvas.width + 50; i+=z) {
-    //         for (let j = ((origin.y - 50) * z) % z; j < canvas.height + 50; j+=z) {
-    //             ctx.strokeStyle = color.grid;
-    //             ctx.setLineDash([]);
-    //             // x1,y1, x2, y2, linewidth
-    //             drawLine( ((i - z / 20) + .05*z), (j - z / 500), ((i - z / 20) + .05*z), ((j - z / 500) + z), 55);
-    //             drawLine( (i - z / 500), ((j - z / 20) + .05*z), ((i - z / 500) + z), ((j - z / 20) + .05*z), 55);
-    //         }
-    //     }
-    // }
 
     //DOES cause massive slow down on everything
     //sub grid
@@ -247,57 +213,45 @@ function draw() {
     //     }
     // }
 
-    // X @ center of canvas
-    ctx.lineWidth = z/60;
-    ctx.strokeStyle = '#6F6F6F';
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo((-origin.x - .1 + 0.5)* z, (origin.y + .1 + 0.5) * z, z, z);
-    ctx.lineTo((-origin.x + .1 + 0.5)* z, (origin.y - .1 + 0.5) * z, z, z);
-    ctx.moveTo((-origin.x - .1 + 0.5)* z, (origin.y - .1 + 0.5) * z, z, z);
-    ctx.lineTo((-origin.x + .1 + 0.5)* z, (origin.y + .1 + 0.5) * z, z, z);
-    ctx.stroke();
 
-    // draw highlight
+    // TODO: condence wire and object loops?
+    // draw highlight for objects
     ctx.lineCap = 'round';
-    for (let [key, value] of Object.entries(objects)) {
-        if (value.highlight === true) {
+    ctx.lineWidth = z/4;
+    ctx.strokeStyle = '#00B6FF';
+    ctx.lineJoin = 'round';
+    ctx.fillStyle = '#00B6FF';
+    for (const value of Object.values(objects)) {
+        if (value.highlight) {
             if (value.img !== 'svg') {
-                ctx.lineWidth = z/4;
-                ctx.strokeStyle = '#00B6FF';
-                ctx.lineJoin = 'round';
-                ctx.setLineDash([]);
-                ctx.fillStyle = '#00B6FF';
                 drawRotatedImg(value, value.shape, value.w, value.h)
-
+                ctx.stroke();
             }
-            ctx.stroke();
         }
     }
 
-    for (let [key, value] of Object.entries(wires)) {
-        if (value.highlight === true) {
-            ctx.strokeStyle = '#00B6FF';
-            ctx.lineWidth = z/5;
+    // draw highlight for wires
+    ctx.lineWidth = z/5;
+    for (const value of Object.values(wires)) {
+        if (value.highlight) {
             drawWire(value)
         }
     }
     
     // draw wires
-    for (let [key, value] of Object.entries(wires)) {
-        ctx.setLineDash([]);
-        ctx.lineJoin = 'round';
-        if (value.storeState) ctx.strokeStyle = color.lineHigh
-        if (!value.storeState) ctx.strokeStyle = color.lineLow
-        ctx.lineWidth = z/20;
-        drawWire(value)
+    ctx.lineWidth = z/20;
+    ctx.lineJoin = 'round';
+    for (const value of Object.values(wires)) {
+        if (value.storeState) ctx.strokeStyle = color.lineHigh;
+        if (!value.storeState) ctx.strokeStyle = color.lineLow;
+        drawWire(value);
     }
     
 
     // draw objects
-    for (let [key, value] of Object.entries(objects)) {
-        ctx.strokeStyle = color.line;
-        ctx.lineWidth = z/15;
+    ctx.lineWidth = z/15;
+    ctx.strokeStyle = color.line;
+    for (const value of Object.values(objects)) {
         if (value.constructor === OnOffSwitch) {
             ctx.fillStyle = color.object;
             drawRotatedImg(value)
@@ -327,7 +281,7 @@ function draw() {
 
     //TODO: REFACTOR
     // draw custom component
-    for (let [key, value] of Object.entries(objects)) {
+    for (const value of Object.values(objects)) {
         if (value.constructor === CustomComponent) {
             // Name of Component
             let fontSize = z/10
@@ -488,6 +442,7 @@ function draw() {
         ctx.strokeStyle = color.line;
         ctx.lineCap = 'square';
         ctx.setLineDash([5,15]);
+
         ctx.beginPath();
         ctx.moveTo(drawingRect[0].x, drawingRect[0].y);
         ctx.lineTo(drawingRect[0].x + drawingRect[0].w, drawingRect[0].y);
@@ -543,23 +498,23 @@ canvas.onmousemove = function(e) {
     };
 
     //move label
-    if (globalCond.mouseDown && clicked.isLabel === true) {
-        const id = clicked.object.id
-        const name = clicked.object.name
-        const x = objects[id].x
-        const y = objects[id].y
+    // if (globalCond.mouseDown && clicked.isLabel === true) {
+    //     const id = clicked.object.id
+    //     const name = clicked.object.name
+    //     const x = objects[id].x
+    //     const y = objects[id].y
 
-        // move label within range
-        if  (objects[id].r === 0 || objects[id].r === 180) {
-            objects[id].offset[name].y = Math.max( -objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.y) - y))
-        }
-        if  (objects[id].r === 90 || objects[id].r === 270) {
-            objects[id].offset[name].x = Math.max( - objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.x) - x))
-        }
+    //     // move label within range
+    //     if  (objects[id].r === 0 || objects[id].r === 180) {
+    //         objects[id].offset[name].y = Math.max( -objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.y) - y))
+    //     }
+    //     if  (objects[id].r === 90 || objects[id].r === 270) {
+    //         objects[id].offset[name].x = Math.max( - objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.x) - x))
+    //     }
 
-        moveLabels(id,name)
-        return
-    }
+    //     moveLabels(id,name)
+    //     return
+    // }
 
     // move node
     if (clickedProxy.node && globalCond.mouseDown && globalCond.dragging && !globalCond.drawing ) {
@@ -577,7 +532,7 @@ canvas.onmousemove = function(e) {
         }
 
         // if mulitple objects
-        if (highlighted.length > 1) {
+        if (highlighted.length > 0) {
             for (const part of mouse.moveOffset.components) {
                 objects[part.id].x = part.x + -1 * Math.round(delta.x*2)/2
                 objects[part.id].y = part.y + -1 * Math.round(delta.y*2)/2
@@ -589,8 +544,8 @@ canvas.onmousemove = function(e) {
             return
         }
 
-        clickedProxy.object.x = Math.round(mouse.canvas.x*2)/2;
-        clickedProxy.object.y = Math.round(mouse.canvas.y*2)/2;
+        // clickedProxy.object.x = Math.round(mouse.canvas.x*2)/2;
+        // clickedProxy.object.y = Math.round(mouse.canvas.y*2)/2;
     }
 
     if (globalCond.drawing === true) {
@@ -925,13 +880,13 @@ function connectNodes(pNode) {
     }
 
     // if inputs are both inputs or both outputs reject
-    if ( stringIncludes('output', pNode.name) && stringIncludes('output', clickedProxy.node.name) ) {
-        return
-    }
+    // if ( stringIncludes('output', pNode.name) && stringIncludes('output', clickedProxy.node.name) ) {
+    //     return
+    // }
 
-    if ( stringIncludes('input', pNode.name) && stringIncludes('input', clickedProxy.node.name) ) {
-        return
-    }
+    // if ( stringIncludes('input', pNode.name) && stringIncludes('input', clickedProxy.node.name) ) {
+    //     return
+    // }
 
     let wire = new Wire( { a: pNode, b: clickedProxy.node } );
     wire.id = generateId();

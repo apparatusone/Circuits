@@ -32,10 +32,6 @@ document.addEventListener('contextmenu', function(e) {
 const nameButton = document.getElementById("name-component");
 nameButton.onclick = function() {
     if (!clickedProxy.object) return
-    nameComponent()
-}
-
-function nameComponent() {
     if (select.components.length === 0) {
         return
     }
@@ -46,17 +42,6 @@ function nameComponent() {
     }
 
     rightClickMenu.addEventListener("transitionend", nameFormX, true);
-    //rightClickMenu.removeEventListener("transitionend", nameFormX, true);
-    //nameFormX()
-    //document.getElementById("fname").focus()
-
-    //document.getElementById('name-form-type').textContent = clickedProxy.object.classname
-    
-    // if (clickedProxy.object.name !== "undefined") {
-    //     document.getElementById('name-form-label').textContent = `Name: ${clickedProxy.object.name}`
-    // } else {
-    //     document.getElementById('name-form-label').textContent = ''
-    // }
 }
 
 // create custom component from selection
@@ -98,8 +83,6 @@ saveComponentButton.onclick = function() {
 // }
 
 
-
-
 //secondary menu
 const rightClickSecondary = document.getElementById("right-click-secondary");
 rightClickSecondary.addEventListener("click", hideRightClickMenu, false);
@@ -123,35 +106,63 @@ rightClickSecondary.onmouseout= function() {
 let hideTimer;
 let rightClickSecondaryExit = false;
 
-options.onmouseover = function() {
+options.onmouseover = function(e) {
     clearTimeout(hideTimer)
+
+    // handle event at edge of screen
+    let loc = {x: 0, y: 0}
+    const width = getOffset(rightClickMenu).width + getOffset(rightClickSecondary).width;
+
+    const left = options.getBoundingClientRect().left;
+    const top = options.getBoundingClientRect().top;
+    const optionsMenuWidth = options.getBoundingClientRect().width;
+    const contextMenuWidth = rightClickMenu.getBoundingClientRect().width;
+
+    // right x boundary
+    (rightClickMenu.getBoundingClientRect().left + width > window.innerWidth) ? loc.x = left - contextMenuWidth : loc.x = left + optionsMenuWidth;
+
     rightClickSecondary.style.visibility = "visible";
 
-    const left = options.getBoundingClientRect().left
-    const top = options.getBoundingClientRect().top
-    
-    rightClickSecondary.style.left = (left + 160)+"px";
+    rightClickSecondary.style.left = loc.x+"px";
     rightClickSecondary.style.top = (top)+"px";
 };
 
-options.onmouseout = function() {
+options.onmouseout = function(e) {
     //get cursor trajectory
     const array = []
     let delta = {x: 0, y: 0}
-    function set(e) {
-        let point = {x: e.screenX, y: e.screenY}
+    let start = {x: e.screenX, y: e.screenY}
+    function set(event) {
+        let point = {x: event.screenX, y: event.screenY}
         array.push(point)
-        delta.x = e.movementX
-        delta.y = e.movementY  
+        delta.x = Math.abs(event.movementX)
+        delta.y = Math.abs(event.movementY) 
     }
 
     document.addEventListener('mousemove', set, true);
+
+    const optionsMenuLeft = rightClickSecondary.getBoundingClientRect().left;
+    const contextMenuLocation = rightClickMenu.getBoundingClientRect().left;
+
+    const segment = 0
 
     // if cursor is moving to secondary menu
     setTimeout(function() {
         document.removeEventListener('mousemove', set, true)
         const s = slope(array.pop(), array.shift())
-        if (s < -.15 || s > 1.3) rightClickSecondary.style.visibility = "hidden";
+
+        console.log(delta.y)
+
+        //hide if not going towards menu
+        if (optionsMenuLeft > contextMenuLocation) {
+            if (s < -.15 || s > 1.3) rightClickSecondary.style.visibility = "hidden";
+        } else {
+            console.log('left')
+            console.log(s)
+            if (s < -1 || s > .25) rightClickSecondary.style.visibility = "hidden";
+        }
+
+        // hide if slow mouse speed
         if (delta.y < 2 && delta.x < 1) rightClickSecondary.style.visibility = "hidden";
     }, 70)
 };

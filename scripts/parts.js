@@ -24,14 +24,13 @@ class Wire {
         }
     }
 
-    //reduced(array) { return array.reduce((partialSum, a) => partialSum + a, 0); }
     nodeState = { a: 0, b: 0}
     storeState = 0
 
-    // get state () {
+    // set state ( [state, node] ) {
+
     //     let idArray = [this.id]
     //     getId(this.id)
-
 
     //     function getId(id) {
     //         wires[id].nodes.forEach(element => {
@@ -41,6 +40,7 @@ class Wire {
     //     }
 
     //     let objectArray = []
+    //     let states = [state]
 
     //     idArray.forEach(id => {
     //         const a = parseInt(wires[id].node.a.id)
@@ -55,33 +55,25 @@ class Wire {
     //         }
     //     });
 
-    //     let states = []
-
     //     objectArray.forEach(object => {
     //         states.push(parseInt(object.state))
-    //     });    
-
+    //     });
 
     //     if(states.includes(1)) this.storeState = 1
     //     if(!states.includes(1)) this.storeState = 0
 
+    //     if (this.node.a !== node && objects[this.node.a.id] === undefined) this.node.a.setter = this.storeState
+    //     if (this.node.b !== node && objects[this.node.b.id] === undefined) this.node.b.setter = this.storeState
+        
     //     this.node.a.state = this.storeState;
     //     this.node.b.state = this.storeState;
     //     this.nodeState.a = this.storeState
     //     this.nodeState.b = this.storeState
 
     //     for (let n of this.nodes) {
+    //         if (n === node) continue;
     //         n.setter = this.storeState
     //     }
-    //     return this.storeState;
-        
-    //     // get all connected wires
-    //     // get all inputs
-    //     // reduce to 1 or 0
-    //     // set all output to 1 or 0
-
-    //     return 0
-    //     //return this.storeState;
     // }
 
     get state () {
@@ -129,7 +121,7 @@ class Node {
         this.name = name;
         this.connectionType = connectionType
         this.type = 'node'
-        this.id = id;
+        this.id = id; //object id
         this.wireId;
         this.state = 0
         this.highlight = false;
@@ -138,20 +130,57 @@ class Node {
         this.classname = this.constructor.name;
     }
 
-    set setter(state) {
+    // set setter ( state ) {
+    //     this.state = state
+
+
+    //     console.log('wire id', this.wireId, 'id', this.id);
+        
+
+    //     if (this.wireId && wires[this.wireId] === undefined) {
+    //         console.error(`Wire ${this.wireId} does not exist`)
+    //         return
+    //     }
+
+    //     if (this.wireId) wires[this.wireId].state = [this.state, this]
+
+    //     for ( const node of wires[this.wireId].nodes) {
+    //         if (node === this) console.log('node', node)
+    //         return
+    //     }
+
+    //     if (wires[this.id] !== undefined) {
+    //         //if (this.id === parseInt(id)) return
+    //         for ( const node of wires[this.id].nodes) {
+    //             if (node === this) {
+
+    //                 console.log('return', this.id, this.wireId);
+    //                 //if (id === this.wireId) wires[this.id].state = [this.state,this]
+    //                 wires[this.id].state = [this.state,this]
+    //                 return
+    //             }
+    //         }
+    //     }
+
+
+    //     //if (wires[this.id] !== undefined) wires[this.id].state = [this.state, this]
+    // }
+
+    set setter ( state ) {
         this.state = state
 
         if (this.wireId && wires[this.wireId] === undefined) {
             console.error(`Wire ${this.wireId} does not exist`)
             return
         }
+
         if (this.wireId) wires[this.wireId].state
     }
 
     get x () { return this.connectionType[this.id].x + this.connectionType[this.id].offset[this.name].x };
     get y () { return this.connectionType[this.id].y + this.connectionType[this.id].offset[this.name].y };
 
-    serialize(){
+    serialize() {
         return JSON.stringify(this);
     }
 }
@@ -186,10 +215,6 @@ class Generic {
     get state () {
         if (this.temp !== this.logic()) {
             const state = this.logic();
-            if (state === undefined) console.log('why')
-
-            console.log(state);
-            
             this.temp = state;
             this.output.setter = state
             return state
@@ -225,14 +250,15 @@ class Led extends Generic{
     type = 'non-interactive'
     img = 'led'
     nodes = ['input']
-    color = '#FF0000'
+    color = "rgba(255,0,0," + .9 + ")"
 
     offset = {
         input: { x: 0, y: -0.5 },
     }
 
+    // this is called on every redraw
     get state () {
-            return this.logic();
+            return this.logic(); 
     }
 
     logic() {
@@ -293,14 +319,16 @@ class OnOffSwitch extends Generic{
     get changeState () {
         this.state ^= 1;
         this.animate();
-        this.output.setter = this.state;
+        this.output.setter = this.state
     }
 
     timeoutID = undefined
-    
+
     animate() {
-        const self = this
-        let i = 0
+        const self = this;
+        let i = 0;
+        const increments = 80;
+        const speed = 4;
 
         // if button is clicked before previous animation ends
         if (self.timeoutID !== undefined) {
@@ -312,17 +340,17 @@ class OnOffSwitch extends Generic{
         //animate state change
         function iterate () {
             self.timeoutID = setTimeout(function() {
-                if (self.state) self.swLocation = 1 - easeOutBounce(i/40)
-                if (!self.state) self.swLocation = easeOutBounce(i/40)
+                if (self.state) self.swLocation = 1 - easeOutBounce(i/increments)
+                if (!self.state) self.swLocation = easeOutBounce(i/increments)
             i++
-            if (i < 40) {        
+            if (i < increments) {        
                 iterate();
             }           
-            if (i === 40) {
+            if (i === increments) {
                 self.swLocation = !self.state
                 self.timeoutID = undefined
             }
-            }, 6)          
+            }, speed)          
         }
     }
 
@@ -400,9 +428,6 @@ class AndGate extends Generic {
         if (this.temp1 === this.input1.state && this.temp2 === this.input2.state) return
 
         const state = this.logic();
-        if (state === undefined) console.log('why')
-
-        console.log(state);
         this.temp1 = this.input1.state
         this.temp2 = this.input2.state
         this.output.setter = state
@@ -431,8 +456,6 @@ class NandGate extends Generic {
         if (this.temp1 === this.input1.state && this.temp2 === this.input2.state) return
 
         const state = this.logic();
-        if (state === undefined) console.log('why')
-
         this.temp1 = this.input1.state
         this.temp2 = this.input2.state
         this.output.setter = state
