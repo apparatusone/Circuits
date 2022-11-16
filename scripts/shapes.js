@@ -8,10 +8,11 @@ export const shape = (function() {
         context.setLineDash([]);
         context.miterLimit = 10;
         context.lineCap = 'butt';
-        context.lineJoin = 'miter';
+        context.lineJoin = 'round';
 
         if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
             context.lineWidth = z/30;
+            context.lineJoin = 'miter';
         }
 
         context.beginPath();
@@ -515,7 +516,7 @@ export const shape = (function() {
         const swLeft = left + (width - width/1.1)/2
         const swWidth = width/1.1
         const swHeight = height/2.4
-        const swRadius = .04*z
+        const swRadius = .045*z
 
         context.lineWidth = z/95;
 

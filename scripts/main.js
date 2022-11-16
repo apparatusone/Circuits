@@ -286,10 +286,10 @@ function draw() {
             // Name of Component
             let fontSize = z/10
             ctx.fillStyle = 'white'
-            ctx.font = `${fontSize}px sans-serif`;
+            ctx.font = `bold ${fontSize}px sans-serif`;
             ctx.textAlign = 'center'
             ctx.baseline = 'middle'
-            ctx.strokeStyle = 'black';
+            //ctx.strokeStyle = 'black';
             ctx.lineWidth = z/120;
 
             let x = (-origin.x + .5 + value.x) * z
@@ -497,24 +497,24 @@ canvas.onmousemove = function(e) {
         origin.y = parseFloat((origin.prev.y - (origin.click.y - e.y)/z).toFixed(4));
     };
 
-    //move label
-    // if (globalCond.mouseDown && clicked.isLabel === true) {
-    //     const id = clicked.object.id
-    //     const name = clicked.object.name
-    //     const x = objects[id].x
-    //     const y = objects[id].y
+    //move node label
+    if (globalCond.mouseDown && clicked.isLabel === true) {
+        const id = clicked.object.id
+        const name = clicked.object.name
+        const x = objects[id].x
+        const y = objects[id].y
 
-    //     // move label within range
-    //     if  (objects[id].r === 0 || objects[id].r === 180) {
-    //         objects[id].offset[name].y = Math.max( -objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.y) - y))
-    //     }
-    //     if  (objects[id].r === 90 || objects[id].r === 270) {
-    //         objects[id].offset[name].x = Math.max( - objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.x) - x))
-    //     }
+        // move label within range
+        if  (objects[id].r === 0 || objects[id].r === 180) {
+            objects[id].offset[name].y = Math.max( -objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.y) - y))
+        }
+        if  (objects[id].r === 90 || objects[id].r === 270) {
+            objects[id].offset[name].x = Math.max( - objects[id].h/2 + .15, Math.min(objects[id].h/2 - .15, parseFloat(mouse.canvas.x) - x))
+        }
 
-    //     moveLabels(id,name)
-    //     return
-    // }
+        moveLabels(id,name)
+        return
+    }
 
     // move node
     if (clickedProxy.node && globalCond.mouseDown && globalCond.dragging && !globalCond.drawing ) {
