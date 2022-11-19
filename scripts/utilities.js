@@ -334,19 +334,14 @@ export function makeCustomComponent(parts, id) {
     }
 
     // check if names are unique
+    let map = {}
     for (const part of parts) {
         if (part.constructor === Led || part.constructor === OnOffSwitch) {
-            for (const part2 of parts) {
-                if (part.constructor === Led || part.constructor === OnOffSwitch) {                
-                    if (part.id === part2.id) continue
-                        
-                    if (part.name === part2.name) {
-                        alert('Names must be unique')
-                        return
-                    }
-                }
+            if (map[part.name] !== undefined) {
+                alert('Names must be unique')
+                return
             }
-        }
+            map[part.name] = 0;
     }
 
     let inputs = []
