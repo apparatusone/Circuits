@@ -342,6 +342,7 @@ export function makeCustomComponent(parts, id) {
                 return
             }
             map[part.name] = 0;
+        }
     }
 
     let inputs = []
