@@ -1108,13 +1108,14 @@ deleteButton.onclick = function() {
 
 // FIXME:
 //boolean to reset id's from 1
-function convertSelectiontoJson(reset) {
+function convertSelectiontoJson( reset ) {
     let custom = {};
     selectedComponents();
     const parts = select.components;
     let partIdArray = parts.map(part => parseInt(part.id));
 
     for (const part of parts) {
+        console.log(part)
         if (part.constructor === CustomComponent) {
             storeCustomComponent(part);
             continue
@@ -1122,7 +1123,7 @@ function convertSelectiontoJson(reset) {
         storeObject(part);
     }
 
-    for (let [id, wire] of Object.entries(wires)) {
+    for (let wire of Object.values(wires)) {
         if (wire.highlight) {
             //ignore partially connected wires 
             if (!partIdArray.includes(parseInt(wire.node.a.id))) continue;
