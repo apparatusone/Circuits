@@ -1,153 +1,156 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <!-- <script defer src="scripts/astar.js"></script> -->
-    <script defer type="module" src="scripts/src/setupGlobals.js"></script>
-    <script defer type="module" src="scripts/main.js"></script>
-    <script defer type="module" src="scripts/menu.js"></script>
-    <script defer type="module" src="scripts/parts.js"></script>
-    <script defer type="module" src="scripts/hidden-canvas.js"></script>
-    <script defer type="module" src="scripts/menus/action-menu.js"></script>
-    <script defer type="module" src="scripts/menus/context-menu.js"></script>
-    <script defer type="module" src="scripts/forms.js"></script>
-    <script defer type="module" src="scripts/logic-rebuild.js"></script>
-    
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Logic</title>
+    </head>
+    <!-- <link rel="stylesheet" href="style.css"> -->
     <style> @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;500&display=swap');</style>
-        
-    <title>computer</title>
-</head>
-<body>
-    <div id="welcome">
-        <h2>What doesn't work yet:</h2>
-        <ul>
-            <li><strong>Safari Browser</strong></li>
-            <li>Undo</li>
-            <li>Add Node</li>
-        </ul>
-        <h2>How to use:</h2>
-        <p>Drag components from the left onto the canvas.</p>
-        <p>Connect nodes together by clicking and dragging.</p>
-        <p>Components can be named using the right click menu.</p>
-        <p>Circuits can be made into Integrated Circuits by using the selection button at the top to select your circuit, then using the right click menu to "Create Component"
-        </p>
-        <button id="welcome-close"></button>
-    </div>
 
-    <div id="tooltip">
-        <div id="tooltip-text">undo</div>
-        <div id="tooltip-tail"></div>
-    </div>
-
-    <div id="action-menu">
-        <button name="Undo" id="undo" class="btn"></button>
-        <button name="Reset Zoom" id="zoomlevel" class="btn"></button>
-        <button name="Increase Zoom" id="zoom-in" class="btn"></button>
-        <button name="Decrease Zoom" id="zoom-out" class="btn"></button>
-        <button name="Select" id="select" class="btn"></button>
-        <button name="Save" id="save" class="btn"></button>
-        <button name="Settings" id="settings" class="btn">
-            <div id="settings-menu-arrow"></div>
-            <div id="settings-menu">
-                <div id="settings-1" class="settings-menu-container">
-                    <label for="menu-darkmode" class="switch">
-                        <input type="checkbox" id="menu-darkmode">
-                        <span class="slider round"></span>
-                        
-                    </label>
-                    <label>Dark Mode</label>
-                </div>
-                <div id="settings-2" class="settings-menu-container">
-                    <label for="menu-show-labels" class="switch">
-                        <input type="checkbox" id="menu-show-labels">
-                        <span class="slider round"></span>
-                    </label>
-                    <label>Always Show Labels</label>
-                </div>
-                <div id="settings-3" class="settings-menu-container">
-                    <label for="menu-welcome" class="switch">
-                        <input type="checkbox" id="menu-welcome">
-                        <span class="slider round"></span>
-                    </label>
-                    <label>Disable Welcome Message</label>
-                </div>
-                <div id="settings-4" class="settings-menu-container">
-                    <label for="menu-smooth-zoom" class="switch">
-                        <input type="checkbox" id="menu-smooth-zoom">
-                        <span class="slider round"></span>
-                    </label>
-                    <label>Smooth Zoom</label>
-                </div>
-                <!-- <div id="settings-5" class="settings-menu-container">
-                    <input type="checkbox" id="menu-hide-grid">
-                    <label for="menu-hide-grid">Hide Grid</label>
-                </div> -->
-            </div>
-        </button>
-    </div>
-
-    <div tabindex="0" id="form-container"></div>
-
-    <canvas id="menu-canvas" class="unselectable animated"></canvas>
-    <div id="menu-background-left" class="animated"></div>
-    <button id="menu-hide-left" class="animated">&lt;</button>
-    <!-- <div id="menu-background-right" class="animated">
-        <h2 id="information-type">Type: And Gate</h2>
-        <h2 id="information-name">Name: undefined</h2>
-        <h2 id="information-state">State: 0</h2>
-    </div>
-    <button id="menu-hide-right" class="animated">&gt;</button> -->
-
-    <button id="rotate-left" class="hide"></button>
-    <button id="rotate-right" class="hide"></button>
-    <canvas id="canvas"></canvas>
-    <canvas id="hidden-canvas"></canvas>
-    <div style="display:none;">
-        <img id="source"
-             src="svg/dot-01.svg"
-             width="100" height="100">
-    </div>
-    <div style="display:none;">
-        <img id="transistor"
-             src="svg/transistor.svg"
-             width="100" height="100">
-    </div>
-    <div style="display:none;">
-        <img id="cc"
-             src="svg/ic.svg"
-             width="100" height="100">
-    </div>
-
-    <menu id="right-click">
-        <div id="name-component" class="options">Rename</div>
-        <div id="custom-component"class="options">Create Component</div>
-        <!-- <div id="name-component" class="options">Name Component</div> -->
-        <div id="save-component" class="options">Save Component</div>
-
-        <div id="options" class="options">
-            Options
-            <div id="chevron" class="chevron"></div>
+    <body>
+        <div id="welcome">
+            <h2>What doesn't work yet:</h2>
+            <ul>
+                <li><strong>Safari Browser</strong></li>
+                <li>Undo</li>
+                <li>Add Node</li>
+            </ul>
+            <h2>How to use:</h2>
+            <p>Drag components from the left onto the canvas.</p>
+            <p>Connect nodes together by clicking and dragging.</p>
+            <p>Components can be named using the right click menu.</p>
+            <p>Circuits can be made into Integrated Circuits by using the selection button at the top to select your circuit, then using the right click menu to "Create Component"
+            </p>
+            <button id="welcome-close"></button>
         </div>
+    
+        <div id="tooltip">
+            <div id="tooltip-text">undo</div>
+            <div id="tooltip-tail"></div>
+        </div>
+    
+        <div id="action-menu">
+            <button name="Undo" id="undo" class="btn"></button>
+            <button name="Reset Zoom" id="zoomlevel" class="btn"></button>
+            <button name="Increase Zoom" id="zoom-in" class="btn"></button>
+            <button name="Decrease Zoom" id="zoom-out" class="btn"></button>
+            <button name="Select" id="select" class="btn"></button>
+            <button name="Save" id="save" class="btn"></button>
+            <button name="Settings" id="settings" class="btn">
+                <div id="settings-menu-arrow"></div>
+                <div id="settings-menu">
+                    <div id="settings-1" class="settings-menu-container">
+                        <label for="menu-darkmode" class="switch">
+                            <input type="checkbox" id="menu-darkmode">
+                            <span class="slider round"></span>
+                            
+                        </label>
+                        <label>Dark Mode</label>
+                    </div>
+                    <div id="settings-2" class="settings-menu-container">
+                        <label for="menu-show-labels" class="switch">
+                            <input type="checkbox" id="menu-show-labels">
+                            <span class="slider round"></span>
+                        </label>
+                        <label>Always Show Labels</label>
+                    </div>
+                    <div id="settings-3" class="settings-menu-container">
+                        <label for="menu-welcome" class="switch">
+                            <input type="checkbox" id="menu-welcome">
+                            <span class="slider round"></span>
+                        </label>
+                        <label>Disable Welcome Message</label>
+                    </div>
+                    <div id="settings-4" class="settings-menu-container">
+                        <label for="menu-smooth-zoom" class="switch">
+                            <input type="checkbox" id="menu-smooth-zoom">
+                            <span class="slider round"></span>
+                        </label>
+                        <label>Smooth Zoom</label>
+                    </div>
+                    <!-- <div id="settings-5" class="settings-menu-container">
+                        <input type="checkbox" id="menu-hide-grid">
+                        <label for="menu-hide-grid">Hide Grid</label>
+                    </div> -->
+                </div>
+            </button>
+        </div>
+    
+        <div tabindex="0" id="form-container"></div>
+    
+        <canvas id="menu-canvas" class="unselectable animated"></canvas>
+        <div id="menu-background-left" class="animated"></div>
+        <button id="menu-hide-left" class="animated">&lt;</button>
+        <!-- <div id="menu-background-right" class="animated">
+            <h2 id="information-type">Type: And Gate</h2>
+            <h2 id="information-name">Name: undefined</h2>
+            <h2 id="information-state">State: 0</h2>
+        </div>
+        <button id="menu-hide-right" class="animated">&gt;</button> -->
+    
+        <button id="rotate-left" class="hide"></button>
+        <button id="rotate-right" class="hide"></button>
+        <canvas id="canvas"></canvas>
+        <canvas id="hidden-canvas"></canvas>
+        <div style="display:none;">
+            <img id="source"
+                 src="svg/dot-01.svg"
+                 width="100" height="100">
+        </div>
+        <div style="display:none;">
+            <img id="transistor"
+                 src="svg/transistor.svg"
+                 width="100" height="100">
+        </div>
+        <div style="display:none;">
+            <img id="cc"
+                 src="svg/ic.svg"
+                 width="100" height="100">
+        </div>
+    
+        <menu id="right-click">
+            <div id="name-component" class="options">Rename</div>
+            <div id="custom-component"class="options">Create Component</div>
+            <!-- <div id="name-component" class="options">Name Component</div> -->
+            <div id="save-component" class="options">Save Component</div>
+    
+            <div id="options" class="options">
+                Options
+                <div id="chevron" class="chevron"></div>
+            </div>
+    
+            <hr/>
+            <div id="undo-context" class="options">Undo</div>
+            <hr/>
+            <div id="cut" class="options">Cut</div>
+            <div id="copy" class="options">Copy</div>
+            <div id="paste" class="options">Paste</div>
+            <hr/>
+            <div id="delete" class="options">Delete</div>
+        </menu>
+    
+        <menu id="right-click-secondary">
+            <div id="custom-component"class="options">Create Component</div>
+            <div id="save-component" class="options">Save Component</div>
+            <div id="set-clock" class="options">Set Clock Speed</div>
+        </menu>
+        <!-- <div id="notepad"></div> -->
+    
+    </body>
 
-        <hr/>
-        <div id="undo-context" class="options">Undo</div>
-        <hr/>
-        <div id="cut" class="options">Cut</div>
-        <div id="copy" class="options">Copy</div>
-        <div id="paste" class="options">Paste</div>
-        <hr/>
-        <div id="delete" class="options">Delete</div>
-    </menu>
-
-    <menu id="right-click-secondary">
-        <div id="custom-component"class="options">Create Component</div>
-        <div id="save-component" class="options">Save Component</div>
-        <div id="set-clock" class="options">Set Clock Speed</div>
-    </menu>
-    <!-- <div id="notepad"></div> -->
-
-</body>
+    <!-- <script>var exports = {};</script> -->
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker
+                    .register("service-worker.js")
+                    .then((registration) => {
+                        console.log("Service Worker registered: ", registration);
+                    })
+                    .catch((registrationError) => {
+                        console.error("Service Worker registration failed: ", registrationError);
+                    });
+            });
+        }
+    </script>
 </html>

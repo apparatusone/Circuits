@@ -1,1 +1,0 @@
-// menu at left of screen, drag and drop to add components to canvas

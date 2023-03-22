@@ -1,4 +1,4 @@
-import * as Type from '../types/types'
+import * as Type from './types/types'
 
 export const logic = (function() {
     type GateType = Generic | AndGate | XorGate
