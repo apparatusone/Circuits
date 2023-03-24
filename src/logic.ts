@@ -1,10 +1,10 @@
 import * as Type from './types/types'
 
-export const logic = (function() {
-    type GateType = Generic | AndGate | XorGate
+export namespace logic {
+    type GateType = AndGate | XorGate
     type ComponentType = GateType | Input | Led
 
-    class Simulate {
+    export class Simulate {
         components:Map<number, ComponentType>
         connections:any
 
@@ -174,14 +174,15 @@ export const logic = (function() {
         }
     }
 
-    class AndGate extends Generic {
+    export class AndGate extends Generic {
         inputA: Type.Binary;
         inputB: Type.Binary;
 
-        constructor(x: number = 0, y: number = 0) {
+        constructor(x:number = 0, y:number = 0) {
             super(x, y);
             this.inputA = 0;
             this.inputB = 0;
+            this.prevPosition = {x: 0, y: 0};
         }
 
         logic() {
@@ -189,10 +190,6 @@ export const logic = (function() {
             this.state = newState;
             return this.state
         }
-
-        // maybe condence into generic?
-        // or move to the canvas loops as shape[name] ake shape['andGate']
-        // shape = shape.andGate
     }
 
     class NandGate extends Generic {
@@ -331,16 +328,18 @@ export const logic = (function() {
 
         // shape = shape.led
     }
-    return {
-        Simulate,
-        Generic,
-        Input,
-        AndGate,
-        NandGate,
-        OrGate,
-        NorGate,
-        XorGate,
-        XnorGate,
-        NotGate,
-    }
-})();
+    // return {
+    //     Simulate,
+    //     Generic,
+    //     Input,
+    //     AndGate,
+    //     NandGate,
+    //     OrGate,
+    //     NorGate,
+    //     XorGate,
+    //     XnorGate,
+    //     NotGate,
+    // }
+}
+
+// export default logic;

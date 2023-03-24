@@ -21,7 +21,12 @@ function resizeCanvas() {
 // instantiate logic
 const circuit = new logic.Simulate();
 const andGate = new logic.AndGate(5,5);
+const andGate2 = new logic.AndGate(3,3);
 circuit.addComponent(andGate);
+cursor.selected.push(andGate)
+
+circuit.addComponent(andGate2);
+cursor.selected.push(andGate2)
 
 let lastFrame = performance.now();
 function draw() {
@@ -64,12 +69,12 @@ function draw() {
     // Smooth Zoom transistion
     // if(settings.smoothZoom) {
     if (true) {
-        origin.x += cursor.screen.x * (1 / z - 5 / (smoothZoom + 4 * z));
-        origin.y -= cursor.screen.y * (1 / z - 5 / (smoothZoom + 4 * z));
+        origin.x += cursor.window.current.x * (1 / z - 5 / (smoothZoom + 4 * z));
+        origin.y -= cursor.window.current.y * (1 / z - 5 / (smoothZoom + 4 * z));
         z = z - (z - smoothZoom) / 5
     } else {
-        origin.x = (origin.x + cursor.screen.x * (1 / z - 1 / (smoothZoom)));
-        origin.y = (origin.y - cursor.screen.y * (1 / z - 1 / (smoothZoom)));
+        // origin.x = (origin.x + cursor.screen.x * (1 / z - 1 / (smoothZoom)));
+        // origin.y = (origin.y - cursor.screen.y * (1 / z - 1 / (smoothZoom)));
         z = smoothZoom;
     };
 
@@ -87,54 +92,18 @@ function draw() {
 
 draw();
 
-canvas.onmousemove = function(e) {
-    // set cursor location in relation to the canvas
-    cursor.canvas.x = Math.round((e.x / z + origin.x - 0.5) * 100) / 100;
-    cursor.canvas.y = Math.round((e.y / z + origin.y - 0.5) * 100) / 100;
-
-    // move object(s) and align to grid
-    if (cursor.state.clicked && cursor.state.button === 0) {
-        const rect = canvas.getBoundingClientRect();
-
-        // get location of cursor in relation to the window scaled to the zoom level
-        const delta = {
-            x: (e.clientX - rect.left)/z - 0.5,
-            y: (e.clientY - rect.top)/z - 0.5,
-        }
-        
-        const object = circuit.components.get(0)
-        if (object) {
-            object.x = Math.round(delta.x*2)/2;
-            object.y = Math.round(delta.y*2)/2;
-        }
-    }
-}
-
-canvas.onwheel = function(e) {
-    e.preventDefault();
-
-    cursor.screen.x = e.x;
-    cursor.screen.y = e.y;
-
-    // TODO: MAKE READABLE
-    smoothZoom = Math.min( Math.max(smoothZoom - (z/8) * ((e.deltaY) > 0 ? .3 : -.5),
-        //minimum zoom / maximum zoom      
-            15), 300
-    );
-
-    // level of current zoom in action (top) menu
-    const zoomLevelElement = document.getElementById("zoomlevel");
-    if (zoomLevelElement) {
-      zoomLevelElement.innerHTML = Math.round(z) + '%';
-    } else {
-      console.error("Element with ID 'zoomlevel' not found.");
-    }
-
-    return false;
-}
-
 canvas.onmousedown = function(e) {
     cursor.state.clicked = true;
+
+    // store cursor click coordinates relative to the window
+    cursor.window.previous.x = e.x;
+    cursor.window.previous.y = e.y;
+
+    // store current position of all components
+    cursor.selected.forEach(component => {
+        component.prevPosition.x = component.x;
+        component.prevPosition.y = component.y;
+    });
 
     switch (e.button) {
         case 0:
@@ -152,6 +121,61 @@ canvas.onmousedown = function(e) {
         default:
           console.log(`Unknown button code: ${e.button}`);
       }
+}
+
+
+
+
+
+canvas.onmousemove = function(e) {
+    // store cursor coordinates relative to the window
+    cursor.window.current.x = e.x;
+    cursor.window.current.y = e.y;
+
+    // TODO: REFACTOR
+    // move canvas
+    if (false) {
+        origin.x = parseFloat((origin.prev.x + (origin.click.x - e.x)/z).toFixed(4));
+        origin.y = parseFloat((origin.prev.y - (origin.click.y - e.y)/z).toFixed(4));
+    };
+
+    // get the change in position
+    let delta = {
+        x: cursor.canvas.previous.x - cursor.canvas.current.x,
+        y: cursor.canvas.previous.y - cursor.canvas.current.y,
+    }
+
+
+    // loop through selected array and update selected component position
+    if (cursor.state.clicked && cursor.state.button === 0) {
+        cursor.selected.forEach(obj => {
+            obj.x = obj.prevPosition.x - Math.round(delta.x*2)/2
+            obj.y = obj.prevPosition.y + Math.round(delta.y*2)/2
+        });
+    }
+}
+
+canvas.onwheel = function(e) {
+    e.preventDefault();
+    // store cursor coordinates relative to the window
+    cursor.window.current.x = e.x;
+    cursor.window.current.y = e.y;
+
+    // TODO: MAKE READABLE
+    smoothZoom = Math.min( Math.max(smoothZoom - (z/8) * ((e.deltaY) > 0 ? .3 : -.5),
+        //minimum zoom / maximum zoom      
+            15), 300
+    );
+
+    // level of current zoom in action (top) menu
+    const zoomLevelElement = document.getElementById("zoomlevel");
+    if (zoomLevelElement) {
+      zoomLevelElement.innerHTML = Math.round(z) + '%';
+    } else {
+      console.error("Element with ID 'zoomlevel' not found.");
+    }
+
+    return false;
 }
 
 canvas.onmouseup = function(e) {

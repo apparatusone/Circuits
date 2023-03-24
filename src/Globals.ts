@@ -1,3 +1,5 @@
+import * as Type from './types/types'
+
 declare global {
     var z: number;
     var smoothZoom: number;
@@ -16,46 +18,67 @@ export const canvasCenter:canvasCenter = {
     y: Number.parseFloat((window.innerHeight/(window.z*2)).toFixed(3)) - 0.5
 }
 
-interface cursor {
-    screen: {
-        x: number,
-        y: number
-    },
-    canvas: {
-        x: number,
-        y: number
-    },
-    state: {
-        clicked: boolean,
-        button: 0 | 1 | 2 | null;
-    }
-}
-
-// rename to cursor
-export const cursor:cursor = {
-    // cursor's position relative to the screen (window)
-    screen: { x: 0, y: 0 },
-    // cursor's position relative to the canvas
-    canvas: { x: 0, y: 0 },
-    // is mouse down and which button
-    state: {
-        clicked: false,
-        button: null,
-    }
-    // cell: {x: 0, y: 0},
-    //offset for moving multiple objects
-    // moveOffset: {components: [], nodes: []}
-};
-
 interface origin {
     x: number,
     y: number,
+    prev: {
+        x: number,
+        y: number,
+    }
+    click: {
+        x: number,
+        y: number,
+    }
 }
 
 // set origin to center of screen
 export const origin:origin = {                                         
     x: canvasCenter.x,
     y: canvasCenter.y,
-    // click: { x:0, y:0 },
-    // prev: { x:0, y:0 },                      
+    prev: { x:0, y:0 },
+    click: { x:0, y:0 },       
 };
+
+interface cursor {
+    window: {
+        current: { x: number, y: number },
+        previous: { x: number, y: number },
+    },
+    canvas: {
+        current: { x: number, y: number },
+        previous: { x: number, y: number },
+    },
+    state: {
+        clicked: boolean,
+        button: 0 | 1 | 2 | null,
+    },
+    selected: Array<Type.ComponentType>
+}
+
+export const cursor:cursor = {
+    // cursor's position relative to the window
+    window: { 
+        current: { x: 0, y: 0 },
+        previous: { x: 0, y: 0 }
+    },
+    // cursor's position relative to the canvas
+    get canvas() {
+        return {
+          current: {
+            x: (this.window.current.x / z + origin.x) - 0.5,
+            y: (-this.window.current.y / z + origin.y) + 0.5, 
+          },
+          previous: {
+            x: (this.window.previous.x / z + origin.x) - 0.5,
+            y: (-this.window.previous.y / z + origin.y) + 0.5, 
+          },
+        };
+    },
+    // mouse down and button
+    state: {
+        clicked: false,
+        button: null,
+    },
+    selected: []
+};
+
