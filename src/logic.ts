@@ -178,8 +178,8 @@ export const logic = (function() {
         inputA: Type.Binary;
         inputB: Type.Binary;
 
-        constructor() {
-            super();
+        constructor(x: number = 0, y: number = 0) {
+            super(x, y);
             this.inputA = 0;
             this.inputB = 0;
         }
@@ -189,6 +189,10 @@ export const logic = (function() {
             this.state = newState;
             return this.state
         }
+
+        // maybe condence into generic?
+        // or move to the canvas loops as shape[name] ake shape['andGate']
+        // shape = shape.andGate
     }
 
     class NandGate extends Generic {
