@@ -5,7 +5,7 @@ export const shape = (function() {
      * @param context 
      */
 
-    const andGate = function (x:number, y:number, context:CanvasRenderingContext2D):void {
+    const andGate = function (x:number, y:number, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
         context.setLineDash([]);
 
         // set linewidth when not highlight
@@ -13,11 +13,12 @@ export const shape = (function() {
             context.lineWidth = z/25;
         }
 
-        // offset
+        //offset
+        function xOffset(offset:number) { return (-r.x + x + offset/100) * z};
+        function yOffset(offset:number) { return (r.y + y + offset/100) * z};
+        
         // function x(off) { return (-a + x1 + off/100) * z};
         // function y(off) { return (b + y1 + off/100) * z};
-        function xOffset(offset:number) { return (x + offset/100) * z};
-        function yOffset(offset:number) { return (y + offset/100) * z};
 
         // #line471
         context.beginPath();

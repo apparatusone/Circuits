@@ -1,6 +1,8 @@
 import { logic } from "./logic";
 import { shape } from './shapes'
 import { canvasCenter, cursor, origin } from "./Globals"
+import { bmp, offScreenDraw } from "./gridcanvas"
+import { GateType, ComponentType } from "./types/types";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d", { alpha: false })!;
@@ -18,15 +20,23 @@ function resizeCanvas() {
     canvas.height = Math.floor(window.innerHeight * scale);
 }
 
+// update offscreen canvas
+const update = {
+    x: 0,
+    y: 0,
+    z: 0,
+    condition: function() { 
+        if ( this.x !== parseFloat(origin.x.toFixed(4)) || this.y !== parseFloat(origin.y.toFixed(4)) || this.z !== parseFloat(z.toFixed(4)) ) return true
+        return false
+    }
+}
+
 // instantiate logic
 const circuit = new logic.Simulate();
-const andGate = new logic.AndGate(5,5);
-const andGate2 = new logic.AndGate(3,3);
-circuit.addComponent(andGate);
-cursor.selected.push(andGate)
-
-circuit.addComponent(andGate2);
-cursor.selected.push(andGate2)
+const andGate1 = new logic.AndGate(0,0);
+andGate1.r = 0;
+circuit.addComponent(andGate1);
+cursor.selected.push(andGate1);
 
 let lastFrame = performance.now();
 function draw() {
@@ -37,32 +47,24 @@ function draw() {
     ctx.fillStyle = 'white'
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
+    // update offscreen canvas
+    if (update.condition()) {
+        offScreenDraw() 
+        update.x = parseFloat(origin.x.toFixed(4))
+        update.y = parseFloat(origin.y.toFixed(4))
+        update.z = parseFloat(z.toFixed(4))
+    }
+
+    // draw hidden canvas
+    ctx.drawImage(bmp,0,0);
+
     // draw components
     ctx.lineWidth = z/15;
     // ctx.strokeStyle = color.line;
     ctx.strokeStyle = 'black';
 
-    // draw objects
-    ctx.lineWidth = z/15;
-    // ctx.strokeStyle = color.line;
-    ctx.strokeStyle = 'black';
-
     for (const component of circuit.components.values()) {
-        shape['andGate'](component.x, component.y, ctx)
-        // if (value.constructor === OnOffSwitch) {
-        //     ctx.fillStyle = color.object;
-        //     drawRotatedImg(value)
-        //     continue
-        // }
-
-        // if (value.state) {
-        //     ctx.fillStyle = value.color;
-        //     drawRotatedImg(value)
-        // }
-        // if (!value.state) {
-        //     ctx.fillStyle = color.object;
-        //     drawRotatedImg(value)
-        // }
+        drawComponent(component);
     }
 
 
@@ -150,7 +152,7 @@ canvas.onmousemove = function(e) {
     if (cursor.state.clicked && cursor.state.button === 0) {
         cursor.selected.forEach(obj => {
             obj.x = obj.prevPosition.x - Math.round(delta.x*2)/2
-            obj.y = obj.prevPosition.y + Math.round(delta.y*2)/2
+            obj.y = obj.prevPosition.y - Math.round(delta.y*2)/2
         });
     }
 }
@@ -161,11 +163,7 @@ canvas.onwheel = function(e) {
     cursor.window.current.x = e.x;
     cursor.window.current.y = e.y;
 
-    // TODO: MAKE READABLE
-    smoothZoom = Math.min( Math.max(smoothZoom - (z/8) * ((e.deltaY) > 0 ? .3 : -.5),
-        //minimum zoom / maximum zoom      
-            15), 300
-    );
+    smoothZoom = Math.min( Math.max( smoothZoom - (z/8) * ((e.deltaY) > 0 ? .3 : -0.5), 15), 300 );
 
     // level of current zoom in action (top) menu
     const zoomLevelElement = document.getElementById("zoomlevel");
@@ -182,27 +180,31 @@ canvas.onmouseup = function(e) {
     cursor.state.clicked = false;
 }
 
-// function rotate (value) {
-//     ctx.save();
+function drawComponent (component:ComponentType) {
+    ctx.save();
+    let rotation = { x: origin.x, y: origin.y }
 
-//     // get middle
-//     let a = z/2 + value.x*z
-//     let b = z/2 + -value.y*z
+    // rotate component
+    if (component.r !== 0) {
+        const middle = {
+            x: z/2 + component.x*z,
+            y: z/2 + -component.y*z
+        }
 
-//     const positions = {
-//         0: { x: origin.y, y: origin.x },
-//         90: { x: origin.y, y: -origin.x },
-//         180: { x: -origin.x, y: -origin.y },
-//         270: { x: -origin.y, y: origin.x },
-//     };
+        const positions: Record< number, { x: number; y: number }> = {
+            90: { x: -origin.y, y: origin.x },
+            180: { x: -origin.x, y: -origin.y },
+            270: { x: origin.y, y: -origin.x },
+        };
 
-//     const o = positions[value.r];
+        rotation = positions[component.r];
 
-//     ctx.translate(a, b)
-//     ctx.rotate(value.r * -Math.PI / 180);
-//     ctx.translate(-a, -b)
+        ctx.translate(middle.x, middle.y)
+        ctx.rotate(component.r * Math.PI / 180);
+        ctx.translate(-middle.x, -middle.y)
+    }
 
-//     value.shape(value.x, -value.y, o.x, o.y, z, value.w, value.h, ctx, value)
-
-//     ctx.restore();
-// }
+    // draw component
+    shape['andGate'](component.x, -component.y, rotation, ctx)
+    ctx.restore();
+}

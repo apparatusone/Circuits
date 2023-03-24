@@ -1,11 +1,8 @@
 import * as Type from './types/types'
 
 export namespace logic {
-    type GateType = AndGate | XorGate
-    type ComponentType = GateType | Input | Led
-
     export class Simulate {
-        components:Map<number, ComponentType>
+        components:Map<number, Type.ComponentType>
         connections:any
 
         constructor() {
@@ -13,7 +10,7 @@ export namespace logic {
             this.connections = new Map();
         }
 
-        addComponent(component: ComponentType) {
+        addComponent(component: Type.ComponentType) {
             const id = this.components.size;
             this.components.set(id, component);
             component.id = id;
@@ -70,7 +67,7 @@ export namespace logic {
                 if (currentConnections) {
                     for (let [index, connection] of currentConnections.entries()) {
                         const [id, node]:[number, string] = connection;
-                        const component = this.components.get(id) as GateType
+                        const component = this.components.get(id) as Type.GateType
                         if (component === undefined) return
 
                         // set value of node
@@ -192,7 +189,7 @@ export namespace logic {
         }
     }
 
-    class NandGate extends Generic {
+    export class NandGate extends Generic {
         inputA: Type.Binary;
         inputB: Type.Binary;
 
@@ -200,6 +197,7 @@ export namespace logic {
             super();
             this.inputA = 0;
             this.inputB = 0;
+            this.prevPosition = {x: 0, y: 0};
         }
 
         logic() {

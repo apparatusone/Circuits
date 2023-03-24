@@ -21,7 +21,8 @@
   },
   "homepage": "https://github.com/apparatusone/Calculator#readme",
   "dependencies": {
-    "@mdi/js": "^7.0.96"
+    "@mdi/js": "^7.0.96",
+    "@types/offscreencanvas": "^2019.7.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
