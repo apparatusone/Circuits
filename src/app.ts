@@ -1,3 +1,4 @@
+import * as Type from './types/types'
 import { logic } from "./logic";
 import { shape } from './shapes'
 import { within } from "./utilites";
@@ -26,6 +27,24 @@ const circuit = new logic.Simulate();
 const andGate1 = new logic.AndGate(0,0);
 circuit.addComponent(andGate1);
 
+const input1 = new logic.Input(0,-4);
+circuit.addComponent(input1);
+
+const led1 = new logic.Led(0,2);
+circuit.addComponent(led1);
+
+const andGate2 = new logic.AndGate(2,0);
+circuit.addComponent(andGate2);
+andGate2.r = 90
+
+const andGate3 = new logic.AndGate(2,-2);
+circuit.addComponent(andGate3);
+andGate3.r = 180
+
+const andGate4 = new logic.AndGate(0,-2);
+circuit.addComponent(andGate4);
+andGate4.r = 270
+
 
 let lastFrame:number = performance.now();
 function draw() {
@@ -50,6 +69,7 @@ function draw() {
     ctx.strokeStyle = 'black';
     for (const component of circuit.components.values()) {
         drawComponent(component);
+        drawNodes(component);
     }
 
 
@@ -189,13 +209,7 @@ function drawComponent (component:ComponentType):void {
             y: z/2 - component.y*z
         }
 
-        const positions: Record< number, { x: number; y: number }> = {
-            90: { x: -origin.y, y: origin.x },
-            180: { x: -origin.x, y: -origin.y },
-            270: { x: origin.y, y: -origin.x },
-        };
-
-        rotation = positions[component.r];
+        rotation = rotateCoordinate( {x:origin.x, y:origin.y}, component.r)
 
         ctx.translate(middle.x, middle.y)
         ctx.rotate(component.r * Math.PI / 180);
@@ -206,3 +220,38 @@ function drawComponent (component:ComponentType):void {
     shape[component.name](component, rotation, ctx)
     ctx.restore();
 }
+
+function drawNodes(component:ComponentType):void {
+    // for each i/o
+    for (const [node, coordinates] of Object.entries(component.nodes) as ['string', {x:number,y:number}][] ) {
+
+        // rotate node coordinates with component
+        const rotated = rotateCoordinate( {x:coordinates.x, y:coordinates.y}, component.r)
+        const x = component.x - rotated.x;
+        const y = component.y + rotated.y;
+        const r = 5.5;
+
+        ctx.lineWidth = z/20;
+        ctx.strokeStyle = 'black';
+        ctx.fillStyle = 'white';
+    
+        // draw circle
+        ctx.beginPath();
+        ctx.arc((-origin.x + x + 0.5) * z, (origin.y - y + 0.5) * z, r/100*z, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.fill();
+    }
+}
+
+function rotateCoordinate(coordinate:Type.Coordinate, r:number):Type.Coordinate {
+    const { x, y } = coordinate;
+
+    const positions: Record< number, { x: number; y: number }> = {
+        0: { x: x, y: y },
+        90: { x: -y, y: x },
+        180: { x: -x, y: -y },
+        270: { x: y, y: -x },
+    };
+
+    return positions[r];
+  }

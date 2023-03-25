@@ -137,6 +137,13 @@ export namespace logic {
             this.x = x;
             this.y = y;
             this.r = r;
+
+            // location of the nodes relative to the center of the component
+            this.nodes = {
+                inputA: { x: -0.25, y: -0.5 },
+                inputB: { x: 0.25, y: -0.5 },
+                output: { x: 0, y: 0.5 },
+            }
         }
 
         setInput(inputName: string, state: Type.Binary) {
@@ -157,6 +164,7 @@ export namespace logic {
         switchPosition: number;
         prevPosition: {x: number, y: number};
         name: string;
+        nodes: { 'output': { x: number, y: number } }
 
         constructor(x = 0, y = 0, r = 0) {
             this.state = 0;
@@ -167,7 +175,14 @@ export namespace logic {
             this.switchPosition = 1
             this.prevPosition = {x: 0, y: 0};
             this.name = "input"
+
+            this.nodes = {
+                output: { x: 0, y: 0.5 },
+            }
         }
+
+        // location of the nodes relative to the center of the component
+
 
         setOutput(value:Type.Binary) {
             this.state = value;
@@ -346,6 +361,10 @@ export namespace logic {
             super(x, y);
             this.inputA = 0;
             this.name = 'led'
+
+            this.nodes = {
+                inputA: { x: 0, y: -0.5 },
+            }
         }
 
         logic() {
