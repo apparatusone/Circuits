@@ -339,31 +339,18 @@ export namespace logic {
         }
     }
 
-    class Led extends Generic{
+    export class Led extends Generic{
         inputA: Type.Binary;
 
-        constructor() {
-            super();
+        constructor(x:number = 0, y:number = 0) {
+            super(x, y);
             this.inputA = 0;
+            this.name = 'led'
         }
-
-        // type = 'non-interactive'
-        // img = 'led'
-        // nodes = ['input']
-        // color = "rgba(255,0,0," + .9 + ")"
-
-        // offset = {
-        //     input: { x: 0, y: -0.5 },
-        // }
 
         logic() {
-            if (this.input.state) {
-                return 1;
-            } else {
-                return 0;
-            }
+            this.state = this.inputA;
+            return this.state
         }
-
-        // shape = shape.led
     }
 };

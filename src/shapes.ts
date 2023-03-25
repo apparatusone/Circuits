@@ -124,8 +124,41 @@ export const shape: Record< string, Function > = (function() {
         context.stroke();
     };
 
+    const led = function (component:ComponentType, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
+        const { x, y } = component
+        
+        // change led color to red if state is high
+        component.state ? context.fillStyle = "red" : context.fillStyle = "white"
+
+        context.setLineDash([]);
+        context.miterLimit = 10;
+        context.lineCap = 'butt';
+        context.lineJoin = 'round';
+
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
+            context.lineWidth = z/30;
+            context.lineJoin = 'miter';
+        }
+
+        context.beginPath();
+        context.arc((-r.x + x + 0.5) * z, (r.y - y + 0.5) * z, .10 * z, 0, 1 * Math.PI, true);
+        context.lineTo((-r.x+ x + 0.4) * z, (r.y - y + .75) * z);
+        context.lineTo((-r.x + x + 0.6) * z, (r.y - y + .75) * z);
+        context.lineTo((-r.x + x + 0.6) * z, (r.y - y + 0.5) * z);
+        context.fill();
+        context.stroke();
+
+
+        context.lineWidth = z/25;
+        context.beginPath();
+        context.lineTo((-r.x + x + 0.5) * z, (r.y - y + .75) * z);
+        context.lineTo((-r.x + x + 0.5) * z, (r.y - y + 1) * z);
+        context.stroke();
+    };
+
     return {
         andGate,
         input,
+        led,
     }
 })();

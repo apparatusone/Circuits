@@ -24,9 +24,8 @@ function resizeCanvas() {
 // instantiate logic
 const circuit = new logic.Simulate();
 const andGate1 = new logic.AndGate(0,0);
-const input1 = new logic.Input(0,-2);
 circuit.addComponent(andGate1);
-circuit.addComponent(input1);
+
 
 let lastFrame:number = performance.now();
 function draw() {
@@ -130,7 +129,8 @@ canvas.onmouseup = function(e) {
         const input = cursor.selected[0]
         // if the selected component hasn't moved toggle it's state
         if (input.x === input.prevPosition.x && input.y === input.prevPosition.y) {
-            input.setOutput(1 - input.state as Binary)
+            input.setOutput(1 - input.state as Binary);
+            circuit.propogate();
         }
     }
 }

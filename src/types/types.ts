@@ -5,4 +5,4 @@ export type Coordinate = { x:number, y:number};
 
 export type GateType = logic.AndGate | logic.NandGate
 
-export type ComponentType = GateType | logic.Input
+export type ComponentType = GateType | logic.Input | logic.Led
