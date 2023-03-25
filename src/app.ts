@@ -1,8 +1,8 @@
 import { logic } from "./logic";
 import { shape } from './shapes'
-import { canvasCenter, cursor, origin } from "./Globals"
+import { cursor, origin } from "./Globals"
 import { bmp, offScreenDraw } from "./gridcanvas"
-import { GateType, ComponentType } from "./types/types";
+import { Binary, ComponentType } from "./types/types";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d", { alpha: false })!;
@@ -34,9 +34,13 @@ const update = {
 // instantiate logic
 const circuit = new logic.Simulate();
 const andGate1 = new logic.AndGate(0,0);
+const input1 = new logic.Input(0,2);
 andGate1.r = 0;
+input1.setInput(1)
 circuit.addComponent(andGate1);
 cursor.selected.push(andGate1);
+circuit.addComponent(input1);
+cursor.selected.push(input1);
 
 let lastFrame = performance.now();
 function draw() {
@@ -62,7 +66,6 @@ function draw() {
     ctx.lineWidth = z/15;
     // ctx.strokeStyle = color.line;
     ctx.strokeStyle = 'black';
-
     for (const component of circuit.components.values()) {
         drawComponent(component);
     }
@@ -98,14 +101,17 @@ canvas.onmousedown = function(e) {
     cursor.state.clicked = true;
 
     // store cursor click coordinates relative to the window
-    cursor.window.previous.x = e.x;
-    cursor.window.previous.y = e.y;
+    cursor.window.previous = { x: e.x, y: e.y };
+
+    // store previous origin position
+    origin.previous = { x: origin.x, y: origin.y };
 
     // store current position of all components
     cursor.selected.forEach(component => {
-        component.prevPosition.x = component.x;
-        component.prevPosition.y = component.y;
+        component.prevPosition = { x: component.x, y: component.y };
     });
+
+    input1.setInput(1 - input1.state as Binary)
 
     switch (e.button) {
         case 0:
@@ -125,21 +131,10 @@ canvas.onmousedown = function(e) {
       }
 }
 
-
-
-
-
 canvas.onmousemove = function(e) {
     // store cursor coordinates relative to the window
     cursor.window.current.x = e.x;
     cursor.window.current.y = e.y;
-
-    // TODO: REFACTOR
-    // move canvas
-    if (false) {
-        origin.x = parseFloat((origin.prev.x + (origin.click.x - e.x)/z).toFixed(4));
-        origin.y = parseFloat((origin.prev.y - (origin.click.y - e.y)/z).toFixed(4));
-    };
 
     // get the change in position
     let delta = {
@@ -147,14 +142,19 @@ canvas.onmousemove = function(e) {
         y: cursor.canvas.previous.y - cursor.canvas.current.y,
     }
 
+    // move canvas
+    if (cursor.state.clicked && cursor.state.button === 0) {
+        origin.x = origin.previous.x + delta.x;
+        origin.y = origin.previous.y + delta.y;
+    };
 
     // loop through selected array and update selected component position
-    if (cursor.state.clicked && cursor.state.button === 0) {
-        cursor.selected.forEach(obj => {
-            obj.x = obj.prevPosition.x - Math.round(delta.x*2)/2
-            obj.y = obj.prevPosition.y - Math.round(delta.y*2)/2
-        });
-    }
+    // if (cursor.state.clicked && cursor.state.button === 0) {
+    //     cursor.selected.forEach(obj => {
+    //         obj.x = obj.prevPosition.x - Math.round(delta.x*2)/2
+    //         obj.y = obj.prevPosition.y + Math.round(delta.y*2)/2
+    //     });
+    // }
 }
 
 canvas.onwheel = function(e) {
@@ -188,7 +188,7 @@ function drawComponent (component:ComponentType) {
     if (component.r !== 0) {
         const middle = {
             x: z/2 + component.x*z,
-            y: z/2 + -component.y*z
+            y: z/2 - component.y*z
         }
 
         const positions: Record< number, { x: number; y: number }> = {
@@ -205,6 +205,6 @@ function drawComponent (component:ComponentType) {
     }
 
     // draw component
-    shape['andGate'](component.x, -component.y, rotation, ctx)
+    shape[component.name](component, rotation, ctx)
     ctx.restore();
 }

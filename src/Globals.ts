@@ -21,11 +21,7 @@ export const canvasCenter:canvasCenter = {
 interface origin {
     x: number,
     y: number,
-    prev: {
-        x: number,
-        y: number,
-    }
-    click: {
+    previous: {
         x: number,
         y: number,
     }
@@ -35,8 +31,7 @@ interface origin {
 export const origin:origin = {                                         
     x: canvasCenter.x,
     y: canvasCenter.y,
-    prev: { x:0, y:0 },
-    click: { x:0, y:0 },       
+    previous: { x:0, y:0 }, 
 };
 
 interface cursor {

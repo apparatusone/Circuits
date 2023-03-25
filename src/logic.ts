@@ -1,4 +1,5 @@
 import * as Type from './types/types'
+import { easeOutBounce } from './utilites'
 
 export namespace logic {
     export class Simulate {
@@ -147,12 +148,15 @@ export namespace logic {
         }
     }
 
-    class Input {
+    export class Input {
         state: Type.Binary;
         id: number | null;
         x: number;
         y: number;
         r: number;
+        switchPosition: number;
+        prevPosition: {x: number, y: number};
+        name: string;
 
         constructor(x = 0, y = 0, r = 0) {
             this.state = 0;
@@ -160,14 +164,49 @@ export namespace logic {
             this.x = x;
             this.y = y;
             this.r = r;
+            this.switchPosition = 1
+            this.prevPosition = {x: 0, y: 0};
+            this.name = "input"
         }
 
         setInput(value:Type.Binary) {
             this.state = value;
+            this.animate();
         }
 
         getState() {
             return this.state;
+        }
+
+        private timeoutID: ReturnType<typeof setTimeout> | undefined = undefined;
+        private animate():void {
+            const self = this;
+            let i = 0;
+            const increments = 80;
+            const speed = 4;
+    
+            // if button is clicked before previous animation ends
+            if (self.timeoutID !== undefined) {
+                clearTimeout(self.timeoutID)
+                self.switchPosition = self.state
+            }
+    
+            iterate()
+            //animate state change
+            function iterate () {
+                self.timeoutID = setTimeout(function() {
+                    if (self.state) self.switchPosition = 1 - easeOutBounce(i/increments)
+                    if (!self.state) self.switchPosition = easeOutBounce(i/increments)
+                i++
+                if (i < increments) {        
+                    iterate();
+                }           
+                if (i === increments) {
+                    self.switchPosition = 1 - self.state
+                    self.timeoutID = undefined
+                }
+                }, speed)          
+            }
         }
     }
 
@@ -180,6 +219,7 @@ export namespace logic {
             this.inputA = 0;
             this.inputB = 0;
             this.prevPosition = {x: 0, y: 0};
+            this.name = "andGate"
         }
 
         logic() {
@@ -326,18 +366,4 @@ export namespace logic {
 
         // shape = shape.led
     }
-    // return {
-    //     Simulate,
-    //     Generic,
-    //     Input,
-    //     AndGate,
-    //     NandGate,
-    //     OrGate,
-    //     NorGate,
-    //     XorGate,
-    //     XnorGate,
-    //     NotGate,
-    // }
-}
-
-// export default logic;
+};
