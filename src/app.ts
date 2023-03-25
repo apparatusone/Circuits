@@ -21,23 +21,12 @@ function resizeCanvas() {
     canvas.height = Math.floor(window.innerHeight * scale);
 }
 
-// update offscreen canvas
-const update = {
-    x: 0,
-    y: 0,
-    z: 0,
-    condition: function() { 
-        if ( this.x !== parseFloat(origin.x.toFixed(4)) || this.y !== parseFloat(origin.y.toFixed(4)) || this.z !== parseFloat(z.toFixed(4)) ) return true
-        return false
-    }
-}
-
 // instantiate logic
 const circuit = new logic.Simulate();
 const andGate1 = new logic.AndGate(0,0);
 circuit.addComponent(andGate1);
 
-let lastFrame = performance.now();
+let lastFrame:number = performance.now();
 function draw() {
     // clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -46,12 +35,9 @@ function draw() {
     ctx.fillStyle = 'white'
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // update offscreen canvas
-    if (update.condition()) {
-        offScreenDraw() 
-        update.x = parseFloat(origin.x.toFixed(4))
-        update.y = parseFloat(origin.y.toFixed(4))
-        update.z = parseFloat(z.toFixed(4))
+    // update offscreen canvas if zooming or cursor is clicked
+    if (Math.abs(z - smoothZoom) > .01 || cursor.state.clicked) {
+        offScreenDraw()
     }
 
     // draw hidden canvas
@@ -183,7 +169,7 @@ canvas.onmouseup = function(e) {
     cursor.state.clicked = false;
 }
 
-function drawComponent (component:ComponentType) {
+function drawComponent (component:ComponentType):void {
     ctx.save();
     let rotation = { x: origin.x, y: origin.y }
 
