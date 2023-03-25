@@ -169,7 +169,7 @@ export namespace logic {
             this.name = "input"
         }
 
-        setInput(value:Type.Binary) {
+        setOutput(value:Type.Binary) {
             this.state = value;
             this.animate();
         }

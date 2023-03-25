@@ -24,7 +24,9 @@ function resizeCanvas() {
 // instantiate logic
 const circuit = new logic.Simulate();
 const andGate1 = new logic.AndGate(0,0);
+const input1 = new logic.Input(0,-2);
 circuit.addComponent(andGate1);
+circuit.addComponent(input1);
 
 let lastFrame:number = performance.now();
 function draw() {
@@ -102,8 +104,6 @@ canvas.onmousedown = function(e) {
         component.prevPosition = { x: component.x, y: component.y };
     });
 
-    // input1.setInput(1 - input1.state as Binary)
-
     switch (e.button) {
         case 0:
             // main button
@@ -120,6 +120,19 @@ canvas.onmousedown = function(e) {
         default:
           console.log(`Unknown button code: ${e.button}`);
       }
+}
+
+canvas.onmouseup = function(e) {
+    cursor.state.clicked = false;
+
+    // if the selected component is an input
+    if ( cursor.selected.length === 1 && cursor.selected[0].name === 'input' ) {
+        const input = cursor.selected[0]
+        // if the selected component hasn't moved toggle it's state
+        if (input.x === input.prevPosition.x && input.y === input.prevPosition.y) {
+            input.setOutput(1 - input.state as Binary)
+        }
+    }
 }
 
 canvas.onmousemove = function(e) {
@@ -163,10 +176,6 @@ canvas.onwheel = function(e) {
     }
 
     return false;
-}
-
-canvas.onmouseup = function(e) {
-    cursor.state.clicked = false;
 }
 
 function drawComponent (component:ComponentType):void {
