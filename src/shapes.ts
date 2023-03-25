@@ -13,7 +13,7 @@ export const shape: Record< string, Function > = (function() {
 
         //offset
         function xOffset(offset:number) { return (-r.x + x + offset/100) * z};
-        function yOffset(offset:number) { return (r.y + y + offset/100) * z};
+        function yOffset(offset:number) { return (r.y - y + offset/100) * z};
 
         // #line471
         context.beginPath();
@@ -61,7 +61,7 @@ export const shape: Record< string, Function > = (function() {
 
         context.setLineDash([]);
 
-        const top = (r.y + y + .2) * z;
+        const top = (r.y - y + .2) * z;
         const left = (-r.x + x + .3) * z;
         const width = .4*z;
         const height = .6*z;
@@ -80,7 +80,7 @@ export const shape: Record< string, Function > = (function() {
         context.stroke();
         context.fill()
 
-        // switch part of switch
+        // switch part of input
         const swTop = top + (height - height/2.4) * Math.min(.95, Math.max(.05, component.switchPosition))
         const swLeft = left + (width - width/1.1)/2
         const swWidth = width/1.1
@@ -108,19 +108,19 @@ export const shape: Record< string, Function > = (function() {
         // 'on' symbol
         context.lineWidth = z/35;
         context.beginPath();
-        context.lineTo((-r.x + x + 0.5) * z, (r.y + y + .29) * z);
-        context.lineTo((-r.x + x + 0.5) * z, (r.y + y + .39) * z);
+        context.lineTo((-r.x + x + 0.5) * z, (r.y - y + .29) * z);
+        context.lineTo((-r.x + x + 0.5) * z, (r.y - y + .39) * z);
         context.stroke();
         
         // 'off' symbol
         context.beginPath();
-        context.arc((-r.x + x + 0.5)* z, (r.y + y + 0.66) * z, .06*z, 0, 2 * Math.PI);
+        context.arc((-r.x + x + 0.5)* z, (r.y - y + 0.66) * z, .06*z, 0, 2 * Math.PI);
         context.stroke();
 
         context.lineCap = 'butt';
         context.beginPath();
-        context.lineTo((-r.x + x + 0.5) * z, (r.y + y + 0) * z);
-        context.lineTo((-r.x + x + 0.5) * z, (r.y + y + .2) * z);
+        context.lineTo((-r.x + x + 0.5) * z, (r.y - y + 0) * z);
+        context.lineTo((-r.x + x + 0.5) * z, (r.y - y + .2) * z);
         context.stroke();
     };
 

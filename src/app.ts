@@ -1,5 +1,6 @@
 import { logic } from "./logic";
 import { shape } from './shapes'
+import { within } from "./utilites";
 import { cursor, origin } from "./Globals"
 import { bmp, offScreenDraw } from "./gridcanvas"
 import { Binary, ComponentType } from "./types/types";
@@ -34,13 +35,7 @@ const update = {
 // instantiate logic
 const circuit = new logic.Simulate();
 const andGate1 = new logic.AndGate(0,0);
-const input1 = new logic.Input(0,2);
-andGate1.r = 0;
-input1.setInput(1)
 circuit.addComponent(andGate1);
-cursor.selected.push(andGate1);
-circuit.addComponent(input1);
-cursor.selected.push(input1);
 
 let lastFrame = performance.now();
 function draw() {
@@ -99,6 +94,9 @@ draw();
 
 canvas.onmousedown = function(e) {
     cursor.state.clicked = true;
+    
+    // clear selected array
+    cursor.selected = [];
 
     // store cursor click coordinates relative to the window
     cursor.window.previous = { x: e.x, y: e.y };
@@ -106,12 +104,19 @@ canvas.onmousedown = function(e) {
     // store previous origin position
     origin.previous = { x: origin.x, y: origin.y };
 
-    // store current position of all components
+    // loop through components to find the component under the cursor and store it in selected array
+    circuit.components.forEach(obj => {
+        if ( within.rectangle( { x:obj.x, y:obj.y }, 1, 1, cursor.canvas.current)) {
+            cursor.selected.push(obj);
+        }
+    });
+
+    // store current position of all selected components
     cursor.selected.forEach(component => {
         component.prevPosition = { x: component.x, y: component.y };
     });
 
-    input1.setInput(1 - input1.state as Binary)
+    // input1.setInput(1 - input1.state as Binary)
 
     switch (e.button) {
         case 0:
@@ -133,8 +138,7 @@ canvas.onmousedown = function(e) {
 
 canvas.onmousemove = function(e) {
     // store cursor coordinates relative to the window
-    cursor.window.current.x = e.x;
-    cursor.window.current.y = e.y;
+    cursor.window.current = { x: e.x, y: e.y };
 
     // get the change in position
     let delta = {
@@ -143,29 +147,28 @@ canvas.onmousemove = function(e) {
     }
 
     // move canvas
-    if (cursor.state.clicked && cursor.state.button === 0) {
+    if (!cursor.selected.length && cursor.state.clicked && cursor.state.button === 0) {
         origin.x = origin.previous.x + delta.x;
         origin.y = origin.previous.y + delta.y;
     };
 
-    // loop through selected array and update selected component position
-    // if (cursor.state.clicked && cursor.state.button === 0) {
-    //     cursor.selected.forEach(obj => {
-    //         obj.x = obj.prevPosition.x - Math.round(delta.x*2)/2
-    //         obj.y = obj.prevPosition.y + Math.round(delta.y*2)/2
-    //     });
-    // }
+    // loop through selected array and update component positions
+    if (cursor.selected.length && cursor.state.clicked && cursor.state.button === 0) {
+        cursor.selected.forEach(obj => {
+            obj.x = obj.prevPosition.x - Math.round(delta.x*2)/2;
+            obj.y = obj.prevPosition.y - Math.round(delta.y*2)/2;
+        });
+    }
 }
 
 canvas.onwheel = function(e) {
     e.preventDefault();
     // store cursor coordinates relative to the window
-    cursor.window.current.x = e.x;
-    cursor.window.current.y = e.y;
+    cursor.window.current = { x: e.x, y: e.y };
 
     smoothZoom = Math.min( Math.max( smoothZoom - (z/8) * ((e.deltaY) > 0 ? .3 : -0.5), 15), 300 );
 
-    // level of current zoom in action (top) menu
+    // level of current zoom displayed in action bar
     const zoomLevelElement = document.getElementById("zoomlevel");
     if (zoomLevelElement) {
       zoomLevelElement.innerHTML = Math.round(z) + '%';
