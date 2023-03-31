@@ -260,25 +260,13 @@ export namespace logic {
         }
     }
 
-    class NotGate {
-        state: Type.Binary;
-        id: number | null;
-        input: Type.Binary;
-        x: number;
-        y: number;
-        r: number;
-
-        constructor(x = 0, y = 0, r = 0) {
-            this.state = 0;
-            this.id = null;
-            this.input = 0
-            this.x = x;
-            this.y = y;
-            this.r = r;
-        }
+    export class NotGate extends Generic{
+        name = 'notGate'
+        inCount = 1;
+        outCount = 1;
 
         logic() {
-            const newState:unknown = !(this.input);
+            const newState:unknown = !(this.input_a);
             this.state = newState as Type.Binary;
             return this.state
         }

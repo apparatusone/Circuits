@@ -345,8 +345,55 @@ export const shape: Record< string, Function > = (function() {
         context.arc(xOffset(50), yOffset(20.5), .051*z, 0, 2 * Math.PI, true);
         context.fill();
         context.stroke();
+    };
+
+    const notGate = function (component:ComponentType, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
+        const { x, y } = component
+
+        // set linewidth when not highlight
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
+            context.lineWidth = z/25;
+        }
+
+        //offset
+        function xOffset(offset:number) { return (r.x + x + offset/100) * z};
+        function yOffset(offset:number) { return (r.y - y + offset/100) * z};
+
+        // 
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(50), yOffset(16.5));
+        context.lineTo(xOffset(50), yOffset(0));
+        context.stroke();
+	
+        // 
+        context.beginPath();
+        context.miterLimit = 10;
+        context.arc(xOffset(50), yOffset(21.6), .051*z, 0, 2 * Math.PI, true);
+        context.fill();
+        context.stroke();
+	
+        // 
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(31.3), yOffset(74.5));
+        context.lineTo(xOffset(48.7), yOffset(29.3));
+        context.bezierCurveTo(xOffset(48.9), yOffset(28.7), xOffset(49.4), yOffset(28.4), xOffset(50), yOffset(28.4));
+        context.bezierCurveTo(xOffset(50.5), yOffset(28.4), xOffset(51.1), yOffset(28.7), xOffset(51.2), yOffset(29.3));
+        context.lineTo(xOffset(68.7), yOffset(74.5));
+        context.closePath();
+        context.fill();
+        context.stroke();
+	
+        // 
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(50), yOffset(74.5));
+        context.lineTo(xOffset(50), yOffset(100));
+        context.stroke();
 
     };
+
 
     const input = function (component:logic.Input, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
         const { x, y } = component
@@ -455,6 +502,7 @@ export const shape: Record< string, Function > = (function() {
         norGate,
         xorGate,
         xnorGate,
+        notGate,
         input,
         led,
     }
