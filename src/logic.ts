@@ -230,18 +230,11 @@ export namespace logic {
         }
     }
 
-    class NorGate extends Generic {
-        inputA: Type.Binary;
-        inputB: Type.Binary;
-
-        constructor() {
-            super();
-            this.inputA = 0;
-            this.inputB = 0;
-        }
+    export class NorGate extends Generic {
+        name = 'norGate'
 
         logic() {
-            const newState:unknown = !this.inputA && !this.inputB;
+            const newState:unknown = !this.input_a && !this.input_b;
             this.state = newState as Type.Binary;
             return this.state
         }

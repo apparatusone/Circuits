@@ -164,6 +164,63 @@ export const shape: Record< string, Function > = (function() {
         context.stroke();
     };
 
+    const norGate = function (component:ComponentType, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
+        const { x, y } = component
+
+        // set linewidth when not highlight
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
+            context.lineWidth = z/25;
+        }
+
+        //offset
+        function xOffset(offset:number) { return (r.x + x + offset/100) * z};
+        function yOffset(offset:number) { return (r.y - y + offset/100) * z};
+
+        // top line
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(50), yOffset(13.5608));
+        context.lineTo(xOffset(50), yOffset(0));
+        context.stroke();
+
+        // lower left line
+        context.beginPath();
+        context.miterLimit = 10
+        context.moveTo(xOffset(37.6), yOffset(72.5));
+        context.lineTo(xOffset(37.5), yOffset(87.5));
+        context.lineTo(xOffset(25), yOffset(100));
+        context.stroke();
+
+        // lower right line
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(62.5), yOffset(72.5));
+        context.lineTo(xOffset(62.5), yOffset(87.6));
+        context.lineTo(xOffset(75), yOffset(100));
+        context.stroke();
+
+        // main
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(50), yOffset(70.9));
+        context.bezierCurveTo(xOffset(58.6), yOffset(70.9), xOffset(68.7), yOffset(75), xOffset(68.7), yOffset(75));
+        context.bezierCurveTo(xOffset(68.7), yOffset(75), xOffset(68.9), yOffset(59.4), xOffset(63.9), yOffset(46.9));
+        context.bezierCurveTo(xOffset(60.508954), yOffset(38.851687), xOffset(55.812474), yOffset(31.418411), xOffset(50), yOffset(24.9));
+        context.bezierCurveTo(xOffset(44.177039), yOffset(31.410502), xOffset(39.479401), yOffset(38.845613), xOffset(36.1), yOffset(46.9));
+        context.bezierCurveTo(xOffset(31.1), yOffset(59.4), xOffset(31.3), yOffset(75), xOffset(31.3), yOffset(75));
+        context.bezierCurveTo(xOffset(31.3), yOffset(75), xOffset(41.5), yOffset(70.9), xOffset(50), yOffset(70.9));
+        context.closePath();
+        context.fill();
+        context.stroke();
+
+        // top circle
+        context.beginPath();
+        context.miterLimit = 10;
+        context.arc(xOffset(50), yOffset(18.722900), .05*z, 0, 2 * Math.PI, true);
+        context.fill();
+        context.stroke();
+    };
+
     const input = function (component:logic.Input, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
         const { x, y } = component
 
@@ -268,6 +325,7 @@ export const shape: Record< string, Function > = (function() {
         andGate,
         nandGate,
         orGate,
+        norGate,
         input,
         led,
     }
