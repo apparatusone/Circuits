@@ -1,6 +1,6 @@
 import { origin } from "./Globals"
 
-const offscreen = new OffscreenCanvas(window.innerWidth, window.innerHeight);
+export const offscreen = new OffscreenCanvas(window.innerWidth, window.innerHeight);
 const htx = offscreen.getContext('2d')!;
 export let bmp:ImageBitmap;
 
@@ -15,10 +15,10 @@ export function offScreenDraw() {
     htx.strokeStyle = '#6F6F6F';
     htx.setLineDash([]);
     htx.beginPath();
-    htx.moveTo((-origin.x - .1 + 0.5) * z, (origin.y + .1 + 0.5) * z);
-    htx.lineTo((-origin.x + .1 + 0.5) * z, (origin.y - .1 + 0.5) * z);
-    htx.moveTo((-origin.x - .1 + 0.5) * z, (origin.y - .1 + 0.5) * z);
-    htx.lineTo((-origin.x + .1 + 0.5) * z, (origin.y + .1 + 0.5) * z);
+    htx.moveTo((origin.x - .1 + 0.5) * z, (origin.y + .1 + 0.5) * z);
+    htx.lineTo((origin.x + .1 + 0.5) * z, (origin.y - .1 + 0.5) * z);
+    htx.moveTo((origin.x - .1 + 0.5) * z, (origin.y - .1 + 0.5) * z);
+    htx.lineTo((origin.x + .1 + 0.5) * z, (origin.y + .1 + 0.5) * z);
     htx.stroke();
 
     //main grid
@@ -33,7 +33,7 @@ export function offScreenDraw() {
     }
 
     if ( z > 15 ) {
-        for (let i = ((-origin.x - 50) * z) % z; i < offscreen.width + 50; i+=z) {  
+        for (let i = ((origin.x - 50) * z) % z; i < offscreen.width + 50; i+=z) {  
             drawLine( ((i - z / 20) + .05*z), 0, ((i - z / 20) + .05*z), offscreen.height);
         }
     }

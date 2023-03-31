@@ -52,3 +52,16 @@ export const within = (function() {
         circle,
     }
 })();
+
+export function rotateCoordinate(coordinate:Type.Coordinate, r:number):Type.Coordinate {
+    const { x, y } = coordinate;
+
+    const positions: Record< number, { x: number; y: number }> = {
+        0: { x: x, y: y },
+        90: { x: y, y: -x },
+        180: { x: -x, y: -y },
+        270: { x: -y, y: x },
+    };
+
+    return positions[r];
+}

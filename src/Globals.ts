@@ -14,8 +14,8 @@ interface canvasCenter {
 
 export const canvasCenter:canvasCenter = {
     // set canvas center to center of window
-    x: - Number.parseFloat((window.innerWidth/(window.z*2)).toFixed(3)) + 0.5,
-    y: Number.parseFloat((window.innerHeight/(window.z*2)).toFixed(3)) - 0.5
+    x: window.innerWidth/(window.z*2),
+    y: window.innerHeight/(window.z*2)
 }
 
 interface origin {
@@ -60,11 +60,11 @@ export const cursor:cursor = {
     get canvas() {
         return {
           current: {
-            x: (this.window.current.x / z + origin.x) - 0.5,
+            x: (this.window.current.x / z - origin.x) - 0.5,
             y: (-this.window.current.y / z + origin.y) + 0.5, 
           },
           previous: {
-            x: (this.window.previous.x / z + origin.x) - 0.5,
+            x: (this.window.previous.x / z - origin.x) - 0.5,
             y: (-this.window.previous.y / z + origin.y) + 0.5, 
           },
         };
