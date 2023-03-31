@@ -27,7 +27,7 @@ function resizeCanvas() {
 
 // instantiate logic
 const circuit = new logic.Simulate();
-const andGate1 = new logic.AndGate(2,1,0,0);
+const andGate1 = new logic.NandGate(2,1,0,0);
 circuit.addComponent(andGate1)
 
 const input1 = new logic.Input(0,1, -2,-4);
@@ -43,6 +43,7 @@ circuit.addConnection(input1, 'output_a', andGate1, 'input_a');
 circuit.addConnection(input2, 'output_a', andGate1, 'input_b')
 circuit.addConnection(andGate1,'output_a', led1, 'input_a')
 
+circuit.propogate();
 
 let lastFrame:number = performance.now();
 function draw() {

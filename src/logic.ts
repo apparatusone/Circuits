@@ -211,18 +211,10 @@ export namespace logic {
     }
 
     export class NandGate extends Generic {
-        inputA: Type.Binary;
-        inputB: Type.Binary;
-
-        constructor() {
-            super();
-            this.inputA = 0;
-            this.inputB = 0;
-            this.prevPosition = {x: 0, y: 0};
-        }
+        name = "nandGate"
 
         logic() {
-            const newState:unknown = !this.inputA || !this.inputB
+            const newState:unknown = !this.input_a || !this.input_b
             this.state = newState as Type.Binary;
             return this.state
         }

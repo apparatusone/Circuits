@@ -57,6 +57,63 @@ export const shape: Record< string, Function > = (function() {
         context.stroke();
     };
 
+    const nandGate = function (component:ComponentType, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
+        const { x, y } = component
+
+        // set linewidth when not highlight
+        if (Math.round(context.lineWidth * 10) / 10 !== Math.round(z/4 * 10) / 10) {
+            context.lineWidth = z/25;
+        }
+
+        //offset
+        function xOffset(offset:number) { return (r.x + x + offset/100) * z};
+        function yOffset(offset:number) { return (r.y - y + offset/100) * z};
+
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(50.028100), yOffset(15.024000));
+        context.lineTo(xOffset(50.018100), yOffset(0));
+        context.stroke();
+        
+        // #polyline90
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(37.571000), yOffset(75.099000));
+        context.lineTo(xOffset(37.503000), yOffset(87.506000));
+        context.lineTo(xOffset(25.000000), yOffset(100.005000));
+        context.stroke();
+        
+        // #polyline92
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(62.502000), yOffset(75.099000));
+        context.lineTo(xOffset(62.502000), yOffset(87.552000));
+        context.lineTo(xOffset(75.000000), yOffset(100.005000));
+        context.stroke();
+        
+        // #path94
+        context.beginPath();
+        context.miterLimit = 10;
+        context.moveTo(xOffset(50.018000), yOffset(24.998900));
+        context.lineTo(xOffset(50.018000), yOffset(24.998900));
+        context.bezierCurveTo(xOffset(54.986221), yOffset(24.998873), xOffset(59.750967), yOffset(26.972466), xOffset(63.264048), yOffset(30.485510));
+        context.bezierCurveTo(xOffset(66.777130), yOffset(33.998554), xOffset(68.750773), yOffset(38.763279), xOffset(68.750800), yOffset(43.731500));
+        context.lineTo(xOffset(68.750800), yOffset(75.006200));
+        context.lineTo(xOffset(31.285400), yOffset(75.006200));
+        context.lineTo(xOffset(31.285400), yOffset(43.731500));
+        context.bezierCurveTo(xOffset(31.285510), yOffset(33.385816), xOffset(39.672316), yOffset(24.999010), xOffset(50.018000), yOffset(24.998900));
+        context.closePath();
+        context.fill()
+        context.stroke();
+        
+    // #circle96
+        context.beginPath();
+        context.miterLimit = 10;
+        context.arc(xOffset(50.000000), yOffset(19.836800), .051621*z, 0, 2 * Math.PI, true);
+        context.fill()
+        context.stroke();
+    };
+
     const input = function (component:logic.Input, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
         const { x, y } = component
 
@@ -159,6 +216,7 @@ export const shape: Record< string, Function > = (function() {
 
     return {
         andGate,
+        nandGate,
         input,
         led,
     }
