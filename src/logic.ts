@@ -220,18 +220,11 @@ export namespace logic {
         }
     }
 
-    class OrGate extends Generic {
-        inputA: Type.Binary;
-        inputB: Type.Binary;
-
-        constructor() {
-            super();
-            this.inputA = 0;
-            this.inputB = 0;
-        }
+    export class OrGate extends Generic {
+        name = 'orGate'
 
         logic() {
-            const newState = this.inputA || this.inputB;
+            const newState = this.inputNodeList.some(input => this[input]) ? 1 : 0;
             this.state = newState;
             return this.state
         }
