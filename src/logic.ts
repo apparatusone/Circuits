@@ -240,18 +240,11 @@ export namespace logic {
         }
     }
 
-    class XorGate extends Generic {
-        inputA: Type.Binary;
-        inputB: Type.Binary;
-
-        constructor() {
-            super();
-            this.inputA = 0;
-            this.inputB = 0;
-        }
+    export class XorGate extends Generic {
+        name = 'xorGate'
 
         logic() {
-            const newState = this.inputA ^ this.inputB;
+            const newState = this.input_a ^ this.input_b;
             this.state = newState as Type.Binary;
             return this.state
         }

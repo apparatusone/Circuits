@@ -27,7 +27,7 @@ function resizeCanvas() {
 
 // instantiate logic
 const circuit = new logic.Simulate();
-const andGate1 = new logic.NorGate(2,1,0,0);
+const andGate1 = new logic.XorGate(2,1,0,0);
 circuit.addComponent(andGate1)
 
 const input1 = new logic.Input(0,1, -2,-4);
