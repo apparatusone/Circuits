@@ -27,16 +27,16 @@ function resizeCanvas() {
 
 // instantiate logic
 const circuit = new logic.Simulate();
-const andGate1 = new logic.NotGate(1,1,0,0);
+const andGate1 = new logic.NotGate(0,0);
 circuit.addComponent(andGate1)
 
-const input1 = new logic.Input(0,1, -2,-4);
+const input1 = new logic.Input(-2,-4);
 circuit.addComponent(input1);
 
-const input2 = new logic.Input(0,1, 1,-4);
+const input2 = new logic.Input(1,-4);
 circuit.addComponent(input2);
 
-const led1 = new logic.Led(1,0,0,2);
+const led1 = new logic.Led(0,2);
 circuit.addComponent(led1);
 
 circuit.addConnection(input1, 'output_a', andGate1, 'input_a');
@@ -126,7 +126,16 @@ canvas.onmousedown = function(e) {
     });
 
     // if a node was clicked start drawing a connection
-
+    circuit.components.forEach(obj => {
+        for (const coordinate of Object.values(obj.nodes)) {
+            const x:number = obj.x + coordinate.x;
+            const y:number = obj.y + coordinate.y;
+            if ( within.circle( { x: x, y: y }, .08, cursor.canvas.current)) {
+                // clear selected array
+                cursor.selected = [];
+            }
+        }
+    });
 
     // store current position of all selected components
     cursor.selected.forEach(component => {

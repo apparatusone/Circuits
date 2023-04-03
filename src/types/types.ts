@@ -8,7 +8,5 @@ export type GateType = logic.AndGate | logic.NandGate;
 export type ComponentType = GateType | logic.Input | logic.Led;
 
 export interface NodePositions {
-    [node: number]: {
-        [index: number]: Coordinate
-    }
+    [node: string]: Coordinate
 }

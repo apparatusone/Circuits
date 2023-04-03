@@ -14,7 +14,7 @@ export namespace logic {
         }
 
         addComponent(component: Type.ComponentType) {
-            const id = this.components.size;
+            const id:number = this.components.size;
             this.components.set(id, component);
             component.id = id;
         }
@@ -81,7 +81,7 @@ export namespace logic {
         
             // Traverse the circuit using BFS
             while (queue.length > 0) {
-                const currentId:number|undefined = queue.shift();
+                const currentId: number | undefined = queue.shift();
                 if (currentId === undefined) return
 
                 const current = this.components.get(currentId);
@@ -90,13 +90,13 @@ export namespace logic {
 
                 // Compute the output of the current component
                 // get connections of current component and store in an array
-                let currentConnections;
+                let currentConnections:Array<[string, number, string]> = [];
 
                 if (this.connections.get(currentId)) {
                     currentConnections = [...this.connections.get(currentId)]
                 }
 
-                if (currentConnections) {
+                if (currentConnections.length) {
                     for (let [index, connection] of currentConnections.entries()) {
                         const [node_a, id, node_b]:[string, number, string] = connection;
                         const component = this.components.get(id) as Type.GateType
@@ -122,11 +122,10 @@ export namespace logic {
         state: Type.Binary;
         id: number | null;
         inputNodeList: Array<string>;
-        inputs:Type.NodePositions;
-        outputs:Type.NodePositions;
+        nodes: Type.NodePositions
         [key: string]: any;
 
-        constructor(inCount:number = 2, outCount:number = 1, x:number = 0, y:number = 0, r:number = 0) {
+        constructor(x = 0, y = 0, r = 0, inCount:number = 2, outCount:number = 1) {
             this.state = 0;
             this.id = null;
             this.x = x;
@@ -153,10 +152,11 @@ export namespace logic {
     }
 
     export class Input extends Generic {
-        inCount = 0;
-        outCount = 1;
-        switchPosition = 1;
-        name = "input"
+        constructor(x: number, y: number, r = 0, inCount = 0, outCount = 1) {
+            super(x, y, r, inCount, outCount);
+            this.switchPosition = 1;
+            this.name = "input";
+        }
 
         setOutput(value:Type.Binary) {
             this.state = value;
@@ -261,9 +261,10 @@ export namespace logic {
     }
 
     export class NotGate extends Generic{
-        name = 'notGate'
-        inCount = 1;
-        outCount = 1;
+        constructor(x: number, y: number, r = 0, inCount = 1, outCount = 1) {
+            super(x, y, r, inCount, outCount);
+            this.name = "notGate";
+        }
 
         logic() {
             const newState:unknown = !(this.input_a);
@@ -272,10 +273,11 @@ export namespace logic {
         }
     }
 
-    export class Led extends Generic{
-        inCount = 1;
-        outCount = 0;
-        name = 'led';
+    export class Led extends Generic {
+        constructor(x: number, y: number, r = 0, inCount = 1, outCount = 0) {
+            super(x, y, r, inCount, outCount);
+            this.name = 'led';
+        }
 
         setInput(inputName: string, state: Type.Binary) {
             this[inputName] = state;
@@ -306,7 +308,7 @@ export namespace logic {
             3: { 0: { x: -0.25, y: p * 0.5 },
                  1: { x: 0, y: p * 0.5 },
                  2: { x: 0.25, y: p * 0.5 }}
-        } as Type.NodePositions;
+        } as Record<string, any> ;
 
         for (let i = 0; i < n; i++) {
             const char = String.fromCharCode(97 + i);
