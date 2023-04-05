@@ -44,10 +44,10 @@ interface cursor {
         previous: { x: number, y: number },
     },
     state: {
-        clicked: boolean,
+        isClicking: boolean,
         button: 0 | 1 | 2 | null,
-    },
-    selected: Array<Type.ComponentType>
+        isDrawing: boolean,
+    }
 }
 
 export const cursor:cursor = {
@@ -71,9 +71,22 @@ export const cursor:cursor = {
     },
     // mouse down and button
     state: {
-        clicked: false,
+        isClicking: false,
         button: null,
-    },
-    selected: []
+        isDrawing: false,
+    }
+};
+
+interface selected {
+    component: Array<Type.ComponentType>,
+    node: { component: Type.ComponentType | null, nodeName: string | null }
+}
+
+export const selected:selected = {
+    component: [],
+    node: { 
+        component: null,
+        nodeName: null,
+    }
 };
 

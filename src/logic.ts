@@ -20,13 +20,24 @@ export namespace logic {
         }
 
         // creates connections in the connection map, takes source id, target id and node name.
-        addConnection(source:any, sourceNode:any, target:any, targetNode:string) {
+        addConnection(source:Type.ComponentType, sourceNode:string, target:Type.ComponentType, targetNode:string) {
             // check if components are in map
             if (!this.components.get(source.id)) {
                 throw new Error(`${source.constructor.name} does not exist in Components map.`);
             }
             if (!this.components.get(target.id)) {
                 throw new Error(`${target.constructor.name} does not exist in Components map.`);
+            }
+
+            // check if drawing to same component
+            if (source === target) {
+                throw new Error(`Drawing to the same component is not allowed`);
+            }
+
+            // switch source and target if drawing from an input to an output
+            if (sourceNode.includes('input')) {
+                [source, target] = [target, source];
+                [sourceNode, targetNode] = [targetNode, sourceNode];
             }
 
             if (!this.connections.has(source.id)) {

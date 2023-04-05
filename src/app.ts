@@ -2,7 +2,7 @@ import * as Type from './types/types'
 import { logic } from "./logic";
 import { shape } from './shapes'
 import { within, rotateCoordinate } from "./utilites";
-import { cursor, origin } from "./Globals"
+import { cursor, origin, selected } from "./Globals"
 import { bmp, offScreenDraw, offscreen } from "./gridcanvas"
 import { Binary, ComponentType } from "./types/types";
 
@@ -27,7 +27,7 @@ function resizeCanvas() {
 
 // instantiate logic
 const circuit = new logic.Simulate();
-const andGate1 = new logic.NotGate(0,0);
+const andGate1 = new logic.AndGate(0,0);
 circuit.addComponent(andGate1)
 
 const input1 = new logic.Input(-2,-4);
@@ -55,7 +55,7 @@ function draw() {
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
     // update offscreen canvas if zooming or cursor is clicked
-    if (Math.abs(z - smoothZoom) > .01 || cursor.state.clicked) {
+    if (Math.abs(z - smoothZoom) > .01 || cursor.state.isClicking) {
         offScreenDraw()
     }
 
@@ -80,6 +80,20 @@ function draw() {
         ctx.stroke();
     }
 
+    // draw 'drawing' line
+    if (cursor.state.isDrawing) {
+        const component = selected.node.component;
+        const node = component.nodes[selected.node.nodeName];
+        const a = {
+            x: component.x + node.x,
+            y: component.y + node.y,
+        }
+        ctx.beginPath();
+        ctx.moveTo((origin.x + a.x + 0.5)* z, (origin.y - a.y + 0.5) * z);
+        ctx.lineTo(cursor.window.current.x, cursor.window.current.y);
+        ctx.stroke();
+    }
+
     // Smooth Zoom transistion
     // if(settings.smoothZoom) {
     if (true) {
@@ -100,17 +114,16 @@ function draw() {
 
     lastFrame = performance.now();
     //fps = 1/((performance.now() - lastFrame)/1000);
-
     window.requestAnimationFrame(draw);
 }
 
 draw();
 
 canvas.onmousedown = function(e) {
-    cursor.state.clicked = true;
+    cursor.state.isClicking = true;
     
     // clear selected array
-    cursor.selected = [];
+    selected.component = [];
 
     // store cursor click coordinates relative to the window
     cursor.window.previous = { x: e.x, y: e.y };
@@ -121,24 +134,27 @@ canvas.onmousedown = function(e) {
     // loop through components to find the component under the cursor and store it in selected array
     circuit.components.forEach(obj => {
         if ( within.rectangle( { x:obj.x, y:obj.y }, 1, 1, cursor.canvas.current)) {
-            cursor.selected.push(obj);
-        }
+            selected.component.push(obj);
+        };
     });
 
     // if a node was clicked start drawing a connection
     circuit.components.forEach(obj => {
-        for (const coordinate of Object.values(obj.nodes)) {
+        for (const [node, coordinate] of Object.entries(obj.nodes)) {
             const x:number = obj.x + coordinate.x;
             const y:number = obj.y + coordinate.y;
             if ( within.circle( { x: x, y: y }, .08, cursor.canvas.current)) {
+                cursor.state.isDrawing = true;
                 // clear selected array
-                cursor.selected = [];
+                selected.component = [];
+                // store node
+                selected.node = { component: obj, nodeName: node };
             }
         }
     });
 
     // store current position of all selected components
-    cursor.selected.forEach(component => {
+    selected.component.forEach(component => {
         component.prevPosition = { x: component.x, y: component.y };
     });
 
@@ -161,16 +177,35 @@ canvas.onmousedown = function(e) {
 }
 
 canvas.onmouseup = function(e) {
-    cursor.state.clicked = false;
+    cursor.state.isClicking = false;
 
     // if the selected component is an input
-    if ( cursor.selected.length === 1 && cursor.selected[0].name === 'input' ) {
-        const input = cursor.selected[0] as logic.Input
+    if ( selected.component.length === 1 && selected.component[0].name === 'input' ) {
+        const input = selected.component[0] as logic.Input
         // if the selected component hasn't moved toggle it's state
         if (input.x === input.prevPosition.x && input.y === input.prevPosition.y) {
             input.setOutput(1 - input.state as Binary);
             circuit.propogate();
         }
+    }
+
+    // if drawing a connection and a node is under the cursor, create a new connection
+    if (cursor.state.isDrawing) {
+        const { component:obj_a, nodeName:node_a } = selected.node;
+        circuit.components.forEach(obj_b => {
+            for (const [node_b, coordinate] of Object.entries(obj_b.nodes)) {
+                const x:number = obj_b.x + coordinate.x;
+                const y:number = obj_b.y + coordinate.y;
+                if ( within.circle( { x: x, y: y }, .08, cursor.canvas.current)) {
+                    circuit.addConnection(obj_a, node_a, obj_b, node_b)
+                    circuit.propogate();
+
+                    selected.node.component = null;
+                    selected.node.nodeName = null;
+                }
+            }
+        });
+        cursor.state.isDrawing = false;
     }
 }
 
@@ -182,20 +217,20 @@ canvas.onmousemove = function(e) {
     let delta = {
         x: cursor.canvas.previous.x - cursor.canvas.current.x,
         y: cursor.canvas.previous.y - cursor.canvas.current.y,
-    }
+    };
 
     // move canvas
-    if (!cursor.selected.length && cursor.state.clicked && cursor.state.button === 0) {
+    if (cursorConditions.moveCanvas) {
         origin.x = origin.previous.x - delta.x;
         origin.y = origin.previous.y + delta.y;
     };
 
     // loop through selected array and update component positions
-    if (cursor.selected.length && cursor.state.clicked && cursor.state.button === 0) {
-        cursor.selected.forEach(obj => {
+    if (cursorConditions.moveComponent) {
+        selected.component.forEach(obj => {
             obj.x = obj.prevPosition.x - Math.round(delta.x*2)/2;
             obj.y = obj.prevPosition.y - Math.round(delta.y*2)/2;
-        });
+    });
 
         // update the connection coordinates to draw connections
         circuit.updateCoordinates();
@@ -261,4 +296,18 @@ function drawNodes(component:ComponentType):void {
         ctx.stroke();
         ctx.fill();
     }
+};
+
+const cursorConditions = {
+    get moveCanvas() {
+        return !selected.component.length && 
+                cursor.state.isClicking && 
+                cursor.state.button === 0 &&
+                !cursor.state.isDrawing
+    },
+    get moveComponent() {
+        return  selected.component.length && 
+                cursor.state.isClicking && 
+                cursor.state.button === 0
+    },
 };
