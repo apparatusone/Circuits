@@ -108,6 +108,7 @@ export namespace logic {
                 }
 
                 if (currentConnections.length) {
+                    const visitedNodes = new Set
                     for (let [index, connection] of currentConnections.entries()) {
                         const [id_a, node_a, id_b, node_b]:Type.NodeConnection = connection;
                         const component = this.components.get(id_b) as Type.GateType
@@ -118,7 +119,7 @@ export namespace logic {
                         // FIXME: this is probably not the most efficient solution
                         // another potential option is to store visited nodes as a string: `${id_id}_$node_b}`
                         // and only update them if the new state is 1
-                        const state = this._findArrayWithNumber(this.connections, index, id_b, visited )
+                        const state = this._findArrayWithNumber(this.connections, id_b, node_b, visitedNodes )
 
                         // set value of node
                         component.setInput(node_b, state)
@@ -135,13 +136,13 @@ export namespace logic {
             }
         }
 
-        private _findArrayWithNumber( map:any, id_a:number, id:number, set:any ):Type.Binary {
+        // get all inputs connected to a particular node
+        private _findArrayWithNumber( map:any, id:number, node:any, set:any ):Type.Binary {
             const bits:Array<Type.Binary> = [];
           
             map.forEach((value:Set<Type.NodeConnection>, key:Type.NodeConnection) => {
                 for (const array of value) {
-                    if (array.includes(id)) {
-                        console.log('id', id)
+                    if (array[2] === id && array[3] === node) {
                         const component = this.components.get(array[0]);
                         const state = component.state;
                         bits.push(state);
