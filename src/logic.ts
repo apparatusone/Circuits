@@ -300,6 +300,27 @@ export namespace logic {
         }
     }
 
+    export class Multiplexor extends Generic {
+        constructor(x: number, y: number, r = 0, inCount = 3, outCount = 1) {
+            super(x, y, r, inCount, outCount);
+            this.name = 'mux';
+
+            this.inputNodeList = ['input_a','input_b','input_sel'];
+            this.nodes = {
+                input_a: {x: -.25, y: -0.5},
+                input_b: {x: .25, y: -0.5},
+                input_sel: {x: 0.5, y: 0},
+                output_a: {x: 0, y: 0.5},
+            }
+        }
+
+        logic() {
+            const newState: number = (this.input_a & (~this.input_sel & 1)) | (this.input_b & (this.input_sel & 1));
+            this.state = newState as Type.Binary;
+            return this.state
+        }
+    }
+
     function genNodePositions(n:number, nodeType:"input"|"output", component:Generic) {
         if (n <= 0) return
         if (n > 25) {
