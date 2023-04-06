@@ -4,7 +4,7 @@ import { easeOutBounce, rotateCoordinate } from './utilites'
 export namespace logic {
     export class Simulate {
         components:Map<number, Type.ComponentType>
-        connections:any
+        connections:Map<number, Set<Type.NodeConnection>>
         connectionCoordinates:Array<{a:Type.Coordinate, b:Type.Coordinate}>;
 
         constructor() {
@@ -44,9 +44,9 @@ export namespace logic {
                 // create a new key value pair with a set as the value
                 this.connections.set(source.id, new Set());
                 // add target to the set
-                this.connections.get(source.id).add([sourceNode, target.id, targetNode]);
+                this.connections.get(source.id).add([source.id, sourceNode, target.id, targetNode]);
             } else {
-                this.connections.get(source.id).add([sourceNode, target.id, targetNode]);
+                this.connections.get(source.id).add([source.id, sourceNode, target.id, targetNode]);
             }
             this.updateCoordinates();
         }
@@ -58,7 +58,7 @@ export namespace logic {
             for (const [key, set] of this.connections) {
                 const component_a = this.components.get(key);
 
-                set.forEach( ([sourceNode, objectId, targetNode]:[string,number,string]) => {
+                set.forEach( ([sourceId, sourceNode, objectId, targetNode]:Type.NodeConnection) => {
                     const node_a = component_a.nodes[sourceNode];
                     const rotate_a = rotateCoordinate( {x:node_a.x, y:node_a.y}, component_a.r)
                     const coordinate_a = {
@@ -101,7 +101,7 @@ export namespace logic {
 
                 // Compute the output of the current component
                 // get connections of current component and store in an array
-                let currentConnections:Array<[string, number, string]> = [];
+                let currentConnections:Array<Type.NodeConnection> = [];
 
                 if (this.connections.get(currentId)) {
                     currentConnections = [...this.connections.get(currentId)]
@@ -109,23 +109,49 @@ export namespace logic {
 
                 if (currentConnections.length) {
                     for (let [index, connection] of currentConnections.entries()) {
-                        const [node_a, id, node_b]:[string, number, string] = connection;
-                        const component = this.components.get(id) as Type.GateType
+                        const [id_a, node_a, id_b, node_b]:Type.NodeConnection = connection;
+                        const component = this.components.get(id_b) as Type.GateType
+
                         if (component === undefined) return
 
+                        // get all inputs for the target node
+                        // FIXME: this is probably not the most efficient solution
+                        // another potential option is to store visited nodes as a string: `${id_id}_$node_b}`
+                        // and only update them if the new state is 1
+                        const state = this._findArrayWithNumber(this.connections, index, id_b, visited )
+
                         // set value of node
-                        component.setInput(node_b, current.state)
+                        component.setInput(node_b, state)
                         // update component
                         component.logic();
                         
                         // FIXME: this will need to be changed
                         // add component to the queue if it hasn't been visited
-                        if (!visited.has(id)) {
-                            queue.push(id);
+                        if (!visited.has(id_b)) {
+                            queue.push(id_b);
                         }
                     }
                 }
             }
+        }
+
+        private _findArrayWithNumber( map:any, id_a:number, id:number, set:any ):Type.Binary {
+            const bits:Array<Type.Binary> = [];
+          
+            map.forEach((value:Set<Type.NodeConnection>, key:Type.NodeConnection) => {
+                for (const array of value) {
+                    if (array.includes(id)) {
+                        console.log('id', id)
+                        const component = this.components.get(array[0]);
+                        const state = component.state;
+                        bits.push(state);
+                        break;
+                    }
+                }
+            });
+          
+            // returns 1 if any number is 1 (or), else 0
+            return bits.some(bit => bit) ? 1 : 0 as Type.Binary;
         }
     }
 
