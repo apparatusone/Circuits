@@ -8,57 +8,65 @@ const WorkboxWebpackPlugin = require("workbox-webpack-plugin");
 const isProduction = process.env.NODE_ENV == "production";
 
 const stylesHandler = isProduction
-  ? MiniCssExtractPlugin.loader
-  : "style-loader";
+    ? MiniCssExtractPlugin.loader
+    : "style-loader";
 
 const config = {
-  entry: [ "./src/index.ts" ],
-  // entry: [ "./src/index.ts", "./src/app.ts"],
-  output: {
-    path: path.resolve(__dirname, "dist"),
-  },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: "index.html",
-    }),
+    entry: ["./src/index.ts"],
+    // entry: [ "./src/index.ts", "./src/app.ts"],
+    output: {
+        path: path.resolve(__dirname, "dist"),
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: "index.html",
+        }),
 
-    // Add your plugins here
-    // Learn more about plugins from https://webpack.js.org/configuration/plugins/
-  ],
-  module: {
-    rules: [
-      {
-        test: /\.(ts|tsx)$/i,
-        loader: "ts-loader",
-        exclude: ["/node_modules/"],
-      },
-      {
-        test: /\.css$/i,
-        use: [stylesHandler, "css-loader"],
-      },
-      {
-        test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
-        type: "asset",
-      },
-
-      // Add your rules for custom modules here
-      // Learn more about loaders from https://webpack.js.org/loaders/
+        // Add your plugins here
+        // Learn more about plugins from https://webpack.js.org/configuration/plugins/
     ],
-  },
-  resolve: {
-    extensions: [".tsx", ".ts", ".jsx", ".js", "..."],
-  },
+    module: {
+        rules: [
+            {
+                test: /\.(ts|tsx)$/i,
+                loader: "ts-loader",
+                exclude: ["/node_modules/"],
+            },
+            {
+                test: /\.css$/i,
+                use: [stylesHandler, "css-loader"],
+            },
+            {
+              test: /\.(svg)$/,
+              use: [
+                {
+                  loader: 'file-loader',
+                  options: {
+                    name: '[name].[hash].[ext]',
+                    outputPath: 'assets/',
+                  },
+                },
+              ],
+            }            
+
+            // Add your rules for custom modules here
+            // Learn more about loaders from https://webpack.js.org/loaders/
+        ],
+    },
+    resolve: {
+        extensions: [".tsx", ".ts", ".jsx", ".js", "..."],
+    },
 };
 
 module.exports = () => {
-  if (isProduction) {
-    config.mode = "production";
+    if (isProduction) {
+        config.mode = "production";
 
-    config.plugins.push(new MiniCssExtractPlugin());
+        config.plugins.push(new MiniCssExtractPlugin());
 
-    config.plugins.push(new WorkboxWebpackPlugin.GenerateSW());
-  } else {
-    config.mode = "development";
-  }
-  return config;
+        config.plugins.push(new WorkboxWebpackPlugin.GenerateSW());
+    } else {
+        config.mode = "development";
+    }
+    return config;
 };

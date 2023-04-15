@@ -1,5 +1,5 @@
 import * as Type from './types/types'
-import { logic } from "./logic";
+import { Logic } from "./logic";
 import { shape } from './shapes'
 import { within, rotateCoordinate } from "./utilites";
 import { cursor, origin, selected } from "./Globals"
@@ -25,25 +25,17 @@ function resizeCanvas() {
     offScreenDraw();
 }
 
-// instantiate logic
-const circuit = new logic.Simulate();
-const andGate1 = new logic.AndGate(0,0);
-circuit.addComponent(andGate1)
+// instantiate Logic
+export const circuit = new Logic.Simulate();
 
-const input1 = new logic.Input(-2,-4);
-circuit.addComponent(input1);
+const trinand1 = new Logic.NandGate(1,0,0,3)
+trinand1.r = 90
+circuit.addComponent(trinand1)
 
-const input2 = new logic.Input(1,-4);
-circuit.addComponent(input2);
+const trinand2 = new Logic.NandGate(1,2,0,3)
+trinand2.r = 90
+circuit.addComponent(trinand2)
 
-const led1 = new logic.Led(0,2);
-circuit.addComponent(led1);
-
-circuit.addConnection(input1, 'output_a', andGate1, 'input_a');
-//circuit.addConnection(input2, 'output_a', andGate1, 'input_b')
-circuit.addConnection(andGate1,'output_a', led1, 'input_a')
-
-circuit.propogate();
 
 let lastFrame:number = performance.now();
 function draw() {
@@ -84,12 +76,15 @@ function draw() {
     if (cursor.state.isDrawing) {
         const component = selected.node.component;
         const node = component.nodes[selected.node.nodeName];
-        const a = {
-            x: component.x + node.x,
-            y: component.y + node.y,
+
+        const rotated = rotateCoordinate( {x: node.x, y: node.y}, component.r)
+        const c = {
+            x: component.x + rotated.x,
+            y: component.y + rotated.y,
         }
+
         ctx.beginPath();
-        ctx.moveTo((origin.x + a.x + 0.5)* z, (origin.y - a.y + 0.5) * z);
+        ctx.moveTo((origin.x + c.x + 0.5)* z, (origin.y - c.y + 0.5) * z);
         ctx.lineTo(cursor.window.current.x, cursor.window.current.y);
         ctx.stroke();
     }
@@ -132,23 +127,26 @@ canvas.onmousedown = function(e) {
     origin.previous = { x: origin.x, y: origin.y };
 
     // loop through components to find the component under the cursor and store it in selected array
-    circuit.components.forEach(obj => {
+    circuit.components.forEach((obj: Type.ComponentType) => {
         if ( within.rectangle( { x:obj.x, y:obj.y }, 1, 1, cursor.canvas.current)) {
             selected.component.push(obj);
         };
     });
 
     // if a node was clicked start drawing a connection
-    circuit.components.forEach(obj => {
-        for (const [node, coordinate] of Object.entries(obj.nodes)) {
-            const x:number = obj.x + coordinate.x;
-            const y:number = obj.y + coordinate.y;
-            if ( within.circle( { x: x, y: y }, .08, cursor.canvas.current)) {
+    circuit.components.forEach((component: Type.ComponentType) => {
+        for (const [node, coordinate] of Object.entries<Type.Coordinate>(component.nodes)) {
+            const rotated = rotateCoordinate( {x: coordinate.x, y: coordinate.y}, component.r)
+            const c = {
+                x: component.x + rotated.x,
+                y: component.y + rotated.y,
+            }
+            if ( within.circle( { x: c.x, y: c.y }, .08, cursor.canvas.current)) {
                 cursor.state.isDrawing = true;
                 // clear selected array
                 selected.component = [];
                 // store node
-                selected.node = { component: obj, nodeName: node };
+                selected.node = { component: component, nodeName: node };
             }
         }
     });
@@ -181,7 +179,7 @@ canvas.onmouseup = function(e) {
 
     // if the selected component is an input
     if ( selected.component.length === 1 && selected.component[0].name === 'input' ) {
-        const input = selected.component[0] as logic.Input
+        const input = selected.component[0] as InstanceType<typeof Logic.Input>
         // if the selected component hasn't moved toggle it's state
         if (input.x === input.prevPosition.x && input.y === input.prevPosition.y) {
             input.setOutput(1 - input.state as Binary);
@@ -192,11 +190,14 @@ canvas.onmouseup = function(e) {
     // if drawing a connection and a node is under the cursor, create a new connection
     if (cursor.state.isDrawing) {
         const { component:obj_a, nodeName:node_a } = selected.node;
-        circuit.components.forEach(obj_b => {
-            for (const [node_b, coordinate] of Object.entries(obj_b.nodes)) {
-                const x:number = obj_b.x + coordinate.x;
-                const y:number = obj_b.y + coordinate.y;
-                if ( within.circle( { x: x, y: y }, .08, cursor.canvas.current)) {
+        circuit.components.forEach( (obj_b: Type.ComponentType) => {
+            for (const [node_b, coordinate] of Object.entries<Type.Coordinate>(obj_b.nodes)) {
+                const rotate_a = rotateCoordinate( {x: coordinate.x, y: coordinate.y}, obj_b.r)
+                const c = {
+                    x: obj_b.x + rotate_a.x,
+                    y: obj_b.y + rotate_a.y,
+                }
+                if ( within.circle( { x: c.x, y: c.y }, .08, cursor.canvas.current)) {
                     circuit.addConnection(obj_a, node_a, obj_b, node_b)
                     circuit.propogate();
 
@@ -207,6 +208,8 @@ canvas.onmouseup = function(e) {
         });
         cursor.state.isDrawing = false;
     }
+    // clear selected array
+    selected.component = [];
 }
 
 canvas.onmousemove = function(e) {

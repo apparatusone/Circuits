@@ -8,7 +8,7 @@
     --side-menu-color: rgba(0, 7, 21, 0.5);
     --icon-color: 'white';
     --tooltip-color: 'black';
-    --text-color: 'white';
+    --text-color: white;
     --window-color: #000000ba;
     --ui-blue: rgb(0, 110, 255);
     --slider: 22px;
@@ -18,11 +18,87 @@ body {
     background: rgb(199, 199, 199);
     margin: 0;
     overflow: hidden;
+    font-family: 'Roboto Flex', sans-serif;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
 }
+
+/* horizontal line */
+hr {
+    border: none;
+    border-top: .1rem solid;
+    border-color: rgba(204, 204, 204, 0.288);
+
+    grid-column: span 2;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+}
+
+#component-menu {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 19rem;
+    height: 100vh;
+    background: var(--side-menu-color);
+    -webkit-backdrop-filter: blur(.5rem);
+    backdrop-filter: blur(.5rem);
+    box-shadow: .1rem 0px 1rem rgba(0, 0, 0, 0.375);
+    overflow: scroll;
+    z-index: 5;
+
+    display: grid;
+    grid-template-columns: auto auto;
+    row-gap: 1rem; 
+    justify-content: space-evenly;
+    padding-top: 10px;
+}
+
+
+.component-menu-heading {
+    color: var(--text-color);
+    font-size: 1.5rem;
+    grid-column: 1 / span 2;
+    margin-bottom: -1rem;
+}
+
+.component-menu-item {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    color: var(--text-color);
+}
+
+.alert-component {
+    position: fixed;
+    bottom: -3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: .5rem;
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+
+    -webkit-backdrop-filter: blur(.5rem);
+    backdrop-filter: blur(.5rem);
+    box-shadow:
+    2.8px 2.8px 2.2px rgba(0, 0, 0, 0.02),
+    6.7px 6.7px 5.3px rgba(0, 0, 0, 0.028),
+    12.5px 12.5px 10px rgba(0, 0, 0, 0.035),
+    22.3px 22.3px 17.9px rgba(0, 0, 0, 0.042),
+    41.8px 41.8px 33.4px rgba(0, 0, 0, 0.05),
+    100px 100px 80px rgba(0, 0, 0, 0.07);
+
+    z-index: 100;
+}
+
+/* old */
+
+
 
 button, input[type="submit"], input[type="reset"] {
 	background: none;
@@ -132,7 +208,7 @@ canvas {
     z-index: 4;
 }
 
-#menu-background-left,  #menu-background-right{
+/* #menu-background-left,  #menu-background-right{
     position: fixed;
     top: 0;
     --menu-width: 300px;
@@ -147,7 +223,7 @@ canvas {
 
 #menu-background-left {
     left: 0;
-}
+} */
 
 #menu-background-right {
     color: white;
@@ -636,13 +712,4 @@ menu {
     pointer-events: none;
 }
 
-/* horizontal line */
-hr {
-    height: 1px;
-    border: 0;
-    border-top: 1px solid;
-    border-color: rgba(204, 204, 204, 0.288);
-    width: 145px;
-    margin: .1em 0;
-    padding: 0;
-}
+

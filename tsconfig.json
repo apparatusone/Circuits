@@ -3,11 +3,15 @@
     "outDir": "./build",
     "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
-    "module": "es6",
+    "module": "es2020",
     "target": "es2015",
     "allowJs": true,
     "skipLibCheck": true,
   },
+  "include": [
+    "src/**/*.ts",
+    "src/types/custom.d.ts"
+  ],
   "exclude": ["scripts/**/*", "js_backups/**/*", "node_modules"],
   "files": ["src/index.ts"]
 }

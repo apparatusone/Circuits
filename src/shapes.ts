@@ -1,5 +1,5 @@
 import { ComponentType } from "./types/types";
-import { logic } from "./logic"
+import { Logic } from "./logic"
 
 export const shape: Record< string, Function > = (function() {
     const andGate = function (component:ComponentType, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
@@ -394,8 +394,7 @@ export const shape: Record< string, Function > = (function() {
 
     };
 
-
-    const input = function (component:logic.Input, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
+    const input = function (component:InstanceType<typeof Logic.Input>, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
         const { x, y } = component
 
         context.setLineDash([]);
@@ -495,6 +494,14 @@ export const shape: Record< string, Function > = (function() {
         context.stroke();
     };
 
+    const mux = function (component:ComponentType, r: {x:number, y:number}, context:CanvasRenderingContext2D):void {
+        const { x, y } = component
+        
+        //offset
+        function xOffset(offset:number) { return (r.x + x + offset/100) * z};
+        function yOffset(offset:number) { return (r.y - y + offset/100) * z};
+    };
+
     return {
         andGate,
         nandGate,
@@ -505,5 +512,6 @@ export const shape: Record< string, Function > = (function() {
         notGate,
         input,
         led,
+        mux,
     }
 })();
